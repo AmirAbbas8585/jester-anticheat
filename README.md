@@ -5,9 +5,9 @@
 
 ---
 
-**Jester Anti Cheat** is a packet-based anti-cheat for Paper **1.21.4**, focused on
-low false-positives across mixed client versions (ViaBackwards / 1.8+) and behind
-proxies. It ships a large set of movement, combat, world, and packet checks, each
+**Jester Anti Cheat** is a packet-based anti-cheat for Paper **1.19 – latest**
+(primarily tuned and tested on **1.21.4**), focused on low false-positives across
+mixed client versions (ViaBackwards / 1.8+) and behind proxies. It ships a large set of movement, combat, world, and packet checks, each
 fully configurable per-server.
 
 > `jester` is the umbrella brand for a family of plugins; this repository is the

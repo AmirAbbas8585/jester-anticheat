@@ -77,7 +77,9 @@ bukkit {
     author = "Jester"
     main = "ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin"
     website = "https://modrinth.com/plugin/jester-anticheat"
-    apiVersion = "1.20"
+    // Minimum server version. Bukkit has no "max" field — the plugin loads on
+    // this version and every newer one automatically.
+    apiVersion = "1.19"
     foliaSupported = true
 
     if (!BuildConfig.shadePE) {
