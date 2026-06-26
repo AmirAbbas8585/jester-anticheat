@@ -100,10 +100,20 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
 
     private ac.jester.anticheat.platform.bukkit.afk.AfkManager afkManager;
     private ac.jester.anticheat.platform.bukkit.update.UpdateChecker updateChecker;
+    private boolean started = false;
 
     @Override
     public void onEnable() {
+        // Startup-only remote kill switch. Runs before anything else and is
+        // fail-closed: if the version is killed/too old, OR the gate server is
+        // unreachable, the plugin refuses to enable. (Hardcoded endpoint.)
+        if (ac.jester.anticheat.platform.bukkit.update.VersionGate.isBlocked(this)) {
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
         GrimAPI.INSTANCE.start();
+        started = true;
         HookManager.init();
         Bukkit.getPluginManager().registerEvents(
                 new ac.jester.anticheat.platform.bukkit.listeners.FreezeListener(), this);
@@ -140,6 +150,8 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
     public void onDisable() {
         if (afkManager != null) afkManager.stop();
         if (updateChecker != null) updateChecker.stop();
+        // If the version gate refused enable, nothing below was initialised.
+        if (!started) return;
         HookManager.disable();
         GrimAPI.INSTANCE.stop();
     }
