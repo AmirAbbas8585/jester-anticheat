@@ -1,6 +1,10 @@
 # Color codes: legacy '&' codes (&8, &f, &#c19a6b ...), '&#RRGGBB' and bare '#RRGGBB'
 # hex codes, and MiniMessage tags (<bold>, <click:...>) are all supported.
-prefix: '&#c19a6bᴀᴄ &8»'
+prefix: '&#c19a6bᴊᴇꜱᴛᴇʀ &8»'
+
+# Shown to staff (with the update-checker.notify-permission node) on join when a
+# newer version is available. Placeholders: %latest% %current%
+update-available: '%prefix% <yellow>A new version is available: <green>%latest%</green> <gray>(running <red>%current%</red>)'
 
 alerts-enabled: '%prefix% &fAnticheat detections have been successfully &aenabled&f.'
 alerts-disabled: '%prefix% &fAnticheat detections have been &cdisabled&f.'

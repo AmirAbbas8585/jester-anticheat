@@ -60,6 +60,24 @@ experimental-checks-punishable: false
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Update checker
+# Notifies the console at startup, and staff (with the permission below) on join,
+# when a newer version is available. Since this is a private build there is no
+# public version feed, so point it at a URL YOU host whose contents are just the
+# latest version string (e.g. a file containing: 0.0.2). Leave url empty to turn
+# the whole feature off.
+# ─────────────────────────────────────────────────────────────────────────────
+update-checker:
+    enabled: true
+    # Plain-text endpoint returning the latest version, e.g. https://yoursite/jester.txt
+    url: ''
+    # Re-check every N minutes while the server runs (0 = only once at startup).
+    interval-minutes: 180
+    # Permission a player needs to be told about updates on join.
+    notify-permission: 'jester.update'
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Alert Rate Limiting (prevents alert spam)
 # These are GLOBAL defaults — override per-check under "checks:" below.
 # ─────────────────────────────────────────────────────────────────────────────
