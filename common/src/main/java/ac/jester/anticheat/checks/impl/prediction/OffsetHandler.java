@@ -12,7 +12,7 @@ import ac.jester.anticheat.utils.nmsutil.Materials;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-@CheckData(name = "Simulation", decay = 0.02)
+@CheckData(name = "MovementA", decay = 0.02)
 public class OffsetHandler extends Check implements PostPredictionCheck {
     private static final AtomicInteger flags = new AtomicInteger(0);
     // Config
@@ -31,7 +31,7 @@ public class OffsetHandler extends Check implements PostPredictionCheck {
     // Current advantage gained
     private double advantageGained = 0;
     // Grace after a flight (/fly) toggle — the ability desync spikes the offset.
-    // Configurable (Simulation.flight-toggle-grace-ms) for servers whose flight
+    // Configurable (MovementA.flight-toggle-grace-ms) for servers whose flight
     // plugins resync slower/faster than vanilla.
     private long flightToggleGraceMs = 1000L;
     // Consecutive ticks in a row where offset exceeded the threshold. A single
@@ -92,10 +92,10 @@ public class OffsetHandler extends Check implements PostPredictionCheck {
         // Combat knockback (vanilla or a plugin's custom KB, e.g. DeluxeCombat)
         // applies a velocity the general movement predictor can mispredict for
         // a tick or two — unlike AntiKB, which reads the actual sent velocity
-        // packet directly, Simulation predicts movement holistically and a
+        // packet directly, MovementA predicts movement holistically and a
         // non-trivial velocity jump can produce an arbitrarily large one-tick
         // offset that a raised threshold alone wouldn't reliably cover. Real
-        // logs showed large (~0.14-0.33), isolated, one-off Simulation spikes
+        // logs showed large (~0.14-0.33), isolated, one-off MovementA spikes
         // with no other explanation (not sneaking/carpet/bed/water) — this hook
         // existed but was never actually wired to anything until now.
         if (ac.jester.anticheat.hooks.ExemptionProvider.safe().hasRecentCombatKnockback(player)) {
@@ -262,23 +262,23 @@ public class OffsetHandler extends Check implements PostPredictionCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        setbackDecayMultiplier = config.getDoubleElse("Simulation.setback-decay-multiplier", 0.999);
-        threshold = config.getDoubleElse("Simulation.threshold", 0.001);
-        sneakThreshold = config.getDoubleElse("Simulation.sneak-threshold", 0.015);
-        carpetThreshold = config.getDoubleElse("Simulation.carpet-threshold", 0.02);
-        bedThreshold = config.getDoubleElse("Simulation.bed-threshold", 0.035);
+        setbackDecayMultiplier = config.getDoubleElse("MovementA.setback-decay-multiplier", 0.999);
+        threshold = config.getDoubleElse("MovementA.threshold", 0.001);
+        sneakThreshold = config.getDoubleElse("MovementA.sneak-threshold", 0.015);
+        carpetThreshold = config.getDoubleElse("MovementA.carpet-threshold", 0.02);
+        bedThreshold = config.getDoubleElse("MovementA.bed-threshold", 0.035);
         // water-threshold was declared and used below but NEVER read here, so it
         // was always 0.0 — the water tolerance (Math.max with waterThreshold) did
-        // nothing, which is why in-water Simulation false flags kept being
+        // nothing, which is why in-water MovementA false flags kept being
         // reported. Now actually loaded from config.
-        waterThreshold = config.getDoubleElse("Simulation.water-threshold", 0.04);
-        pingThresholdBaseline = config.getIntElse("Simulation.ping-threshold-baseline-ms", 60);
-        pingThresholdPerMs = config.getDoubleElse("Simulation.ping-threshold-per-ms", 0.00003);
-        immediateSetbackThreshold = config.getDoubleElse("Simulation.immediate-setback-threshold", 0.1);
-        maxAdvantage = config.getDoubleElse("Simulation.max-advantage", 1);
-        maxCeiling = config.getDoubleElse("Simulation.max-ceiling", 4);
-        setbackViolationThreshold = config.getDoubleElse("Simulation.setback-violation-threshold", 1);
-        flightToggleGraceMs = config.getIntElse("Simulation.flight-toggle-grace-ms", 1000);
+        waterThreshold = config.getDoubleElse("MovementA.water-threshold", 0.04);
+        pingThresholdBaseline = config.getIntElse("MovementA.ping-threshold-baseline-ms", 60);
+        pingThresholdPerMs = config.getDoubleElse("MovementA.ping-threshold-per-ms", 0.00003);
+        immediateSetbackThreshold = config.getDoubleElse("MovementA.immediate-setback-threshold", 0.1);
+        maxAdvantage = config.getDoubleElse("MovementA.max-advantage", 1);
+        maxCeiling = config.getDoubleElse("MovementA.max-ceiling", 4);
+        setbackViolationThreshold = config.getDoubleElse("MovementA.setback-violation-threshold", 1);
+        flightToggleGraceMs = config.getIntElse("MovementA.flight-toggle-grace-ms", 1000);
         if (maxAdvantage == -1) maxAdvantage = Double.MAX_VALUE;
         if (immediateSetbackThreshold == -1) immediateSetbackThreshold = Double.MAX_VALUE;
     }

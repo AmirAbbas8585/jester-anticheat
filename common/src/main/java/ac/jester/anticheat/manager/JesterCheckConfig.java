@@ -61,14 +61,14 @@ public final class JesterCheckConfig {
         return experimentalChecksPunishable;
     }
 
-    /** Returns (and caches) per-check settings. configPath is e.g. "checks.movement.Simulation" */
+    /** Returns (and caches) per-check settings. configPath is e.g. "checks.movement.MovementA" */
     public static CheckSettings get(String checkName) {
         return cache.computeIfAbsent(checkName, JesterCheckConfig::load);
     }
 
     private static CheckSettings load(String checkName) {
         ConfigManager cfg = GrimAPI.INSTANCE.getConfigManager().getConfig();
-        // config key: checks.<checkName> (e.g. checks.Simulation, checks.Reach)
+        // config key: checks.<checkName> (e.g. checks.MovementA, checks.Reach)
         String prefix = "checks." + checkName + ".";
 
         boolean enabled       = cfg.getBooleanElse(prefix + "enabled", true);

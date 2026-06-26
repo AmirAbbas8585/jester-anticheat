@@ -6,13 +6,13 @@ import ac.jester.anticheat.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 
 // This works around 1.3 timer, to prevent too high abuse - maybe there's a better solution?
-@CheckData(name = "TimerLimit", setback = 10)
-public class TimerLimit extends Timer {
+@CheckData(name = "PacketLimit", setback = 10)
+public class PacketLimit extends Timer {
 
     // At what ping should we start to limit the balance advantage? (nanos)
     private long limitAbuseOverPing;
 
-    public TimerLimit(GrimPlayer player) {
+    public PacketLimit(GrimPlayer player) {
         super(player);
     }
 

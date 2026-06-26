@@ -40,7 +40,7 @@ public class GroundSpoof extends Check implements PostPredictionCheck {
 
         // Beds have an asymmetric, reduced-height collision shape — real logs
         // showed jump-spamming on/near a bed corner repeatedly claiming a
-        // ground status mismatch. Same root cause as the Simulation
+        // ground status mismatch. Same root cause as the MovementA
         // bed-threshold exemption; not a movement exploit.
         if (Materials.isBed(player.compensatedWorld.getBlockType(player.x, player.y - 0.1, player.z))) return;
 

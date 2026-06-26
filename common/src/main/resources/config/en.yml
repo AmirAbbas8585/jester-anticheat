@@ -67,7 +67,7 @@ alert-defaults:
     # Send alert every N violations. 1 = every violation. 2 = every 2nd. 5 = every 5th.
     alert-interval: 1
     # Don't send alert until violations >= this value (suppresses early noise).
-    # Applies to checks WITHOUT their own block (GroundSpoof, TimerLimit,
+    # Applies to checks WITHOUT their own block (GroundSpoof, PacketLimit,
     # TickTimer, ...) — raised so a stray flag from those doesn't spam chat.
     dont-alert-until: 3
     # Minimum milliseconds between consecutive alerts for the same check on the same player.
@@ -83,7 +83,7 @@ alert-defaults:
     punishable: true
     # Minimum time (ms) a violation streak must last BEFORE a kick/punishment is
     # allowed to fire, even if max-violations was already reached. Some checks
-    # (Simulation, combat) can flag several times in a fraction of a second
+    # (MovementA, combat) can flag several times in a fraction of a second
     # during a lag/desync burst, which used to instantly reach max-violations and
     # kick a player who never saw the count climb ("kicked out of nowhere"). This
     # forces the violations to be sustained over real time first: a genuine cheat
@@ -144,7 +144,7 @@ compatibility:
 # a real fly/speed hack sustains a large offset, normal play produces tiny ones.
 # The thresholds below set how much offset is tolerated in each situation.
 # ─────────────────────────────────────────────────────────────────────────────
-Simulation:
+MovementA:
     setback-decay-multiplier: 0.999
     # Per-tick offset that counts as a violation. Half-blocks (slabs, chests,
     # trapped chests) and Via/ItemsAdder collision quirks produce tiny offsets.
@@ -188,7 +188,7 @@ Simulation:
     # most false-positive-prone movement to simulate exactly (depth strider,
     # dolphin's grace, current pushes, hitbox pose change) and a speed/fly hack
     # is far less useful underwater anyway. Reported as a recurring source of
-    # stray Simulation flags, so this is tolerant by design.
+    # stray MovementA flags, so this is tolerant by design.
     water-threshold: 0.04
     immediate-setback-threshold: 0.1
     # Extra per-tick offset tolerance added per ms of ping above the baseline.
@@ -226,7 +226,7 @@ TimerA:
     # Violations removed per second while not flagging.
     decay: 0.5
 
-TimerLimit:
+PacketLimit:
     # Same proxy/ViaBackwards jitter slack as TimerA.drift.
     drift: 250.0
     decay: 0.5
@@ -265,16 +265,16 @@ checks:
 
     # ── Movement ──────────────────────────────────────────────────────────────
 
-    # Simulation — fly / speed / movement detection (the core check).
-    # punishable:false by default — Simulation is the most
+    # MovementA — fly / speed / movement detection (the core check).
+    # punishable:false by default — MovementA is the most
     # false-positive-prone check across mixed client versions (ViaBackwards/1.8),
     # so out of the box it only ALERTS staff, never kicks. Flip to true once
     # you've watched its flags on YOUR server and trust them.
-    Simulation:
+    MovementA:
         enabled: true
         punishable: false
         # Raised from 24 — real logs showed a deterministic engine quirk (same
-        # exact offset value across unrelated players, see Simulation.threshold
+        # exact offset value across unrelated players, see MovementA.threshold
         # comment) sustaining for MINUTES and climbing VL into the 100s even
         # with decay active. A real continuous fly/speed hack still blows past
         # 40 within seconds; this just stops a long-lived non-cheat pattern
@@ -719,9 +719,9 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
 
-    # TimerLimit — hard packet-rate ceiling. Rarely FPs except on lag spikes
+    # PacketLimit — hard packet-rate ceiling. Rarely FPs except on lag spikes
     # (already grace-windowed on join/pack-load), so high tolerance.
-    TimerLimit:
+    PacketLimit:
         enabled: true
         # Alert-only by default for the beta — timing checks behind a proxy
         # (ajQueue) + ViaBackwards are jitter-prone; trust before enabling kicks.
@@ -973,13 +973,13 @@ checks:
     TimerA:
         enabled: true
         # Alert-only by default for the beta — same proxy/ViaBackwards jitter
-        # reasoning as TimerLimit. Flip to true once trusted on your server.
+        # reasoning as PacketLimit. Flip to true once trusted on your server.
         punishable: false
         max-violations: 16           # More chances before kick (fewer false kicks)
         alert-interval: 1
         dont-alert-until: 6
         alert-cooldown-ms: 1500
-        # Same reasoning as TimerLimit.minimum-tps above.
+        # Same reasoning as PacketLimit.minimum-tps above.
         minimum-tps: 19.0
         punishment-commands:
             # %ping% shows whether this was likely a real connection spike

@@ -269,7 +269,7 @@ public class PunishmentManager implements ConfigReloadable {
         // The per-check `checks:` config (dont-alert-until / alert-interval /
         // alert-cooldown-ms) is the alert authority. Previously the alert was
         // ONLY sent by the legacy punishments.yml groups below, whose thresholds
-        // (e.g. 100 VL for Simulation) are far higher than the JesterAC kick
+        // (e.g. 100 VL for MovementA) are far higher than the JesterAC kick
         // threshold (max-violations) — so players were kicked with no warning.
         String alertMsg = replaceAlertPlaceholders("[alert]", currentVL, check, finalVerbose);
         Component alertComponent = MessageUtil.miniMessage(alertMsg);

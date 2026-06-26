@@ -43,8 +43,8 @@ public final class FlagExplainer {
         boolean pingHigh = ping >= 250;
 
         switch (checkName) {
-            case "Simulation" -> explainSimulation(v, sb);
-            case "TimerA", "TimerLimit", "Timer" -> explainTimer(v, sb);
+            case "MovementA" -> explainMovementA(v, sb);
+            case "TimerA", "PacketLimit", "Timer" -> explainTimer(v, sb);
             case "FastBreak" -> explainFastBreak(v, sb);
             case "GroundSpoof" -> explainGroundSpoof(v, sb);
             case "Nuker", "NukerA", "NukerB" -> explainNuker(v, sb);
@@ -72,14 +72,14 @@ public final class FlagExplainer {
     /** True for checks whose accuracy is meaningfully affected by latency. */
     private static boolean wantsPingNote(String check) {
         return switch (check) {
-            case "Reach", "FarBreak", "TimerA", "TimerLimit", "Timer", "AutoClickerB",
+            case "Reach", "FarBreak", "TimerA", "PacketLimit", "Timer", "AutoClickerB",
                  "KillAuraD", "TriggerBot", "AutoBlock", "Criticals", "Knockback",
-                 "AntiKB", "Simulation" -> true;
+                 "AntiKB", "MovementA" -> true;
             default -> false;
         };
     }
 
-    private static void explainSimulation(String v, StringBuilder sb) {
+    private static void explainMovementA(String v, StringBuilder sb) {
         sb.append("The server replayed this player's movement and it didn't match what they sent");
         String off = firstToken(v);
         if (off != null) sb.append(" (offset ").append(off).append(")");

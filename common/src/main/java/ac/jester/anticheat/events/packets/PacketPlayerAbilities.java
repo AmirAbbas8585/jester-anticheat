@@ -30,7 +30,7 @@ public class PacketPlayerAbilities extends Check implements PacketCheck {
             player.isFlying = abilities.isFlying() && player.canFly;
             // Starting/stopping flight (take-off and landing while you have /fly)
             // briefly desyncs the prediction the same way toggling the ability
-            // does — grace it so Simulation doesn't flag the transition.
+            // does — grace it so MovementA doesn't flag the transition.
             if (wasFlying != player.isFlying) {
                 player.lastFlightToggleTime = System.currentTimeMillis();
             }
