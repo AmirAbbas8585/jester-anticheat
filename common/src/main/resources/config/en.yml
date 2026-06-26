@@ -1116,6 +1116,16 @@ AutoTool:
     # How many consecutive fast-switch+dig events before flagging
     min-consecutive: 3
 
+# FastBreak — how much faster than vanilla-predicted mining to tolerate.
+# This check predicts how long a block SHOULD take to break from vanilla data
+# (tool, Efficiency, Haste, attributes). Custom-enchant plugins make players mine
+# faster than that prediction — vanilla Efficiency beyond level 5, or
+# CrazyEnchantments enchants like Haste/Blast — which would otherwise false-flag.
+# 2.0 = allow up to twice the predicted speed. Raise it if custom enchants still
+# flag; on a vanilla-only server you can lower it toward 1.0 for stricter checks.
+FastBreak:
+    speed-tolerance: 2.0
+
 # PacketMine — instant-break detection (sub-tick start->finish)
 PacketMine:
     # Max ms between start-dig and finish-dig to count as instant.

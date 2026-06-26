@@ -1,5 +1,6 @@
 package ac.jester.anticheat.checks.impl.breaking;
 
+import ac.grim.grimac.api.config.ConfigManager;
 import ac.jester.anticheat.checks.Check;
 import ac.jester.anticheat.checks.CheckData;
 import ac.jester.anticheat.checks.type.BlockBreakCheck;
@@ -32,8 +33,21 @@ public class FastBreak extends Check implements BlockBreakCheck {
     private static final Set<StateType> EXEMPT_STATES = Set.of();
     private final boolean clientOlderThanServer = PacketEvents.getAPI().getServerManager().getVersion().getProtocolVersion() > player.getClientVersion().getProtocolVersion();
 
+    // How much faster than vanilla-predicted mining to tolerate. Custom enchant
+    // plugins (Efficiency above the vanilla max, CrazyEnchantments Haste/Blast,
+    // ...) make players mine faster than this check can predict from vanilla
+    // data, which false-flags them. 2.0 = allow up to twice the predicted speed.
+    // Raise it if custom enchants still flag; lower toward 1.0 on vanilla-only
+    // servers for stricter detection.
+    private double speedTolerance = 2.0;
+
     public FastBreak(GrimPlayer playerData) {
         super(playerData);
+    }
+
+    @Override
+    public void onReload(ConfigManager config) {
+        speedTolerance = Math.max(1.0, config.getDoubleElse(getConfigName() + ".speed-tolerance", 2.0));
     }
 
     // The block the player is currently breaking
@@ -88,7 +102,13 @@ public class FastBreak extends Check implements BlockBreakCheck {
             // has the same rapid-retry pattern as a denied vanilla instant block).
             boolean recentCustomBlock = ac.jester.anticheat.hooks.ExemptionProvider.safe().hasRecentCustomBlockBreak(player);
 
-            if (breakDelay >= 275 || lastBreakWasInstant || recentCustomBlock) { // Reduce buffer if "close enough", or the last break was instant/custom (no minimum delay applies)
+            // A high-speed tool/enchant (vanilla Efficiency+Haste, or a custom
+            // enchant) legitimately breaks this block in under the assumed minimum
+            // aiming delay — so don't penalise the short gap between such breaks.
+            boolean fastTool = maximumBlockDamage > 0
+                    && Math.ceil(1 / (maximumBlockDamage * speedTolerance)) * 50 < 275;
+
+            if (breakDelay >= 275 || lastBreakWasInstant || recentCustomBlock || fastTool) { // Reduce buffer if "close enough", or the last break was instant/custom/fast (no minimum delay applies)
                 blockDelayBalance *= 0.9;
             } else { // Otherwise, increase buffer
                 blockDelayBalance += 300 - breakDelay;
@@ -104,7 +124,9 @@ public class FastBreak extends Check implements BlockBreakCheck {
         }
 
         if (blockBreak.action == DiggingAction.FINISHED_DIGGING && targetBlockPosition != null) {
-            double predictedTime = Math.ceil(1 / maximumBlockDamage) * 50;
+            // speedTolerance inflates the predicted mining damage so breaking
+            // faster than vanilla predicts (custom enchants) isn't a violation.
+            double predictedTime = Math.ceil(1 / (maximumBlockDamage * speedTolerance)) * 50;
             double realTime = System.currentTimeMillis() - startBreak;
             double diff = predictedTime - realTime;
 

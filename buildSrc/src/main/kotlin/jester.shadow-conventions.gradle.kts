@@ -7,18 +7,20 @@ plugins {
 
 tasks.named<ShadowJar>("shadowJar") {
     minimize()
-    archiveFileName = "${rootProject.name}-${project.name}-${rootProject.version}.jar"
+    archiveFileName = "${rootProject.name}-${rootProject.version}.jar"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     if (BuildConfig.relocate) {
         if (BuildConfig.shadePE) {
             relocate("io.github.retrooper.packetevents", "ac.jester.anticheat.shaded.io.github.retrooper.packetevents")
             relocate("com.github.retrooper.packetevents", "ac.jester.anticheat.shaded.com.github.retrooper.packetevents")
+            // Adventure may ONLY be relocated when we also shade PacketEvents.
+            // In lite mode the plugin serializes messages through PacketEvents'
+            // OWN bundled Adventure serializer, which expects the real (un-
+            // relocated) net.kyori Component — relocating it there causes
+            // NoSuchMethodError on every alert and disconnects the player.
+            relocate("net.kyori", "ac.jester.anticheat.shaded.kyori")
         }
-        // Adventure (text/colour). In lite mode it's bundled directly, so relocate
-        // it under shaded.* too — removes the readable top-level net/kyori tree
-        // from the distributed jar. (ProGuard keeps shaded.* intact so it works.)
-        relocate("net.kyori", "ac.jester.anticheat.shaded.kyori")
         // The Grim engine API/glue our forked code links against. Relocating it
         // strips the "grim" package from the distributed jar entirely (the source
         // still imports ac.grim.grimac — that's compile-time only). Target is
