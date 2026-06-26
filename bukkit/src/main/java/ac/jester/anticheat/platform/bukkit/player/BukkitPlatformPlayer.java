@@ -4,7 +4,7 @@ import ac.jester.anticheat.platform.api.entity.GrimEntity;
 import ac.jester.anticheat.platform.api.player.PlatformInventory;
 import ac.jester.anticheat.platform.api.player.PlatformPlayer;
 import ac.jester.anticheat.platform.api.sender.Sender;
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import ac.jester.anticheat.platform.bukkit.entity.BukkitGrimEntity;
 import ac.jester.anticheat.platform.bukkit.utils.anticheat.MultiLibUtil;
 import ac.jester.anticheat.platform.bukkit.utils.convert.BukkitConversionUtils;
@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class BukkitPlatformPlayer extends BukkitGrimEntity implements PlatformPlayer {
 
-    private static final BukkitAudiences audiences = BukkitAudiences.create(SkyAntiCheatPlugin.LOADER);
+    private static final BukkitAudiences audiences = BukkitAudiences.create(JesterAntiCheatPlugin.LOADER);
 
     @Getter
     private final Player bukkitPlayer;
@@ -162,12 +162,12 @@ public class BukkitPlatformPlayer extends BukkitGrimEntity implements PlatformPl
 
     @Override
     public void sendPluginMessage(String channelName, byte[] byteArray) {
-        this.bukkitPlayer.sendPluginMessage(SkyAntiCheatPlugin.LOADER, channelName, byteArray);
+        this.bukkitPlayer.sendPluginMessage(JesterAntiCheatPlugin.LOADER, channelName, byteArray);
     }
 
     @Override
     public Sender getSender() {
-        return SkyAntiCheatPlugin.LOADER.getBukkitSenderFactory().map(this.bukkitPlayer);
+        return JesterAntiCheatPlugin.LOADER.getBukkitSenderFactory().map(this.bukkitPlayer);
     }
 
     @Override

@@ -3,7 +3,7 @@ package ac.jester.anticheat.platform.bukkit.sender;
 import ac.jester.anticheat.GrimAPI;
 import ac.jester.anticheat.platform.api.sender.Sender;
 import ac.jester.anticheat.platform.api.sender.SenderFactory;
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
@@ -21,7 +21,7 @@ public class BukkitSenderFactory extends SenderFactory<CommandSender> implements
     private final BukkitAudiences audiences;
 
     public BukkitSenderFactory() {
-        this.audiences = BukkitAudiences.create(SkyAntiCheatPlugin.LOADER);
+        this.audiences = BukkitAudiences.create(JesterAntiCheatPlugin.LOADER);
     }
 
     @Override

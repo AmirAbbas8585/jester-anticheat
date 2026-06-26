@@ -4,7 +4,7 @@ import ac.grim.grimac.api.plugin.GrimPlugin;
 import ac.jester.anticheat.platform.api.scheduler.RegionScheduler;
 import ac.jester.anticheat.platform.api.scheduler.TaskHandle;
 import ac.jester.anticheat.platform.api.world.PlatformWorld;
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import ac.jester.anticheat.platform.bukkit.world.BukkitPlatformWorld;
 import ac.jester.anticheat.utils.math.Location;
 import org.bukkit.Bukkit;
@@ -16,7 +16,7 @@ public class FoliaRegionScheduler implements RegionScheduler {
 
     @Override
     public void execute(@NotNull GrimPlugin plugin, @NotNull PlatformWorld world, int chunkX, int chunkZ, @NotNull Runnable task) {
-        regionScheduler.execute(SkyAntiCheatPlugin.LOADER, ((BukkitPlatformWorld) world).getBukkitWorld(), chunkX, chunkZ, task);
+        regionScheduler.execute(JesterAntiCheatPlugin.LOADER, ((BukkitPlatformWorld) world).getBukkitWorld(), chunkX, chunkZ, task);
     }
 
     @Override
@@ -27,7 +27,7 @@ public class FoliaRegionScheduler implements RegionScheduler {
     @Override
     public TaskHandle run(@NotNull GrimPlugin plugin, @NotNull PlatformWorld world, int chunkX, int chunkZ, @NotNull Runnable task) {
         return new FoliaTaskHandle(regionScheduler.run(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 ((BukkitPlatformWorld) world).getBukkitWorld(),
                 chunkX,
                 chunkZ,
@@ -43,7 +43,7 @@ public class FoliaRegionScheduler implements RegionScheduler {
     @Override
     public TaskHandle runDelayed(@NotNull GrimPlugin plugin, @NotNull PlatformWorld world, int chunkX, int chunkZ, @NotNull Runnable task, long delayTicks) {
         return new FoliaTaskHandle(regionScheduler.runDelayed(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 ((BukkitPlatformWorld) world).getBukkitWorld(),
                 chunkX,
                 chunkZ,
@@ -60,7 +60,7 @@ public class FoliaRegionScheduler implements RegionScheduler {
     @Override
     public TaskHandle runAtFixedRate(@NotNull GrimPlugin plugin, @NotNull PlatformWorld world, int chunkX, int chunkZ, @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
         return new FoliaTaskHandle(regionScheduler.runAtFixedRate(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 ((BukkitPlatformWorld) world).getBukkitWorld(),
                 chunkX,
                 chunkZ,

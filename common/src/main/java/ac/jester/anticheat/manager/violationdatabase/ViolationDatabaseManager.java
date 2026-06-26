@@ -75,7 +75,7 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
             case "MYSQL" -> {
                 int port = cfg.getIntElse("history.database.port", 3306);
                 String host = cfg.getStringElse("history.database.host", "localhost") + ":" + port;
-                String db = cfg.getStringElse("history.database.database", "skyac");
+                String db = cfg.getStringElse("history.database.database", "jester");
                 String user = cfg.getStringElse("history.database.username", "root");
                 String pwd = cfg.getStringElse("history.database.password", "password");
 
@@ -98,7 +98,7 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
             case "POSTGRESQL" -> {
                 int port = cfg.getIntElse("history.database.port", 3306);
                 String host = cfg.getStringElse("history.database.host", "localhost") + ":" + port;
-                String db   = cfg.getStringElse("history.database.database", "skyac");
+                String db   = cfg.getStringElse("history.database.database", "jester");
                 String user = cfg.getStringElse("history.database.username", "root");
                 String pwd  = cfg.getStringElse("history.database.password", "password");
 
@@ -129,8 +129,8 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
     }
 
     public void logAlert(GrimPlayer player, String verbose, String checkName, int vls) {
-        String SkyVersion = GrimAPI.INSTANCE.getExternalAPI().getGrimVersion();
-        GrimAPI.INSTANCE.getScheduler().getAsyncScheduler().runNow(plugin, () -> database.logAlert(player, SkyVersion, verbose, checkName, vls));
+        String JesterVersion = GrimAPI.INSTANCE.getExternalAPI().getGrimVersion();
+        GrimAPI.INSTANCE.getScheduler().getAsyncScheduler().runNow(plugin, () -> database.logAlert(player, JesterVersion, verbose, checkName, vls));
     }
 
     public int getLogCount(UUID player) {

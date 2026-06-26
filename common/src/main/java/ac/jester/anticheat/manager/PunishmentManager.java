@@ -175,8 +175,8 @@ public class PunishmentManager implements ConfigReloadable {
     public boolean handleAlert(GrimPlayer player, String verbose, Check check) {
         boolean sentDebug = false;
 
-        // ── SkyAC: per-check alert rate limiting ──────────────────────────────
-        SkyCheckConfig.CheckSettings checkCfg = SkyCheckConfig.get(check.getConfigName());
+        // ── JesterAC: per-check alert rate limiting ──────────────────────────────
+        JesterCheckConfig.CheckSettings checkCfg = JesterCheckConfig.get(check.getConfigName());
         if (!checkCfg.enabled) return false;
 
         int currentVL = (int) check.violations;
@@ -189,12 +189,12 @@ public class PunishmentManager implements ConfigReloadable {
                 checkCfg.alertCooldownMs
         );
 
-        // ── SkyAC: per-check punishment execution ─────────────────────────────
+        // ── JesterAC: per-check punishment execution ─────────────────────────────
         // Experimental checks (39 of them — marked unreliable by Grim's own
         // authors) can still alert/log for staff visibility, but never punish
         // unless experimental-checks-punishable is explicitly turned on.
         boolean allowedToPunish = checkCfg.punishable
-                && (!check.isExperimental() || SkyCheckConfig.isExperimentalChecksPunishable());
+                && (!check.isExperimental() || JesterCheckConfig.isExperimentalChecksPunishable());
         if (allowedToPunish && !checkCfg.punishmentCommands.isEmpty()) {
             final String punishKey = check.getConfigName();
             final long now = System.currentTimeMillis();
@@ -252,7 +252,7 @@ public class PunishmentManager implements ConfigReloadable {
                 player.uuid, player.user.getName(), check.getCheckName(), check.violations, verbose,
                 player.getTransactionPing(), GrimAPI.INSTANCE.getPlatformServer().getTPS());
 
-        // Store in per-player in-memory alert buffer (for /skyac check)
+        // Store in per-player in-memory alert buffer (for /jester check)
         player.recentAlerts.add(check.getCheckName(), currentVL, verbose);
 
         if (!decision.shouldSend) return false;
@@ -265,11 +265,11 @@ public class PunishmentManager implements ConfigReloadable {
         }
         final String finalVerbose = effectiveVerbose;
 
-        // ── SkyAC: send the staff alert directly ───────────────────────────────
+        // ── JesterAC: send the staff alert directly ───────────────────────────────
         // The per-check `checks:` config (dont-alert-until / alert-interval /
         // alert-cooldown-ms) is the alert authority. Previously the alert was
         // ONLY sent by the legacy punishments.yml groups below, whose thresholds
-        // (e.g. 100 VL for Simulation) are far higher than the SkyAC kick
+        // (e.g. 100 VL for Simulation) are far higher than the JesterAC kick
         // threshold (max-violations) — so players were kicked with no warning.
         String alertMsg = replaceAlertPlaceholders("[alert]", currentVL, check, finalVerbose);
         Component alertComponent = MessageUtil.miniMessage(alertMsg);
@@ -282,10 +282,10 @@ public class PunishmentManager implements ConfigReloadable {
             alertComponent = alertComponent
                     .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(hover))
                     .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
-                            "/skyac tp " + player.user.getName()));
+                            "/jester tp " + player.user.getName()));
         }
 
-        // Verbose listeners (/skyac verbose) get the alert too; exclude them
+        // Verbose listeners (/jester verbose) get the alert too; exclude them
         // from the normal alert so they aren't messaged twice
         Set<@Nullable PlatformPlayer> verboseListeners = null;
         if (GrimAPI.INSTANCE.getAlertManager().hasVerboseListeners()) {
@@ -306,7 +306,7 @@ public class PunishmentManager implements ConfigReloadable {
         }
 
         // ── Legacy punishments.yml groups: [log] history + custom commands ─────
-        // [alert]/[proxy]/[webhook] are handled by the SkyAC path above, so they
+        // [alert]/[proxy]/[webhook] are handled by the JesterAC path above, so they
         // are skipped here to avoid double alerts.
         for (PunishGroup group : groups) {
             if (group.checks.contains(check)) {

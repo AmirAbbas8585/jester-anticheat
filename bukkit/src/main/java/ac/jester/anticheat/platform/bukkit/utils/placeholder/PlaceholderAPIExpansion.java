@@ -18,7 +18,7 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getIdentifier() {
-        return "skyac";
+        return "jester";
     }
 
     public @NotNull String getAuthor() {
@@ -41,10 +41,10 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
         Set<String> variableReplacements = GrimAPI.INSTANCE.getExternalAPI().getVariableReplacements().keySet();
         ArrayList<String> placeholders = new ArrayList<>(staticReplacements.size() + variableReplacements.size());
         for (String s : staticReplacements) {
-            placeholders.add(s.equals("%grim_version%") ? "%skyac_version%" : "%skyac_" + s.replaceAll("%", "") + "%");
+            placeholders.add(s.equals("%grim_version%") ? "%jester_version%" : "%jester_" + s.replaceAll("%", "") + "%");
         }
         for (String s : variableReplacements) {
-            placeholders.add(s.equals("%player%") ? "%skyac_player%" : "%skyac_player_" + s.replaceAll("%", "") + "%");
+            placeholders.add(s.equals("%player%") ? "%jester_player%" : "%jester_player_" + s.replaceAll("%", "") + "%");
         }
         return placeholders;
     }

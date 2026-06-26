@@ -52,7 +52,7 @@ public final class FreezeListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        // Allow admin-initiated teleports (e.g. /skyac tp, /skyac setback)
+        // Allow admin-initiated teleports (e.g. /jester tp, /jester setback)
         // but block self-initiated teleports (ender pearl, etc.) while frozen
         if (!GrimAPI.INSTANCE.getFreezeManager().isFrozen(uuid)) return;
 

@@ -115,7 +115,7 @@ public final class AfkManager implements Listener {
         warnBeforeMs = Math.max(0, cfg.getLong("warn-before-seconds", 60)) * 1000L;
         double dist = cfg.getDouble("min-move-distance", 2.5);
         minMoveDistSq = dist * dist;
-        bypassPerm = cfg.getString("bypass-permission", "skyac.afk.bypass");
+        bypassPerm = cfg.getString("bypass-permission", "jester.afk.bypass");
         warnMsg = ChatColor.translateAlternateColorCodes('&',
                 cfg.getString("messages.warn",
                         "&e[AFK] &fYou will be kicked in &c%seconds%s&f for being AFK here. Move to stay."));
@@ -148,7 +148,7 @@ public final class AfkManager implements Listener {
                 "min-move-distance: 2.5",
                 "",
                 "# Players with this permission are never AFK-kicked.",
-                "bypass-permission: skyac.afk.bypass",
+                "bypass-permission: jester.afk.bypass",
                 "",
                 "messages:",
                 "  warn: \"&e[AFK] &fYou will be kicked in &c%seconds%s&f for being AFK here. Move to stay.\"",

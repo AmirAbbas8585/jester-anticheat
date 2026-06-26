@@ -3,7 +3,7 @@ package ac.jester.anticheat.platform.bukkit.scheduler.folia;
 import ac.grim.grimac.api.plugin.GrimPlugin;
 import ac.jester.anticheat.platform.api.scheduler.AsyncScheduler;
 import ac.jester.anticheat.platform.api.scheduler.TaskHandle;
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,13 +15,13 @@ public class FoliaAsyncScheduler implements AsyncScheduler {
 
     @Override
     public TaskHandle runNow(@NotNull GrimPlugin plugin, @NotNull Runnable task) {
-        return new FoliaTaskHandle(scheduler.runNow(SkyAntiCheatPlugin.LOADER, ignored -> task.run()));
+        return new FoliaTaskHandle(scheduler.runNow(JesterAntiCheatPlugin.LOADER, ignored -> task.run()));
     }
 
     @Override
     public TaskHandle runDelayed(@NotNull GrimPlugin plugin, @NotNull Runnable task, long delay, @NotNull TimeUnit timeUnit) {
         return new FoliaTaskHandle(scheduler.runDelayed(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 ignored -> task.run(),
                 delay,
                 timeUnit
@@ -31,7 +31,7 @@ public class FoliaAsyncScheduler implements AsyncScheduler {
     @Override
     public TaskHandle runAtFixedRate(@NotNull GrimPlugin plugin, @NotNull Runnable task, long delay, long period, @NotNull TimeUnit timeUnit) {
         return new FoliaTaskHandle(scheduler.runAtFixedRate(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 ignored -> task.run(),
                 delay,
                 period,
@@ -42,7 +42,7 @@ public class FoliaAsyncScheduler implements AsyncScheduler {
     @Override
     public TaskHandle runAtFixedRate(@NotNull GrimPlugin plugin, @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
         return new FoliaTaskHandle(scheduler.runAtFixedRate(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 ignored -> task.run(),
                 initialDelayTicks * 50,
                 periodTicks * 50,
@@ -52,6 +52,6 @@ public class FoliaAsyncScheduler implements AsyncScheduler {
 
     @Override
     public void cancel(@NotNull GrimPlugin plugin) {
-        scheduler.cancelTasks(SkyAntiCheatPlugin.LOADER);
+        scheduler.cancelTasks(JesterAntiCheatPlugin.LOADER);
     }
 }

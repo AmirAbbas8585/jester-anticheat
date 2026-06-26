@@ -19,18 +19,18 @@ public class BukkitPlatformServer implements PlatformServer {
 
     @Override
     public void dispatchCommand(Sender sender, String command) {
-        CommandSender commandSender = SkyAntiCheatPlugin.LOADER.getBukkitSenderFactory().reverse(sender);
+        CommandSender commandSender = JesterAntiCheatPlugin.LOADER.getBukkitSenderFactory().reverse(sender);
         Bukkit.dispatchCommand(commandSender, command);
     }
 
     @Override
     public Sender getConsoleSender() {
-        return SkyAntiCheatPlugin.LOADER.getBukkitSenderFactory().map(Bukkit.getConsoleSender());
+        return JesterAntiCheatPlugin.LOADER.getBukkitSenderFactory().map(Bukkit.getConsoleSender());
     }
 
     @Override
     public void registerOutgoingPluginChannel(String name) {
-        SkyAntiCheatPlugin.LOADER.getServer().getMessenger().registerOutgoingPluginChannel(SkyAntiCheatPlugin.LOADER, name);
+        JesterAntiCheatPlugin.LOADER.getServer().getMessenger().registerOutgoingPluginChannel(JesterAntiCheatPlugin.LOADER, name);
     }
 
     @Override

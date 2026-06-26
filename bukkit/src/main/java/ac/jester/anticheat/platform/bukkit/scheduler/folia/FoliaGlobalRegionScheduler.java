@@ -3,7 +3,7 @@ package ac.jester.anticheat.platform.bukkit.scheduler.folia;
 import ac.grim.grimac.api.plugin.GrimPlugin;
 import ac.jester.anticheat.platform.api.scheduler.GlobalRegionScheduler;
 import ac.jester.anticheat.platform.api.scheduler.TaskHandle;
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,26 +13,26 @@ public class FoliaGlobalRegionScheduler implements GlobalRegionScheduler {
 
     @Override
     public void execute(@NotNull GrimPlugin plugin, @NotNull Runnable task) {
-        globalRegionScheduler.execute(SkyAntiCheatPlugin.LOADER, task);
+        globalRegionScheduler.execute(JesterAntiCheatPlugin.LOADER, task);
     }
 
     @Override
     public TaskHandle run(@NotNull GrimPlugin plugin, @NotNull Runnable task) {
-        return new FoliaTaskHandle(globalRegionScheduler.run(SkyAntiCheatPlugin.LOADER, ignored -> task.run()));
+        return new FoliaTaskHandle(globalRegionScheduler.run(JesterAntiCheatPlugin.LOADER, ignored -> task.run()));
     }
 
     @Override
     public TaskHandle runDelayed(@NotNull GrimPlugin plugin, @NotNull Runnable task, long delay) {
-        return new FoliaTaskHandle(globalRegionScheduler.runDelayed(SkyAntiCheatPlugin.LOADER, ignored -> task.run(), delay));
+        return new FoliaTaskHandle(globalRegionScheduler.runDelayed(JesterAntiCheatPlugin.LOADER, ignored -> task.run(), delay));
     }
 
     @Override
     public TaskHandle runAtFixedRate(@NotNull GrimPlugin plugin, @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
-        return new FoliaTaskHandle(globalRegionScheduler.runAtFixedRate(SkyAntiCheatPlugin.LOADER, ignored -> task.run(), initialDelayTicks, periodTicks));
+        return new FoliaTaskHandle(globalRegionScheduler.runAtFixedRate(JesterAntiCheatPlugin.LOADER, ignored -> task.run(), initialDelayTicks, periodTicks));
     }
 
     @Override
     public void cancel(@NotNull GrimPlugin plugin) {
-        globalRegionScheduler.cancelTasks(SkyAntiCheatPlugin.LOADER);
+        globalRegionScheduler.cancelTasks(JesterAntiCheatPlugin.LOADER);
     }
 }

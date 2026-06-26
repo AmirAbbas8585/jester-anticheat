@@ -610,8 +610,8 @@ public class GrimPlayer implements GrimUser {
         if (platformPlayer == null) return;
         try {
             GrimAPI.INSTANCE.getScheduler().getEntityScheduler().execute(platformPlayer, GrimAPI.INSTANCE.getGrimPlugin(), () -> {
-                this.noModifyPacketPermission = platformPlayer.hasPermission("skyac.nomodifypacket");
-                this.noSetbackPermission = platformPlayer.hasPermission("skyac.nosetback");
+                this.noModifyPacketPermission = platformPlayer.hasPermission("jester.nomodifypacket");
+                this.noSetbackPermission = platformPlayer.hasPermission("jester.nosetback");
                 for (AbstractCheck check : checkManager.allChecks.values()) {
                     if (check instanceof Check c) {
                         c.updatePermissions();

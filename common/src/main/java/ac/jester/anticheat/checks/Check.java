@@ -74,11 +74,11 @@ public class Check extends GrimProcessor implements AbstractCheck {
         // registered in plugin.yml, and Bukkit's default for unregistered
         // permissions is OP — without it every OP was silently exempt from
         // every check (no flags, no alerts)
-        exemptPermission = player.platformPlayer.hasPermission("skyac.exempt." + id, false)
+        exemptPermission = player.platformPlayer.hasPermission("jester.exempt." + id, false)
                 || player.platformPlayer.hasPermission("grim.exempt." + id, false);
-        noSetbackPermission = player.platformPlayer.hasPermission("skyac.nosetback." + id, false)
+        noSetbackPermission = player.platformPlayer.hasPermission("jester.nosetback." + id, false)
                 || player.platformPlayer.hasPermission("grim.nosetback." + id, false);
-        noModifyPacketPermission = player.platformPlayer.hasPermission("skyac.nomodifypacket." + id, false)
+        noModifyPacketPermission = player.platformPlayer.hasPermission("jester.nomodifypacket." + id, false)
                 || player.platformPlayer.hasPermission("grim.nomodifypacket." + id, false);
     }
 
@@ -105,8 +105,8 @@ public class Check extends GrimProcessor implements AbstractCheck {
         // Respect the per-check `enabled` config — a check set to enabled: false
         // truly stops flagging (no violation, no alert, no setback), not just
         // silenced alerts. Cached lookup, so this is cheap.
-        ac.jester.anticheat.manager.SkyCheckConfig.CheckSettings checkCfg = configName == null
-                ? null : ac.jester.anticheat.manager.SkyCheckConfig.get(configName);
+        ac.jester.anticheat.manager.JesterCheckConfig.CheckSettings checkCfg = configName == null
+                ? null : ac.jester.anticheat.manager.JesterCheckConfig.get(configName);
         if (checkCfg != null && !checkCfg.enabled)
             return false;
 

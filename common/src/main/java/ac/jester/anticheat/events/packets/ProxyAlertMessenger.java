@@ -41,7 +41,7 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Forward");
         out.writeUTF("ONLINE");
-        out.writeUTF("skyac");
+        out.writeUTF("jester");
 
         try {
             new DataOutputStream(messageBytes).writeUTF(message);
@@ -91,7 +91,7 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
 
         ByteArrayDataInput in = ByteStreams.newDataInput(wrapper.getData());
 
-        if (!in.readUTF().equals("skyac")) return;
+        if (!in.readUTF().equals("jester")) return;
 
         final String alert;
         byte[] messageBytes = new byte[in.readShort()];

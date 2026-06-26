@@ -1,15 +1,15 @@
 package ac.jester.anticheat.command;
 
 import ac.jester.anticheat.command.commands.*;
-import ac.jester.anticheat.command.commands.SkyCPS;
-import ac.jester.anticheat.command.commands.SkyClearViolations;
-import ac.jester.anticheat.command.commands.SkyFreeze;
-import ac.jester.anticheat.command.commands.SkyKnockback;
-import ac.jester.anticheat.command.commands.SkyRotate;
-import ac.jester.anticheat.command.commands.SkySetback;
-import ac.jester.anticheat.command.commands.SkyStats;
-import ac.jester.anticheat.command.commands.SkyTP;
-import ac.jester.anticheat.command.handler.SkyCommandFailureHandler;
+import ac.jester.anticheat.command.commands.JesterCPS;
+import ac.jester.anticheat.command.commands.JesterClearViolations;
+import ac.jester.anticheat.command.commands.JesterFreeze;
+import ac.jester.anticheat.command.commands.JesterKnockback;
+import ac.jester.anticheat.command.commands.JesterRotate;
+import ac.jester.anticheat.command.commands.JesterSetback;
+import ac.jester.anticheat.command.commands.JesterStats;
+import ac.jester.anticheat.command.commands.JesterTP;
+import ac.jester.anticheat.command.handler.JesterCommandFailureHandler;
 import ac.jester.anticheat.platform.api.command.CommandService;
 import ac.jester.anticheat.platform.api.manager.cloud.CloudCommandAdapter;
 import ac.jester.anticheat.platform.api.sender.Sender;
@@ -54,39 +54,39 @@ public class CloudCommandService implements CommandService {
     public void registerCommands() {
         if (commandsRegistered) return;
         CommandManager<Sender> commandManager = commandManagerSupplier.get();
-        new SkyPerf().register(commandManager, commandAdapter);
-        new SkyDebug().register(commandManager, commandAdapter);
-        new SkyAlerts().register(commandManager, commandAdapter);
-        new SkyProfile().register(commandManager, commandAdapter);
-        new SkySendAlert().register(commandManager, commandAdapter);
-        new SkyHelp().register(commandManager, commandAdapter);
-        new SkyHistory().register(commandManager, commandAdapter);
-        new SkyReload().register(commandManager, commandAdapter);
-        new SkySpectate().register(commandManager, commandAdapter);
-        new SkyStopSpectating().register(commandManager, commandAdapter);
-        new SkyLog().register(commandManager, commandAdapter);
-        new SkyVerbose().register(commandManager, commandAdapter);
-        new SkyVersion().register(commandManager, commandAdapter);
-        new SkyDump().register(commandManager, commandAdapter);
-        new SkyBrands().register(commandManager, commandAdapter);
-        new SkyList().register(commandManager, commandAdapter);
-        new SkyFreeze().register(commandManager, commandAdapter);
-        new SkyKnockback().register(commandManager, commandAdapter);
-        new SkyRotate().register(commandManager, commandAdapter);
-        new SkyCPS().register(commandManager, commandAdapter);
-        new SkyClearViolations().register(commandManager, commandAdapter);
-        new SkyTP().register(commandManager, commandAdapter);
-        new SkyStats().register(commandManager, commandAdapter);
-        new SkySetback().register(commandManager, commandAdapter);
-        new SkyViolations().register(commandManager, commandAdapter);
-        new SkyInfo().register(commandManager, commandAdapter);
-        new SkyCheck().register(commandManager, commandAdapter);
-        new SkyLogs().register(commandManager, commandAdapter);
+        new JesterPerf().register(commandManager, commandAdapter);
+        new JesterDebug().register(commandManager, commandAdapter);
+        new JesterAlerts().register(commandManager, commandAdapter);
+        new JesterProfile().register(commandManager, commandAdapter);
+        new JesterSendAlert().register(commandManager, commandAdapter);
+        new JesterHelp().register(commandManager, commandAdapter);
+        new JesterHistory().register(commandManager, commandAdapter);
+        new JesterReload().register(commandManager, commandAdapter);
+        new JesterSpectate().register(commandManager, commandAdapter);
+        new JesterStopSpectating().register(commandManager, commandAdapter);
+        new JesterLog().register(commandManager, commandAdapter);
+        new JesterVerbose().register(commandManager, commandAdapter);
+        new JesterVersion().register(commandManager, commandAdapter);
+        new JesterDump().register(commandManager, commandAdapter);
+        new JesterBrands().register(commandManager, commandAdapter);
+        new JesterList().register(commandManager, commandAdapter);
+        new JesterFreeze().register(commandManager, commandAdapter);
+        new JesterKnockback().register(commandManager, commandAdapter);
+        new JesterRotate().register(commandManager, commandAdapter);
+        new JesterCPS().register(commandManager, commandAdapter);
+        new JesterClearViolations().register(commandManager, commandAdapter);
+        new JesterTP().register(commandManager, commandAdapter);
+        new JesterStats().register(commandManager, commandAdapter);
+        new JesterSetback().register(commandManager, commandAdapter);
+        new JesterViolations().register(commandManager, commandAdapter);
+        new JesterInfo().register(commandManager, commandAdapter);
+        new JesterCheck().register(commandManager, commandAdapter);
+        new JesterLogs().register(commandManager, commandAdapter);
 
         final RequirementPostprocessor<Sender, SenderRequirement>
                 senderRequirementPostprocessor = RequirementPostprocessor.of(
                 REQUIREMENT_KEY,
-                new SkyCommandFailureHandler()
+                new JesterCommandFailureHandler()
         );
         commandManager.registerCommandPostProcessor(senderRequirementPostprocessor);
 
@@ -99,7 +99,7 @@ public class CloudCommandService implements CommandService {
         registerExceptionHandler(commandManager, InvalidCommandSenderException.class, e ->
                 MessageUtil.miniMessage("%prefix% <red>This command can't be used from here.</red>"));
         registerExceptionHandler(commandManager, NoSuchCommandException.class, e ->
-                MessageUtil.miniMessage("%prefix% <red>Unknown command. Try</red> <gray>/skyac help</gray>"));
+                MessageUtil.miniMessage("%prefix% <red>Unknown command. Try</red> <gray>/jester help</gray>"));
         registerExceptionHandler(commandManager, ArgumentParseException.class, e -> {
             String reason = e.getCause() != null && e.getCause().getMessage() != null
                     ? e.getCause().getMessage() : "could not parse argument";

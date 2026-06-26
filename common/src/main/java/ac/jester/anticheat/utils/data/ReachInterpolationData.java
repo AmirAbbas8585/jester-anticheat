@@ -1,4 +1,4 @@
-// This file was designed and is an original check for SkyAntiCheatPlugin
+// This file was designed and is an original check for JesterAntiCheatPlugin
 // Copyright (C) 2021 DefineOutside
 //
 // This program is free software: you can redistribute it and/or modify
@@ -201,9 +201,9 @@ public class ReachInterpolationData {
     }
 
     public void updatePossibleStartingLocation(SimpleCollisionBox possibleLocationCombined) {
-        //SkyAntiCheatPlugin.staticGetLogger().info(ChatColor.BLUE + "Updated new starting location as second trans hasn't arrived " + startingLocation);
+        //JesterAntiCheatPlugin.staticGetLogger().info(ChatColor.BLUE + "Updated new starting location as second trans hasn't arrived " + startingLocation);
         this.startingLocation = combineCollisionBox(startingLocation, possibleLocationCombined);
-        //SkyAntiCheatPlugin.staticGetLogger().info(ChatColor.BLUE + "Finished updating new starting location as second trans hasn't arrived " + startingLocation);
+        //JesterAntiCheatPlugin.staticGetLogger().info(ChatColor.BLUE + "Finished updating new starting location as second trans hasn't arrived " + startingLocation);
     }
 
     public void tickMovement(boolean incrementLowBound, boolean tickingReliably) {

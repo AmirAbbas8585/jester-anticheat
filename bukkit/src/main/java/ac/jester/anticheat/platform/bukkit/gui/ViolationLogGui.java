@@ -1,7 +1,7 @@
 package ac.jester.anticheat.platform.bukkit.gui;
 
 import ac.jester.anticheat.database.DatabaseManager;
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * In-game violation log viewer — /skyac logs <player>.
+ * In-game violation log viewer — /jester logs <player>.
  *
- * Reads from the SkyAC database (SQLite/MySQL), so it works for offline
+ * Reads from the JesterAC database (SQLite/MySQL), so it works for offline
  * players and survives restarts. One paper per violation, newest first,
  * 45 per page with arrow navigation.
  */
@@ -58,7 +58,7 @@ public final class ViolationLogGui implements Listener {
 
         // Fetch one extra row to know whether a next page exists
         DatabaseManager.fetchViolations(targetName, PAGE_SIZE + 1, page * PAGE_SIZE).thenAccept(entries ->
-                Bukkit.getScheduler().runTask(SkyAntiCheatPlugin.LOADER, () -> {
+                Bukkit.getScheduler().runTask(JesterAntiCheatPlugin.LOADER, () -> {
                     Player viewer = Bukkit.getPlayer(viewerUuid);
                     if (viewer == null) return;
 

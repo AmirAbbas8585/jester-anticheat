@@ -75,7 +75,7 @@ dependencies {
 bukkit {
     name = "JesterAntiCheat"
     author = "Jester"
-    main = "ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin"
+    main = "ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin"
     website = "https://modrinth.com/plugin/jester-anticheat"
     apiVersion = "1.20"
     foliaSupported = true
@@ -173,12 +173,12 @@ bukkit {
             default = Permission.Default.FALSE
         }
 
-        register("skyac.violations") {
+        register("jester.violations") {
             description = "View per-check violation breakdown for a player"
             default = Permission.Default.OP
         }
 
-        register("skyac.info") {
+        register("jester.info") {
             description = "View detailed real-time player state"
             default = Permission.Default.OP
         }
@@ -186,148 +186,148 @@ bukkit {
         // Staff-notification permissions are LuckPerms-driven, NOT op-based:
         // default FALSE so ONLY players explicitly granted the node (e.g. via
         // LuckPerms) receive alerts. Ops without the node get nothing.
-        register("skyac.alerts") {
+        register("jester.alerts") {
             description = "Receive violation alerts (auto-enabled on join)"
             default = Permission.Default.FALSE
         }
 
-        register("skyac.verbose") {
+        register("jester.verbose") {
             description = "Toggle verbose alerts"
             default = Permission.Default.FALSE
         }
 
         // Verbose is spammy (every flag), so it stays opt-in: needs this node too
-        register("skyac.verbose.enable-on-join") {
+        register("jester.verbose.enable-on-join") {
             description = "Enable verbose alerts on join"
             default = Permission.Default.FALSE
         }
 
-        register("skyac.brand") {
+        register("jester.brand") {
             description = "Receive client brand alerts (auto-enabled on join)"
             default = Permission.Default.FALSE
         }
 
-        register("skyac.freeze") {
+        register("jester.freeze") {
             description = "Freeze/unfreeze players"
             default = Permission.Default.OP
         }
 
-        register("skyac.profile") {
+        register("jester.profile") {
             description = "View player profile"
             default = Permission.Default.OP
         }
 
-        register("skyac.performance") {
+        register("jester.performance") {
             description = "View performance metrics"
             default = Permission.Default.OP
         }
 
-        register("skyac.cps") {
+        register("jester.cps") {
             description = "View player CPS"
             default = Permission.Default.OP
         }
 
-        register("skyac.list") {
+        register("jester.list") {
             description = "List tracked players"
             default = Permission.Default.OP
         }
 
-        register("skyac.knockback") {
+        register("jester.knockback") {
             description = "View knockback debug info"
             default = Permission.Default.OP
         }
 
-        register("skyac.tp") {
+        register("jester.tp") {
             description = "Teleport to a player"
             default = Permission.Default.OP
         }
 
-        register("skyac.rotate") {
+        register("jester.rotate") {
             description = "Rotate a player's head"
             default = Permission.Default.OP
         }
 
-        register("skyac.stats") {
+        register("jester.stats") {
             description = "View server-wide anticheat stats"
             default = Permission.Default.OP
         }
 
-        register("skyac.sendalert") {
+        register("jester.sendalert") {
             description = "Manually send a cheater alert"
             default = Permission.Default.OP
         }
 
-        register("skyac.setback") {
+        register("jester.setback") {
             description = "Manually setback a player"
             default = Permission.Default.OP
         }
 
-        register("skyac.clearviolations") {
+        register("jester.clearviolations") {
             description = "Clear all violations for a player"
             default = Permission.Default.OP
         }
 
-        register("skyac.help") {
+        register("jester.help") {
             description = "View help information"
             default = Permission.Default.TRUE
         }
 
-        register("skyac.history") {
+        register("jester.history") {
             description = "View violation history"
             default = Permission.Default.OP
         }
 
-        register("skyac.version") {
+        register("jester.version") {
             description = "View plugin version"
             default = Permission.Default.OP
         }
 
-        register("skyac.spectate") {
+        register("jester.spectate") {
             description = "Spectate players"
             default = Permission.Default.OP
         }
 
-        register("skyac.spectate.stophere") {
+        register("jester.spectate.stophere") {
             description = "Stop spectating at current position"
             default = Permission.Default.OP
         }
 
-        register("skyac.reload") {
+        register("jester.reload") {
             description = "Reload configuration"
             default = Permission.Default.OP
         }
 
-        register("skyac.log") {
+        register("jester.log") {
             description = "View/toggle check logs"
             default = Permission.Default.OP
         }
 
-        register("skyac.dump") {
+        register("jester.dump") {
             description = "Dump player data for debugging"
             default = Permission.Default.OP
         }
 
-        register("skyac.debug") {
+        register("jester.debug") {
             description = "Toggle debug mode for a player"
             default = Permission.Default.OP
         }
 
-        register("skyac.logs") {
+        register("jester.logs") {
             description = "Open the violation log GUI"
             default = Permission.Default.OP
         }
 
-        register("skyac.exempt") {
+        register("jester.exempt") {
             description = "Exempt from all checks"
             default = Permission.Default.FALSE
         }
 
-        register("skyac.nosetback") {
+        register("jester.nosetback") {
             description = "Disable setback"
             default = Permission.Default.FALSE
         }
 
-        register("skyac.nomodifypacket") {
+        register("jester.nomodifypacket") {
             description = "Disable packet modification"
             default = Permission.Default.FALSE
         }

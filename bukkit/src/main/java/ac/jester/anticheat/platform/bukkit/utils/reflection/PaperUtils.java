@@ -1,6 +1,6 @@
 package ac.jester.anticheat.platform.bukkit.utils.reflection;
 
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import ac.jester.anticheat.utils.anticheat.LogUtil;
 import ac.jester.anticheat.utils.reflection.ReflectionUtils;
 import org.bukkit.Location;
@@ -24,12 +24,12 @@ public class PaperUtils {
         try {
             Class<?> clazz = ReflectionUtils.getClass("com.destroystokyo.paper.event.server.ServerTickEndEvent");
             if (clazz == null) return false;
-            SkyAntiCheatPlugin.LOADER.getServer().getPluginManager().registerEvent(
+            JesterAntiCheatPlugin.LOADER.getServer().getPluginManager().registerEvent(
                     (Class<? extends Event>) clazz,
                     listener,
                     EventPriority.NORMAL,
                     (l, event) -> runnable.run(),
-                    SkyAntiCheatPlugin.LOADER
+                    JesterAntiCheatPlugin.LOADER
             );
             return true;
         } catch (Exception e) {
