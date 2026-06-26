@@ -1,0 +1,1336 @@
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                          J E S T E R   A N T I C H E A T                   ║
+# ║                            configuration · v0.0.1                          ║
+# ╠══════════════════════════════════════════════════════════════════════════╣
+# ║  How this file works:                                                      ║
+# ║   • Every check has its own block under "checks:" further down. There you  ║
+# ║     turn it on/off, set how many violations trigger a punishment, and      ║
+# ║     choose which command runs (kick, ban, ...).                            ║
+# ║   • Values that aren't set per-check fall back to "alert-defaults" below.  ║
+# ║   • Colours accept legacy codes (&a) and hex (&#rrggbb).                   ║
+# ║   • Edit, then run /skyac reload in-game to apply without a restart.       ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Shown at the start of every plugin message.
+prefix: '&#c19a6bᴊᴇꜱᴛᴇʀ &8»'
+
+alerts:
+    # Should alerts be printed to the console?
+    print-to-console: true
+    # Alert message format. Placeholders: %player% %check_name% %vl% %verbose% %ping% %tps% %version%
+    format: '%prefix% &#c19a6b%player% &fhas failed &#c19a6b%check_name% &8[&#c19a6bx%vl% &8| &#c19a6b%ping%ms&8]'
+    # Console format (no color codes needed)
+    console-format: '&8[&#c19a6bᴊ&8] %player% failed %check_name% (x%vl%) | %verbose%'
+    # Cross-server alert forwarding (BungeeCord/Velocity networks).
+    #   send    — broadcast this server's alerts to every other server on the
+    #             proxy that also runs Jester.
+    #   receive — also show alerts forwarded here from those other servers.
+    # Needs bungeecord/velocity enabled in spigot.yml / paper-global.yml
+    # (detected automatically).
+    proxy:
+        send: true
+        receive: true
+
+verbose:
+    print-to-console: false
+
+# Toggle alerts on join for players with skyac.alerts permission
+toggle-alerts-on-join: true
+
+# Transient-state grace: movement/timer checks don't flag during these windows
+# because the client legitimately desyncs (no kick for a state it didn't cause).
+movement-grace:
+    # Right after joining — player may spawn mid-air (logged out falling/flying),
+    # chunks still loading, etc. Resource-pack download is graced automatically
+    # until the client reports it loaded (max 30s).
+    join-ms: 3000
+
+# Experimental checks (BadPackets, MultiActions, Sprint, Elytra, Vehicle,
+# NoSwingBreak, MultiPlace, ...). These ~39 checks are still maturing and can
+# false-flag legitimate play (e.g. a fast key combo on 1.21.2+). They stay ON so
+# staff still see their alerts/logs, but — thanks to the next option — they only
+# warn, never punish, until you explicitly trust one.
+experimental-checks: true
+
+# Master safety switch for the checks above: while this is false, NO experimental
+# check can kick/ban, even if its own punishable is true — it can only alert/log.
+# Turn it on only after you've watched a specific check flag correctly with no
+# false positives.
+experimental-checks-punishable: false
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Alert Rate Limiting (prevents alert spam)
+# These are GLOBAL defaults — override per-check under "checks:" below.
+# ─────────────────────────────────────────────────────────────────────────────
+alert-defaults:
+    # Send alert every N violations. 1 = every violation. 2 = every 2nd. 5 = every 5th.
+    alert-interval: 1
+    # Don't send alert until violations >= this value (suppresses early noise).
+    # Applies to checks WITHOUT their own block (GroundSpoof, TimerLimit,
+    # TickTimer, ...) — raised so a stray flag from those doesn't spam chat.
+    dont-alert-until: 3
+    # Minimum milliseconds between consecutive alerts for the same check on the same player.
+    # Prevents burst-spam when simulation engine fires 1-100 flags at once.
+    alert-cooldown-ms: 1000
+    # Below this TPS, checks are paused. The movement prediction assumes a stable
+    # 20 TPS, so even a small dip (a check false-flagging at ~19.8 TPS is common)
+    # can desync any check — not just the timing-based ones. This is the global
+    # fallback; a check can override it with its own minimum-tps.
+    minimum-tps: 19.5
+    # Default max violations before punishment
+    max-violations: 20
+    punishable: true
+    # Minimum time (ms) a violation streak must last BEFORE a kick/punishment is
+    # allowed to fire, even if max-violations was already reached. Some checks
+    # (Simulation, combat) can flag several times in a fraction of a second
+    # during a lag/desync burst, which used to instantly reach max-violations and
+    # kick a player who never saw the count climb ("kicked out of nowhere"). This
+    # forces the violations to be sustained over real time first: a genuine cheat
+    # easily keeps flagging for this long, a one-off burst decays away. Set to 0
+    # to restore the old instant behaviour. Per-check override: punish-grace-ms.
+    punish-grace-ms: 2000
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Database (MySQL or SQLite)
+# ─────────────────────────────────────────────────────────────────────────────
+# All violations, punishments, and player profiles are logged here — usable
+# later from a website (tables: skyac_violations, skyac_punishments,
+# skyac_profiles; each row has ping/tps/timestamp).
+# SQLite file: plugins/JesterAntiCheat/skyac.db — for website access from
+# another host, switch type to mysql.
+database:
+    enabled: true
+    type: sqlite          # sqlite or mysql
+    host: localhost
+    port: 3306
+    database: skyac
+    username: root
+    password: ''
+    pool-size: 5
+    # Minimum time between DB writes for the SAME player+check. A false-positive
+    # streak (e.g. a check flagging every tick) used to write a row every 250ms,
+    # flooding the table with thousands of rows in minutes. The vl column is
+    # cumulative, so raising this loses no real signal — only redundant rows.
+    log-throttle-ms: 2000
+    # Violation log rows older than this are automatically deleted (checked
+    # hourly, plus once immediately on startup). Keeps the table from growing
+    # forever from routine flags. Punishments are NOT auto-purged (kept as a
+    # permanent record) — only the high-volume raw violation log is.
+    violation-retention-hours: 6
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Plugin Compatibility
+# ─────────────────────────────────────────────────────────────────────────────
+compatibility:
+    # Exempt GSit sitting/crawling/laying players from movement checks
+    gsit-exempt-movement: true
+    # Extra tolerance ticks when sitting player just stood up
+    gsit-grace-ticks: 3
+    # Soften velocity checks for DeluxeCombat/CrazyEnchantments custom knockback
+    deluxecombat-kb-tolerance: true
+    # AuraSkills: account for speed/jump bonuses in movement checks
+    auraskills-movement-boost: true
+    # WorldGuard: exempt players in fly-allowed regions from flight checks
+    worldguard-fly-regions: true
+    # ItemsAdder: use custom block hardness for FastBreak/Nuker checks
+    itemsadder-custom-blocks: true
+    # LPX is active — skip duplicate packet exploit checks
+    lpx-skip-duplicate-checks: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Movement prediction engine — replays each player's movement server-side and
+# compares it to what they sent. "offset" is how far the two disagree per tick;
+# a real fly/speed hack sustains a large offset, normal play produces tiny ones.
+# The thresholds below set how much offset is tolerated in each situation.
+# ─────────────────────────────────────────────────────────────────────────────
+Simulation:
+    setback-decay-multiplier: 0.999
+    # Per-tick offset that counts as a violation. Half-blocks (slabs, chests,
+    # trapped chests) and Via/ItemsAdder collision quirks produce tiny offsets.
+    # Real production logs across many UNRELATED players repeatedly showed the
+    # EXACT SAME decimal offsets (.030177, .015151, .024895 — bit-for-bit
+    # identical across different players/times, sneak=false carpet=false
+    # water=false, normal TPS/ping every time). A real fly/speed hack produces
+    # offsets that vary with the specific hack/velocity used — it does NOT
+    # reproduce an identical number across unrelated players. That signature
+    # means this is a deterministic engine/physics quirk (likely a common
+    # movement transition, e.g. landing/step-up), not cheating. Raised well
+    # above that whole cluster; immediate-setback-threshold below still
+    # catches a genuinely large single-tick jump regardless.
+    # Loosened again for the public beta — reports of stray flags on normal
+    # movement persisted at 0.02, so the base bar is raised. A real fly/speed
+    # hack still produces a sustained, much larger offset every tick.
+    threshold: 0.025
+    # Higher threshold applied only while the player is sneaking (vanilla shift).
+    # Sneak movement near block edges (slabs/stairs/chests), especially on
+    # ViaBackwards/1.8 clients, produces noisy offsets up to ~0.01-0.03 that are
+    # NOT cheating. Real production logs showed a sustained, repeating offset
+    # cluster around ~0.015 (with outliers to ~0.0297) during normal sneak-walk —
+    # the previous 0.015 threshold sat right in the middle of that cluster
+    # instead of above it. Sneak speed is too slow for speed/fly to matter, so
+    # raising this further is safe; only weakens detection of a hack that's
+    # already pointless to run while sneaking.
+    sneak-threshold: 0.04
+    # Higher threshold while standing on carpet (any color, or moss carpet).
+    # Carpet's collision box is only 1/16 block tall, and real logs showed a
+    # sustained ~0.015-0.018 offset just from walking normally on it (not
+    # sneaking) — a known collision-simulation quirk for this thin shape,
+    # not a speed exploit (carpet doesn't change movement speed).
+    carpet-threshold: 0.03
+    # Higher threshold while on/near a bed. Beds have an asymmetric, reduced-
+    # height collision shape (head/foot halves) — real logs showed a sustained,
+    # repeating ~0.028-0.031 offset (the exact same value recurring — a
+    # deterministic engine quirk, not noise) from jump-spamming on a bed
+    # corner. Not a speed exploit; jumping on a bed doesn't change speed.
+    bed-threshold: 0.035
+    # Higher threshold while in water. Buoyancy/current/swim-pose physics is the
+    # most false-positive-prone movement to simulate exactly (depth strider,
+    # dolphin's grace, current pushes, hitbox pose change) and a speed/fly hack
+    # is far less useful underwater anyway. Reported as a recurring source of
+    # stray Simulation flags, so this is tolerant by design.
+    water-threshold: 0.04
+    immediate-setback-threshold: 0.1
+    # Extra per-tick offset tolerance added per ms of ping above the baseline.
+    # Higher ping = more uncertainty about exactly when an input applied, which
+    # shows up as small extra offset that isn't cheating. Raised for the beta
+    # since most reported false flags came from 70-150ms players and mobile
+    # (PojavLauncher) jitter.
+    ping-threshold-baseline-ms: 60
+    ping-threshold-per-ms: 0.00005
+    # Allow a little accumulated advantage before a setback, so a single odd tick
+    # landing on a slab/chest edge doesn't rubber-band a legit player.
+    max-advantage: 3
+    max-ceiling: 4
+    setback-violation-threshold: 1
+    # Grace window (ms) after a /fly toggle during which the offset is ignored —
+    # toggling flight briefly desyncs the ability bit and spikes the prediction.
+    # Raise if your flight plugin resyncs slowly.
+    flight-toggle-grace-ms: 1000
+    # Violations removed per second while the player isn't flagging. Kept high so
+    # the occasional harmless physics blip between bursts of normal play fades out
+    # before it can ever stack up to a punishment. A real fly/speed hack flags
+    # every tick it's active, far faster than this clears.
+    decay: 1.0
+
+# Timer — detects clients running their game clock faster than real time.
+# (These tuning keys use the name "TimerA"; the checks.TimerA block further down
+#  controls its violations/alerts/punishment.)
+TimerA:
+    # How far a player's clock may fall BEHIND real time (ms) before the check
+    # tightens up again. Behind a proxy hop + version translation, packet timing
+    # naturally bunches up, so a generous value here avoids false flags. It only
+    # affects the lower bound — running AHEAD (what a timer hack does) is still
+    # caught regardless.
+    drift: 250.0
+    # Violations removed per second while not flagging.
+    decay: 0.5
+
+TimerLimit:
+    # Same proxy/ViaBackwards jitter slack as TimerA.drift.
+    drift: 250.0
+    decay: 0.5
+    # Above this ping (ms), cap how much "fall behind" advantage accumulates,
+    # to stop high-ping abuse. Raised from the 1000ms default since the proxy
+    # hop itself adds baseline latency on top of the player's real ping.
+    ping-abuse-limit-threshold: 2000
+
+Phase:
+    setbackvl: 1
+    decay: 0.005
+
+NoSlow:
+    threshold: 0.001
+    setbackvl: 5
+    decay: 0.05
+
+Knockback:
+    setback-decay-multiplier: 0.999
+    threshold: 0.001
+    immediate-setback-threshold: 0.1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Per-check settings. Every check accepts the same keys:
+#   enabled            — run the check at all
+#   punishable         — may it run its punishment-commands, or only alert?
+#   max-violations     — violations needed before the punishment fires
+#   alert-interval     — alert every Nth violation (1 = every one)
+#   dont-alert-until   — stay silent until this many violations have built up
+#   alert-cooldown-ms  — minimum gap between two alerts for the same check
+#   minimum-tps        — skip the check below this server TPS
+#   punishment-commands — console commands run on punish (%player% %ping% ...)
+# Anything omitted falls back to alert-defaults above.
+# ─────────────────────────────────────────────────────────────────────────────
+checks:
+
+    # ── Movement ──────────────────────────────────────────────────────────────
+
+    # Simulation — fly / speed / movement detection (the core check).
+    # punishable:false by default — Simulation is the most
+    # false-positive-prone check across mixed client versions (ViaBackwards/1.8),
+    # so out of the box it only ALERTS staff, never kicks. Flip to true once
+    # you've watched its flags on YOUR server and trust them.
+    Simulation:
+        enabled: true
+        punishable: false
+        # Raised from 24 — real logs showed a deterministic engine quirk (same
+        # exact offset value across unrelated players, see Simulation.threshold
+        # comment) sustaining for MINUTES and climbing VL into the 100s even
+        # with decay active. A real continuous fly/speed hack still blows past
+        # 40 within seconds; this just stops a long-lived non-cheat pattern
+        # from ever reaching kick range.
+        max-violations: 40
+        alert-interval: 1
+        dont-alert-until: 6           # Ignore the first 5 flags (lag spike tolerance)
+        alert-cooldown-ms: 2000       # Max 1 alert per 2s (prevents 1-100 spam)
+        minimum-tps: 19.5
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # Knockback/AntiKB
+    Knockback:
+        enabled: true
+        punishable: true
+        max-violations: 15
+        alert-interval: 1
+        dont-alert-until: 5
+        alert-cooldown-ms: 2000
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Phase through blocks
+    Phase:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # NoSlow (eating while moving)
+    NoSlow:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1500
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # ── Player ────────────────────────────────────────────────────────────────
+
+    # GUI/Inventory walk — moving while a container is open.
+    # NOT punishable: the check already setbacks (rubber-bands) every tick the
+    # cheat is active, which stops the movement. No kick — just block them.
+    InventoryWalk:
+        enabled: true
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands: []
+
+    # ── Combat ────────────────────────────────────────────────────────────────
+
+    # Reach — simulation-based hit distance check
+    Reach:
+        enabled: true
+        punishable: true
+        max-violations: 12           # More chances before kick (PvP lag tolerance)
+        alert-interval: 1
+        dont-alert-until: 4
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # AutoClicker A — statistical consistency
+    AutoClickerA:
+        enabled: true
+        punishable: true
+        max-violations: 12
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # AutoClicker B — multi-click in one tick
+    AutoClickerB:
+        enabled: true
+        punishable: true
+        # Raised from 10 — a chronically jittery connection (e.g. PojavLauncher
+        # mobile network) was still slowly accumulating enough violations to get
+        # kicked even after requiring repeated bursts.
+        max-violations: 20
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 500
+        minimum-tps: 19.5
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # SelfInteract — attacking own entity (impossible in vanilla)
+    SelfInteract:
+        enabled: true
+        punishable: true
+        max-violations: 1
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # AutoBlock — attacking while blocking with a shield
+    AutoBlock:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Criticals — fake critical hit via ground spoof during attack
+    Criticals:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # NoHitDelay — attack packets arriving faster than one tick apart
+    NoHitDelay:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # KillAura A — no-swing attack
+    KillAuraA:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # KillAura B — multi-entity in one tick
+    KillAuraB:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # KillAura C — attacking while container GUI is open (impossible in vanilla)
+    KillAuraC:
+        enabled: true
+        punishable: true
+        max-violations: 2
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # KillAura D — attacking entity while looking significantly away (angle check)
+    KillAuraD:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 800
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Multitask — attacking while actively using an item (eating/potion/bow)
+    Multitask:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # FastUse — eating/drinking items faster than vanilla timing (1600ms minimum)
+    # DISABLED by default: the RELEASE packet it measures is sent when a player
+    # CANCELS eating (totally legit, happens constantly in PvP) — finishing an
+    # item sends no packet at all. Consumption speed is server-timed anyway,
+    # so FastUse hacks gain nothing on modern servers.
+    FastUse:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # BedAura — rapidly interacting with bed items to trigger explosions
+    BedAura:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # AnchorAura — rapidly interacting with respawn anchors to trigger explosions
+    AnchorAura:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # AutoPot — using healing potion immediately after taking damage
+    AutoPot:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # AutoEat — eating isn't an emergency reaction like AutoPot, so this needs
+    # several consecutive too-fast reactions (set in the flat AutoEat: block
+    # below) before it even counts a violation — high tolerance by design.
+    AutoEat:
+        enabled: true
+        punishable: true
+        max-violations: 6
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # AutoWeapon — automatically switching to best weapon before every attack
+    AutoWeapon:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # CrystalAura — interacting with end crystals at superhuman speed
+    CrystalAura:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # VeinMiner — breaking many distinct block positions per second
+    VeinMiner:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # FastBow — releasing bow before minimum charge time
+    # DISABLED by default: tapping right-click on a bow sends draw+release
+    # within <50ms legitimately (no arrow fires, but the packets are sent),
+    # and the server computes arrow power from its own timer anyway — the
+    # hack gains nothing on modern servers.
+    FastBow:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # TransactionOrder — client's transaction response skipped one or more
+    # pending IDs. The implementation's own comment explicitly tolerates this
+    # by design ("if some error made a client miss a packet, it won't hurt
+    # them too bad") — it's a packet-loss/network signal, not a reliable cheat
+    # indicator on its own. Alert-only so staff still see it; never punishes.
+    TransactionOrder:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        alert-interval: 1
+        dont-alert-until: 5
+        alert-cooldown-ms: 2000
+        minimum-tps: 19.5
+        punishment-commands: []
+
+    # ── Scaffolding/Placing ───────────────────────────────────────────────────
+
+    # AirPlace — placing a block against air / liquid (no valid support).
+    # High max-violations because legit break+place-in-same-tick can flag 1-2x;
+    # sustained air-placing (the cheat) racks up fast.
+    AirLiquidPlace:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        # The check's own author notes a VL of 1 isn't reliable signal on its
+        # own (documented history of fighting false positives from same-tick
+        # break+place desyncs) — 4 already gives reasonable headroom.
+        dont-alert-until: 4
+        alert-cooldown-ms: 1500
+        minimum-tps: 19.5
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # FastPlace — placing blocks faster than humanly possible
+    FastPlace:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # ScaffoldGoDown — automated descending staircase block placement
+    ScaffoldGoDown:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # Tower — placing blocks under self while jumping upward too fast
+    Tower:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # NoJumpDelay — jumping too quickly after landing
+    # DISABLED by default: vanilla bunny-hopping (holding space) legitimately
+    # re-jumps instantly on every landing — the 10-tick jump cooldown expires
+    # mid-air, and tapping the key resets it entirely. There is no reliable
+    # packet signature that separates this hack from normal jumping.
+    NoJumpDelay:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # AutoParkour — pixel-perfect edge-jump timing every jump
+    # AutoParkour — relaxed: skilled players on a parkour server hit many edge
+    # jumps legitimately. More samples + higher ratio + more chances before kick.
+    AutoParkour:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 4
+        alert-cooldown-ms: 3000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # RotationPlace — placing a block while not looking at it (scaffold).
+    # Most FP-prone scaffolding check on cross-version (ViaBackwards/1.8 rapid yaw)
+    # servers, so it's given a high tolerance. Other scaffolding checks
+    # (ScaffoldGoDown, FastPlace, AirLiquidPlace) carry the real punishment weight.
+    RotationPlace:
+        enabled: true
+        punishable: true
+        max-violations: 25
+        alert-interval: 1
+        dont-alert-until: 6
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # TimerLimit — hard packet-rate ceiling. Rarely FPs except on lag spikes
+    # (already grace-windowed on join/pack-load), so high tolerance.
+    TimerLimit:
+        enabled: true
+        # Alert-only by default for the beta — timing checks behind a proxy
+        # (ajQueue) + ViaBackwards are jitter-prone; trust before enabling kicks.
+        punishable: false
+        max-violations: 20
+        alert-interval: 1
+        dont-alert-until: 6
+        alert-cooldown-ms: 2000
+        # Timer's own algorithm is already designed to self-compensate for ping
+        # (it measures against the player's OWN clock, not a flat wall-clock
+        # window — see the long comment at the top of Timer.java), so adding
+        # ad-hoc ping-scaling on top would be redundant/risk hiding real timer
+        # hacks. The real correlated factor (same root cause as FastBreak) is
+        # SERVER TPS dips distorting timing measurement — raised in line with
+        # FastBreak's fix, now that minimum-tps is actually enforced.
+        minimum-tps: 19.0
+        punishment-commands:
+            # %ping% shows whether this was likely a real connection spike
+            # (proxy hop, bad mobile connection) rather than an actual timer hack.
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # MeteorDetector — fingerprint detection for Meteor Client
+    MeteorDetector:
+        enabled: true
+        punishable: false
+        max-violations: 1
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 60000
+        minimum-tps: 10.0
+        punishment-commands: []
+
+    # ── Player / Inventory ─────────────────────────────────────────────────────
+
+    # AutoTotem — re-equipping totem faster than humanly possible after pop
+    AutoTotem:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Aim A — combat rotations not quantized by mouse sensitivity (aimbot)
+    AimA:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # TriggerBot — attacking the same tick the crosshair lands on a target
+    TriggerBot:
+        enabled: true
+        punishable: true
+        max-violations: 6
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # ── Vehicle / Elytra ─────────────────────────────────────────────────────
+
+    # BoatFly — vehicle ascending in mid-air (impossible without water)
+    BoatFly:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # BoatClip — vehicle moving teleport-sized distances per packet
+    BoatClip:
+        enabled: true
+        punishable: true
+        max-violations: 4
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # FireworkBoost — machine-uniform firework boost timing while gliding
+    FireworkBoost:
+        enabled: true
+        punishable: true
+        max-violations: 6
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # ChestStealer — taking items from a container at superhuman speed.
+    # Off by default: container-sorting mods and fast legit looting trip it often
+    # enough that it isn't worth running out of the box. Turn on if you need it.
+    ChestStealer:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # AutoFish — reeling in fishing rod too quickly after fish bite
+    AutoFish:
+        enabled: true
+        punishable: true
+        max-violations: 4
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # AutoArmor — equipping multiple armor pieces at superhuman speed
+    AutoArmor:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # AutoRespawn — sending respawn packet immediately after death
+    AutoRespawn:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # ── Breaking ──────────────────────────────────────────────────────────────
+
+    # Nuker A — multi-block simultaneous start
+    NukerA:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # Nuker B — breaking blocks in multiple directions / creative rate
+    NukerB:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # AutoTool — automatically switching to optimal tool before each break
+    AutoTool:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # PacketMine — instant break via sending start+finish in same tick
+    PacketMine:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # FastBreak — breaking blocks too quickly
+    FastBreak:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1500
+        # FastBreak measures raw wall-clock milliseconds, so even a small TPS dip
+        # (real log showed false flags at 18.98 TPS — only a ~5% dip) distorts its
+        # timing enough to false-flag once minimum-tps is actually enforced (see
+        # the Check.flag() fix). 14.0 was far too low to ever catch this.
+        minimum-tps: 19.5
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # ── BadPackets (keep most enabled) ────────────────────────────────────────
+    BadPacketsA:
+        enabled: true
+        punishable: true
+        max-violations: 1
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPackets&8 &7ping: %ping%ms&8)'
+
+    BadPacketsB:
+        enabled: true
+        punishable: true
+        max-violations: 1
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPackets&8 &7ping: %ping%ms&8)'
+
+    # ── Timer ─────────────────────────────────────────────────────────────────
+    # NOTE: the Timer check's config name is "TimerA" (not "Timer"), so this
+    # block MUST be keyed TimerA or it is silently ignored.
+    TimerA:
+        enabled: true
+        # Alert-only by default for the beta — same proxy/ViaBackwards jitter
+        # reasoning as TimerLimit. Flip to true once trusted on your server.
+        punishable: false
+        max-violations: 16           # More chances before kick (fewer false kicks)
+        alert-interval: 1
+        dont-alert-until: 6
+        alert-cooldown-ms: 1500
+        # Same reasoning as TimerLimit.minimum-tps above.
+        minimum-tps: 19.0
+        punishment-commands:
+            # %ping% shows whether this was likely a real connection spike
+            # (proxy hop, bad mobile connection) rather than an actual timer hack.
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Check-Specific Fine-Tuning
+# These keys are read directly by each check's onReload method.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Reach — simulation-based combat hit distance (entity_interaction_range, 3.0).
+# threshold is extra hitbox margin (blocks). 0.0005 is razor-thin and flags
+# legit combat near the 3.0 boundary; 0.03 (one movement tick of uncertainty)
+# absorbs that while still catching real reach (always 3.3+ blocks).
+Reach:
+    block-impossible-hits: true
+    threshold: 0.05
+    # Extra reach margin (blocks) while sneaking — the sneak eye-height change is
+    # processed a tick late, briefly inflating the measured hit distance. Real
+    # reach hacks are 3.3+ blocks, far beyond this.
+    sneak-lenience: 0.1
+
+# AutoBlock — max ping before the check is skipped (ms)
+AutoBlock:
+    max-ping: 500
+
+# Criticals — max ping before the check is skipped (ms)
+Criticals:
+    max-ping: 500
+
+# NoHitDelay — attacks counted per client tick (immune to network jitter).
+# A vanilla client may rarely fit 2 attacks in one tick; 3+ is a hack.
+NoHitDelay:
+    # Attacks within one client tick to count as a bad tick
+    max-per-tick: 3
+    # Consecutive bad ticks before flagging
+    min-consecutive: 2
+
+# FastUse — minimum item use duration in ms (vanilla food = 1600ms, potions = 1600ms)
+FastUse:
+    min-use-ms: 1500
+
+# CrystalAura — only attacks on actual END_CRYSTAL entities count.
+# Skilled crystal PvP legitimately reaches 12-16 interactions/sec.
+CrystalAura:
+    max-ips: 16
+    min-place-detonate-ms: 50
+    # Consecutive sub-50ms place->detonate cycles before flagging
+    min-consecutive: 3
+
+# VeinMiner — max COMPLETED block breaks (FINISHED_DIGGING) per second.
+# Clicks and instant-break blocks are not counted.
+VeinMiner:
+    max-bps: 5
+
+# FastBow — minimum bow charge time in ms before release is valid
+FastBow:
+    min-charge-ms: 45
+
+# FastPlace — max blocks per second before flagging
+# FastPlace — vanilla's 4-tick right-click cooldown caps placements at 5/sec
+# regardless of click speed; 10 absorbs network jitter. Meteor FastUse ~20/sec.
+FastPlace:
+    max-bps: 10
+
+# Tower — minimum milliseconds between consecutive under-self placements while jumping
+Tower:
+    min-interval-ms: 100
+    # Consecutive too-fast placements before flagging (absorbs network jitter)
+    min-consecutive: 2
+
+# InventoryWalk — sustained movement with a container GUI open.
+# Momentum slides and knockback die out within a few ticks; held movement keys
+# don't. Flagging triggers a setback every tick, neutralizing the cheat.
+InventoryWalk:
+    # Horizontal blocks/tick below this counts as residual drift, not input
+    min-speed: 0.10
+    # Consecutive moving ticks (on the ground, not ice) before flag + immediate setback (~300ms)
+    min-consecutive: 6
+
+# KillAuraD — angle threshold for looking away from target
+KillAuraD:
+    # Entity position tracking lags moving targets — keep this high (135 = clearly behind)
+    max-angle-deg: 135.0
+    max-ping: 300
+    # Consecutive bad-angle attacks required before flagging
+    min-consecutive: 3
+
+# NukerB — direction-span detection thresholds
+NukerB:
+    max-span-degrees: 120.0
+    max-creative-bps: 8
+
+# AutoFish — minimum human reaction time after fish bite
+AutoFish:
+    min-react-ms: 150
+
+# AutoArmor — burst detection thresholds
+AutoArmor:
+    # Maximum milliseconds window for counting rapid armor-slot clicks
+    max-burst-ms: 250
+    # How many DISTINCT armor slots clicked within the window before flagging
+    # (double-clicks on a single slot never count twice)
+    burst-threshold: 2
+
+# AutoRespawn — minimum ms between death and respawn packet
+AutoRespawn:
+    min-respawn-ms: 300
+
+# AutoTool — timing between held-item-change and start-digging
+AutoTool:
+    # Max ms between HELD_ITEM_CHANGE and START_DIGGING to count as a switch
+    switch-ms: 50
+    # How many consecutive fast-switch+dig events before flagging
+    min-consecutive: 3
+
+# PacketMine — instant-break detection (sub-tick start->finish)
+PacketMine:
+    # Max ms between start-dig and finish-dig to count as instant.
+    # Keep below 50 (1 tick) — legit 1-tick breaks arrive ~50ms apart.
+    max-instant-ms: 30
+    # Consecutive instant breaks before flagging (absorbs TCP packet bunching)
+    min-consecutive: 3
+
+# BedAura — maximum bed interactions per second
+# Note: right-clicking any block while holding a bed also counts, so this
+# must stay above human jitter-click range (~5-7/s)
+BedAura:
+    max-per-second: 8
+
+# AnchorAura — maximum respawn anchor interactions per second
+AnchorAura:
+    max-per-second: 8
+
+# AutoPot — minimum human reaction time after taking damage
+AutoPot:
+    min-react-ms: 80
+
+# AutoWeapon — hotbar switch and attack in the SAME client tick, repeatedly.
+# A human can scroll+click in one tick occasionally; the cheat does it every attack.
+AutoWeapon:
+    min-consecutive: 6
+
+# AutoTotem — offhand totem restock reaction after a pop (ping-compensated)
+AutoTotem:
+    min-react-ms: 150
+    min-consecutive: 2
+
+# AutoEat — minimum human reaction time after a hunger drop. Eating isn't an
+# emergency like combat damage, so this needs several consecutive fast
+# reactions (min-consecutive) before it's treated as suspicious, not one.
+AutoEat:
+    min-react-ms: 100
+    min-consecutive: 5
+
+# AimA — aimbot GCD analysis. Rotations during combat must be multiples of the
+# mouse sensitivity step; computed rotations (aimbot) have no common divisor.
+AimA:
+    # Unquantized significant rotations in a row before flagging
+    min-consecutive: 15
+    # Only judge rotations within this many ticks after an attack
+    combat-window-ticks: 40
+
+# TriggerBot — attack arriving within max-acquire-ticks of the crosshair
+# landing on the target, min-consecutive times in a row (humans need 3-5 ticks)
+TriggerBot:
+    max-acquire-ticks: 1
+    min-consecutive: 5
+    max-ping: 400
+
+# BoatFly — consecutive ascending vehicle-move packets with no water involved
+BoatFly:
+    min-rise-ticks: 15
+    min-rise: 3.0
+
+# BoatClip — max legitimate vehicle movement per packet (blue-ice racing ~3.5)
+BoatClip:
+    max-delta: 5.0
+    min-consecutive: 2
+
+# FireworkBoost — interval uniformity (CV) of rocket boosts while gliding.
+# Human spam clicking has CV > 0.1; macros sit near 0.
+FireworkBoost:
+    window-size: 8
+    max-cv: 0.06
+    max-interval-ms: 1200
+
+# NoJumpDelay — consecutive instant re-jump detection.
+# A single fast re-jump is vanilla-possible (tapping jump on landing);
+# the cheat re-jumps instantly on EVERY landing.
+NoJumpDelay:
+    # Land->jump gap below this counts toward the streak
+    max-gap-ms: 150
+    # Consecutive fast re-jumps before flagging
+    min-consecutive: 6
+
+# AutoParkour — edge-jump detection thresholds
+AutoParkour:
+    # Fraction of block depth (0-1) considered an "edge jump" (0.75 = last 25%)
+    edge-threshold: 0.75
+    # Number of jumps in the rolling analysis window (bigger = harder to false)
+    window-size: 14
+    # Fraction of window that must be edge-jumps to flag (0.93 ≈ 13/14).
+    # A human, even a great parkour player, has more variance than this.
+    min-edge-ratio: 0.93
+    # Minimum horizontal speed (blocks/tick) to be considered parkour
+    min-speed-bps: 0.15
+
+# ScaffoldGoDown — descending staircase placement thresholds
+ScaffoldGoDown:
+    # Maximum ms between consecutive staircase placements
+    max-interval-ms: 250
+    # How many consecutive downward placements before flagging
+    # (skilled manual down-bridgers can sustain short bursts — keep >= 6)
+    min-consecutive: 6
+
+# MeteorDetector — detection method toggles
+MeteorDetector:
+    # Method B (translation fingerprint): force-opens a sign editor once after
+    # join — VISIBLE to the player as a brief popup. Enable only if that's
+    # acceptable. The passive channel fingerprint (method A) is always active.
+    sign-check: false
+
+# AutoClickerA — click consistency analysis thresholds
+AutoClickerA:
+    # Maximum physically possible CPS; above this is flagged immediately.
+    # 20.0 is the exact vanilla tick-rate ceiling (1 click/tick) with NO margin
+    # for packet-timestamp jitter — a real log showed a legit player averaging
+    # 49.8ms over a full 20-click window (cps=20.1), i.e. clicking essentially
+    # exactly on every tick. Vanilla doesn't even register extra hits above
+    # 20/sec anyway, so there's no exploit value between 20-21; raised to give
+    # genuine max-speed clickers room without weakening detection of real
+    # macros (which run well above this, e.g. 25-30+ CPS).
+    max-cps: 21.0
+    # Minimum coefficient of variation for human clicks (lower = auto-clicker)
+    min-cv: 0.10
+    # Rolling window of click intervals used for analysis
+    window-size: 20
+    # How many consecutive analysis windows must exceed max-cps before a CPS
+    # violation counts — absorbs a single borderline window from a max-speed
+    # human clicker sitting right on the vanilla tick ceiling.
+    min-consecutive-cps: 2
+    # Cancel-before-kick: instead of kicking the moment an auto-clicker is
+    # detected, first NEUTRALISE it — the player's attack packets are silently
+    # cancelled for cancel-duration-ms (their clicks land on nothing). A legit
+    # borderline-fast clicker stops, the violations decay, and no kick happens. A
+    # real macro keeps clicking through the dead window, keeps flagging, reaches
+    # max-violations and only THEN gets kicked. Set cancel-before-kick:false to
+    # go straight back to kicking on threshold.
+    cancel-before-kick: true
+    cancel-duration-ms: 3000
+
+AutoClickerB:
+    # Violations removed per second while not flagging. Kept high so a jittery
+    # connection (e.g. a mobile client) that occasionally produces the
+    # multi-swing-in-one-tick pattern clears between incidents instead of slowly
+    # creeping toward a kick over a whole session.
+    decay: 1.0
+    # Number of multi-swing-in-one-tick bursts within burst-window-ms before a
+    # violation is counted (a single coincidental burst is network noise, a real
+    # macro does it repeatedly).
+    min-bursts: 4
+    burst-window-ms: 4000
+    # Cancel-before-kick (see AutoClickerA): neutralise the extra swings for a
+    # few seconds before any kick can happen.
+    cancel-before-kick: true
+    cancel-duration-ms: 3000
+
+# Exploit toggles
+exploit:
+    allow-sprint-jumping-when-using-elytra: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Legacy grouped punishments. The per-check "checks:" blocks above already drive
+# alerts and kicks, so this section is optional and only used for [log] history
+# entries and any extra grouped commands you choose to add here. [alert]/[proxy]/
+# [webhook] entries are ignored here to avoid duplicate alerts.
+# Format per command:  <threshold>:<interval> <command>   (interval 0 = once)
+# ─────────────────────────────────────────────────────────────────────────────
+Punishments:
+    - checks:
+          - '!BadPackets'
+          - '!Crash'
+      remove-violations-after: 300
+      commands:
+          - '1:1 [alert]'
+          - '1:1 [log]'
+
+    - checks:
+          - 'BadPackets'
+          - 'Crash'
+      remove-violations-after: 300
+      commands:
+          - '1:1 [alert]'
+          - '1:0 [log]'
+
+# Setback block resync (fix ghost blocks)
+disable-default-resync-handler: false
+cancel-duplicate-packet: true
+ignore-duplicate-packet-rotation: false
+
+# Client brand alerts
+client-brand:
+    ignored-clients:
+        - "^vanilla$"
+        - "^fabric$"
+        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4},(?:fabric|forge)$"
+        - "^Feather Fabric$"
+        - "^labymod$"
+    disconnect-blacklisted-forge-versions: true
+
+spectators:
+    hide-regardless: false
+    allowed-worlds:
+        - ""
+
+max-transaction-time: 60
+disable-pong-cancelling: false
+
+alerts-enabled: '%prefix% <white>ᴀʟᴇʀᴛꜱ</white> <color:#a9c8ff>ᴇɴᴀʙʟᴇᴅ</color>'
+alerts-disabled: '%prefix% <white>ᴀʟᴇʀᴛꜱ</white> <color:#ff5348>ᴅɪꜱᴀʙʟᴇᴅ</color>'
+verbose-enabled: '%prefix% <white>ᴠᴇʀʙᴏꜱᴇ</white> <color:#a9c8ff>ᴇɴᴀʙʟᴇᴅ</color>'
+verbose-disabled: '%prefix% <white>ᴠᴇʀʙᴏꜱᴇ</white> <color:#ff5348>ᴅɪꜱᴀʙʟᴇᴅ</color>'
+brands-enabled: '%prefix% <white>ʙʀᴀɴᴅꜱ</white> <color:#a9c8ff>ᴇɴᴀʙʟᴇᴅ</color>'
+brands-disabled: '%prefix% <white>ʙʀᴀɴᴅꜱ</white> <color:#ff5348>ᴅɪꜱᴀʙʟᴇᴅ</color>'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /skyac help output — one line per entry, supports MiniMessage & legacy colors
+# ─────────────────────────────────────────────────────────────────────────────
+help:
+    - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
+    - '%prefix% <color:#c19a6b><bold>ᴊᴇꜱᴛᴇʀ ᴀɴᴛɪ ᴄʜᴇᴀᴛ</bold></color> <dark_gray>—</dark_gray> <white>ᴄᴏᴍᴍᴀɴᴅ ʀᴇꜰᴇʀᴇɴᴄᴇ</white>'
+    - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
+    - '%prefix% <color:#a9c8ff>/skyac alerts</color> <white>—</white> <gray>Toggle violation alerts</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac verbose</color> <white>—</white> <gray>Toggle verbose alerts</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac violations <player></color> <white>—</white> <gray>Per-check VL breakdown</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac info <player></color> <white>—</white> <gray>Detailed player state</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac cps <player></color> <white>—</white> <gray>Show click-per-second info</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac history <player></color> <white>—</white> <gray>Violation history log</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac freeze <player></color> <white>—</white> <gray>Toggle freeze on a player</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac setback <player></color> <white>—</white> <gray>Manually setback a player</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac tp <player></color> <white>—</white> <gray>Teleport to a player</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac spectate <player></color> <white>—</white> <gray>Spectate a player</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac clearviolations <player></color> <white>—</white> <gray>Clear all violations</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac stats</color> <white>—</white> <gray>Server-wide anticheat statistics</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac perf</color> <white>—</white> <gray>Performance metrics</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac reload</color> <white>—</white> <gray>Reload configuration</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac debug <player></color> <white>—</white> <gray>Toggle debug mode for player</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac list</color> <white>—</white> <gray>List tracked players</gray>'
+    - '%prefix% <color:#a9c8ff>/skyac version</color> <white>—</white> <gray>Plugin version info</gray>'
+    - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
+
