@@ -182,6 +182,11 @@ bukkit {
             default = Permission.Default.OP
         }
 
+        register("jester.update") {
+            description = "Be notified on join when a plugin update is available"
+            default = Permission.Default.OP
+        }
+
         register("jester.stats") {
             description = "View server-wide anticheat stats"
             default = Permission.Default.OP

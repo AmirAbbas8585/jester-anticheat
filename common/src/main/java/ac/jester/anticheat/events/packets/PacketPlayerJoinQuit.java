@@ -60,6 +60,21 @@ public class PacketPlayerJoinQuit extends PacketListenerAbstract {
         if (platformPlayer.hasPermission("jester.spectate") && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("spectators.hide-regardless", false)) {
             GrimAPI.INSTANCE.getSpectateManager().onLogin(platformPlayer.getUniqueId());
         }
+
+        // A newer plugin version is available (set asynchronously by the update
+        // checker) — tell staff who hold the notify permission, once, on join.
+        if (ac.jester.anticheat.manager.UpdateState.isAvailable()) {
+            String notifyPerm = GrimAPI.INSTANCE.getConfigManager().getConfig()
+                    .getStringElse("update-checker.notify-permission", "jester.update");
+            if (platformPlayer.hasPermission(notifyPerm, false)) {
+                String msg = GrimAPI.INSTANCE.getConfigManager().getConfig()
+                        .getStringElse("update-available",
+                                "%prefix% <yellow>A new version is available: <green>%latest%</green> <gray>(running <red>%current%</red>)")
+                        .replace("%latest%", ac.jester.anticheat.manager.UpdateState.latest())
+                        .replace("%current%", ac.jester.anticheat.manager.UpdateState.current());
+                platformPlayer.sendMessage(ac.jester.anticheat.utils.anticheat.MessageUtil.miniMessage(msg));
+            }
+        }
     }
 
     @Override

@@ -99,6 +99,7 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
     }
 
     private ac.jester.anticheat.platform.bukkit.afk.AfkManager afkManager;
+    private ac.jester.anticheat.platform.bukkit.update.UpdateChecker updateChecker;
 
     @Override
     public void onEnable() {
@@ -117,6 +118,10 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
             afkManager = null;
         }
 
+        // Update notifier (own + obf builds). Off unless update-checker.url is set.
+        updateChecker = new ac.jester.anticheat.platform.bukkit.update.UpdateChecker(this);
+        updateChecker.start();
+
         // Violation log GUI (/jester logs <player>)
         ac.jester.anticheat.platform.bukkit.gui.ViolationLogGui logGui =
                 new ac.jester.anticheat.platform.bukkit.gui.ViolationLogGui();
@@ -134,6 +139,7 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
     @Override
     public void onDisable() {
         if (afkManager != null) afkManager.stop();
+        if (updateChecker != null) updateChecker.stop();
         HookManager.disable();
         GrimAPI.INSTANCE.stop();
     }
