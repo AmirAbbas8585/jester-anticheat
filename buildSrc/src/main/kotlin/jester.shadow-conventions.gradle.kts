@@ -14,8 +14,16 @@ tasks.named<ShadowJar>("shadowJar") {
         if (BuildConfig.shadePE) {
             relocate("io.github.retrooper.packetevents", "ac.jester.anticheat.shaded.io.github.retrooper.packetevents")
             relocate("com.github.retrooper.packetevents", "ac.jester.anticheat.shaded.com.github.retrooper.packetevents")
-            relocate("net.kyori", "ac.jester.anticheat.shaded.kyori") // use PE's built-in adventure instead when not shading PE
         }
+        // Adventure (text/colour). In lite mode it's bundled directly, so relocate
+        // it under shaded.* too — removes the readable top-level net/kyori tree
+        // from the distributed jar. (ProGuard keeps shaded.* intact so it works.)
+        relocate("net.kyori", "ac.jester.anticheat.shaded.kyori")
+        // The Grim engine API/glue our forked code links against. Relocating it
+        // strips the "grim" package from the distributed jar entirely (the source
+        // still imports ac.grim.grimac — that's compile-time only). Target is
+        // under shaded.* so ProGuard keeps it working rather than obfuscating it.
+        relocate("ac.grim.grimac", "ac.jester.anticheat.shaded.core")
         // slf4j is intentionally NOT shaded — HikariCP references org.slf4j and
         // Paper already provides slf4j-api with a working (log4j) provider.
         // Shading/relocating it isolated HikariCP from that provider, producing
