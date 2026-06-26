@@ -15,7 +15,7 @@ reload-failed: "%prefix% &c重载配置失败."
 player-not-found: "%prefix% &c指定玩家不存在或离线!"
 player-not-this-server: "%prefix% &c指定玩家不在此服务器上！"
 sender-not-found: "%prefix% &c如果你被豁免，则无法使用此命令！"
-spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"/grim stopspectating\">\n%prefix% &f点击这里返回之前的位置\n</hover></click>"
+spectate-return: "<click:run_command:/jester stopspectating><hover:show_text:\"/jester stopspectating\">\n%prefix% &f点击这里返回之前的位置\n</hover></click>"
 cannot-spectate-return: "%prefix% &c您只能在观看玩家后执行此操作"
 cannot-run-on-self: "%prefix% &c你不能对自己使用此命令!"
 upload-log: "%prefix% &f已经将日志文件上传至: %url%"
@@ -71,9 +71,9 @@ help:
     - "/grim history <player> [页码] &f- &7显示玩家之前的警报"
     - "&7======================"
 
-grim-history-load-failure: "%prefix% &c历史子系统加载失败！请检查服务器控制台中的错误。"
-grim-history-disabled: "%prefix% &c历史子系统已禁用！"
+jester-history-load-failure: "%prefix% &c历史子系统加载失败！请检查服务器控制台中的错误。"
+jester-history-disabled: "%prefix% &c历史子系统已禁用！"
 # Valid placeholders: %prefix% %player% %page% %maxPages%
-grim-history-header: "%prefix% &b显示 &f%player% 的日志 (&f%page%&b/&f%maxPages%&f)"
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: "%prefix% &8[&f%server%&8] &b失败 &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% 前&7)"
+jester-history-header: "%prefix% &b显示 &f%player% 的日志 (&f%page%&b/&f%maxPages%&f)"
+# Valid placeholders: %prefix% %jester_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+jester-history-entry: "%prefix% &8[&f%server%&8] &b失败 &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% 前&7)"

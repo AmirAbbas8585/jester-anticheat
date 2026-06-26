@@ -15,7 +15,7 @@ reload-failed: "%prefix% &cFailed to reload config."
 player-not-found: "%prefix% &cJogador não encontrado!"
 player-not-this-server: "%prefix% &cO jogador não está no servidor!"
 sender-not-found: "%prefix% &cVocê não pode usar este comando se estiver isento!"
-spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"/grim stopspectating\">\n%prefix% &fClique aqui para retornar a localização anterior\n</hover></click>"
+spectate-return: "<click:run_command:/jester stopspectating><hover:show_text:\"/jester stopspectating\">\n%prefix% &fClique aqui para retornar a localização anterior\n</hover></click>"
 cannot-spectate-return: "%prefix% &cVocê só pode fazer isso após espectar um jogador."
 cannot-run-on-self: "%prefix% &cVocê não pode usar esse comando em sí mesmo!"
 upload-log: "%prefix% &fRegistro enviado para: %url%"
@@ -69,9 +69,9 @@ help:
     - "/grim history <player> [página] &f- &7Mostra alertas anteriores do jogador"
     - "&7======================"
 
-grim-history-load-failure: "%prefix% &cO subsistema de histórico falhou ao carregar! Verifique o console do servidor por erros."
-grim-history-disabled: "%prefix% &cO subsistema de histórico está desativado!"
+jester-history-load-failure: "%prefix% &cO subsistema de histórico falhou ao carregar! Verifique o console do servidor por erros."
+jester-history-disabled: "%prefix% &cO subsistema de histórico está desativado!"
 # Valid placeholders: %prefix% %player% %page% %maxPages%
-grim-history-header: "%prefix% &bMostrando logs de &f%player% (&f%page%&b/&f%maxPages%&f)"
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: "%prefix% &8[&f%server%&8] &bFalhou &f%check% (x&c%vl%&f) &7%verbose% (&bhá %timeago%&7)"
+jester-history-header: "%prefix% &bMostrando logs de &f%player% (&f%page%&b/&f%maxPages%&f)"
+# Valid placeholders: %prefix% %jester_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+jester-history-entry: "%prefix% &8[&f%server%&8] &bFalhou &f%check% (x&c%vl%&f) &7%verbose% (&bhá %timeago%&7)"

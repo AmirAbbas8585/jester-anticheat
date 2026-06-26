@@ -16,7 +16,7 @@ public class JesterHelp implements BuildableCommand {
         commandManager.command(
                 commandManager.commandBuilder("jester", "jac")
                         .literal("help", Description.of("Display help information"))
-                        .permission("grim.help")
+                        .permission("jester.help")
                         .handler(this::handleHelp)
         );
     }

@@ -3,8 +3,8 @@ import versioning.BuildConfig
 
 plugins {
     `maven-publish`
-    grim.`base-conventions`
-    grim.`shadow-conventions`
+    jester.`base-conventions`
+    jester.`shadow-conventions`
     id("de.eldoria.plugin-yml.bukkit") version "0.8.0"
     id("xyz.jpenilla.run-paper") version "3.0.0-beta.1"
 }
@@ -106,73 +106,6 @@ bukkit {
     )
 
     permissions {
-        register("grim.alerts") {
-            description = "Receive alerts for violations"
-            default = Permission.Default.OP
-        }
-
-        register("grim.alerts.enable-on-join") {
-            description = "Enable alerts on join"
-            default = Permission.Default.OP
-        }
-
-        register("grim.performance") {
-            description = "Check performance metrics"
-            default = Permission.Default.OP
-        }
-
-        register("grim.profile") {
-            description = "Check user profile"
-            default = Permission.Default.OP
-        }
-
-        register("grim.brand") {
-            description = "Show client brands on join"
-            default = Permission.Default.OP
-        }
-
-        register("grim.brand.enable-on-join") {
-            description = "Enable showing client brands on join"
-            default = Permission.Default.OP
-        }
-
-        register("grim.sendalert") {
-            description = "Send cheater alert"
-            default = Permission.Default.OP
-        }
-
-        register("grim.nosetback") {
-            description = "Disable setback"
-            default = Permission.Default.FALSE
-        }
-
-        register("grim.nomodifypacket") {
-            description = "Disable modifying packets"
-            default = Permission.Default.FALSE
-        }
-
-        register("grim.exempt") {
-            description = "Exempt from all checks"
-            default = Permission.Default.FALSE
-        }
-
-        register("grim.verbose") {
-            description = "Receive verbose alerts for violations"
-            default = Permission.Default.OP
-        }
-
-        register("grim.verbose.enable-on-join") {
-            description =
-                "Enable verbose alerts on join"
-            default = Permission.Default.FALSE
-        }
-
-        register("grim.list") {
-            description =
-                "Shows lists of specific data"
-            default = Permission.Default.FALSE
-        }
-
         register("jester.violations") {
             description = "View per-check violation breakdown for a player"
             default = Permission.Default.OP

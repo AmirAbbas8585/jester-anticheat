@@ -75,11 +75,11 @@ public class Check extends GrimProcessor implements AbstractCheck {
         // permissions is OP — without it every OP was silently exempt from
         // every check (no flags, no alerts)
         exemptPermission = player.platformPlayer.hasPermission("jester.exempt." + id, false)
-                || player.platformPlayer.hasPermission("grim.exempt." + id, false);
+                || player.platformPlayer.hasPermission("jester.exempt." + id, false);
         noSetbackPermission = player.platformPlayer.hasPermission("jester.nosetback." + id, false)
-                || player.platformPlayer.hasPermission("grim.nosetback." + id, false);
+                || player.platformPlayer.hasPermission("jester.nosetback." + id, false);
         noModifyPacketPermission = player.platformPlayer.hasPermission("jester.nomodifypacket." + id, false)
-                || player.platformPlayer.hasPermission("grim.nomodifypacket." + id, false);
+                || player.platformPlayer.hasPermission("jester.nomodifypacket." + id, false);
     }
 
     public final boolean flagAndAlert(String verbose) {

@@ -15,7 +15,7 @@ reload-failed: "%prefix% &cFailed to reload config."
 player-not-found: "%prefix% &cИгрок исключен или находится вне сети!"
 player-not-this-server: "%prefix% &cИгрок не находится на этом сервере!"
 sender-not-found: "%prefix% &cВы не можете использовать эту команду, если у вас есть исключение!"
-spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"/grim stopspectating\">\n%prefix% &fНажмите здесь, чтобы вернуться на предыдущее место\n</hover></click>"
+spectate-return: "<click:run_command:/jester stopspectating><hover:show_text:\"/jester stopspectating\">\n%prefix% &fНажмите здесь, чтобы вернуться на предыдущее место\n</hover></click>"
 cannot-spectate-return: "%prefix% &cВы можете сделать это только после наблюдения за игроком"
 cannot-run-on-self: "%prefix% &cВы не можете использовать эту команду на себе!"
 upload-log: "%prefix% &fОтладка была загружена на: %url%"
@@ -71,9 +71,9 @@ help:
     - "/grim history <player> [страница] &f- &7Показывает предыдущие предупреждения игрока"
     - "&7======================"
 
-grim-history-load-failure: "%prefix% &cНе удалось загрузить подсистему истории! Проверьте консоль сервера на наличие ошибок."
-grim-history-disabled: "%prefix% &cПодсистема истории отключена!"
+jester-history-load-failure: "%prefix% &cНе удалось загрузить подсистему истории! Проверьте консоль сервера на наличие ошибок."
+jester-history-disabled: "%prefix% &cПодсистема истории отключена!"
 # Valid placeholders: %prefix% %player% %page% %maxPages%
-grim-history-header: "%prefix% &bПоказ журналов для &f%player% (&f%page%&b/&f%maxPages%&f)"
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: "%prefix% &8[&f%server%&8] &bПровалено &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% назад&7)"
+jester-history-header: "%prefix% &bПоказ журналов для &f%player% (&f%page%&b/&f%maxPages%&f)"
+# Valid placeholders: %prefix% %jester_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+jester-history-entry: "%prefix% &8[&f%server%&8] &bПровалено &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% назад&7)"

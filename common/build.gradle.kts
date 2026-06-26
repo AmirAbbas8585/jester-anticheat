@@ -2,7 +2,7 @@
 
 plugins {
     `maven-publish`
-    grim.`base-conventions`
+    jester.`base-conventions`
 }
 
 repositories {

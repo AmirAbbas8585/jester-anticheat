@@ -14,7 +14,7 @@ public interface PermissionRegistrationManager {
      * making it available for autocomplete immediately on startup.
      *
      * <p>Registering permissions on startup is important for ensuring that
-     * dynamic permissions (e.g., check-specific permissions like "grim.exempt.checkname")
+     * dynamic permissions (e.g., check-specific permissions like "jester.exempt.checkname")
      * are available for autocomplete before Grim attempts to use them. This is
      * particularly useful for command systems and permission management plugins
      * that rely on registered permissions for autocomplete functionality.</p>

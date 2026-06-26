@@ -99,7 +99,7 @@ public final class AlertManagerImpl implements AlertManager, ConfigReloadable, S
 
         if (!(user instanceof GrimPlayer grimPlayer)) {
             // Throw a specific exception if the type is wrong
-            throw new IllegalArgumentException("AlertManager action called with non-GrimPlayer user: " + user.getName());
+            throw new IllegalArgumentException("AlertManager action called with non-player user: " + user.getName());
         }
 
         PlatformPlayer platformPlayer = grimPlayer.platformPlayer;

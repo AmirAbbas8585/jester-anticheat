@@ -59,7 +59,7 @@ public class JesterDump implements BuildableCommand {
         // versions
         JsonObject versions = new JsonObject();
         base.add("versions", versions);
-        versions.addProperty("grim", GrimAPI.INSTANCE.getExternalAPI().getGrimVersion());
+        versions.addProperty("engine", GrimAPI.INSTANCE.getExternalAPI().getGrimVersion());
         versions.addProperty("packetevents", PacketEvents.getAPI().getVersion().toString());
         versions.addProperty("server", PacketEvents.getAPI().getServerManager().getVersion().getReleaseName());
         versions.addProperty("implementation", GrimAPI.INSTANCE.getPlatformServer().getPlatformImplementationString());

@@ -57,7 +57,7 @@ public class PacketPlayerJoinQuit extends PacketListenerAbstract {
         if (platformPlayer.hasPermission("jester.brand", false)) {
             GrimAPI.INSTANCE.getAlertManager().toggleBrands(platformPlayer, platformPlayer.hasPermission("jester.brand.silent", false));
         }
-        if (platformPlayer.hasPermission("grim.spectate") && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("spectators.hide-regardless", false)) {
+        if (platformPlayer.hasPermission("jester.spectate") && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("spectators.hide-regardless", false)) {
             GrimAPI.INSTANCE.getSpectateManager().onLogin(platformPlayer.getUniqueId());
         }
     }

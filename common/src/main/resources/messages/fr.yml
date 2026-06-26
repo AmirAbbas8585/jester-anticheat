@@ -15,7 +15,7 @@ reload-failed: "%prefix% &cFailed to reload config."
 player-not-found: "%prefix% &cPlayer est ignoré ou hors ligne !"
 player-not-this-server: "%prefix% &cPlayer n'est pas sur ce serveur !"
 sender-not-found: "%prefix% &cVous ne pouvez pas utiliser cette commande si vous êtes exempté !"
-spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"/grim stopspectating\">\n%prefix% &fClickez ici pour retourner à votre position d'origine\n</hover></click>"
+spectate-return: "<click:run_command:/jester stopspectating><hover:show_text:\"/jester stopspectating\">\n%prefix% &fClickez ici pour retourner à votre position d'origine\n</hover></click>"
 cannot-spectate-return: "%prefix% &cVous pouvez faire cela uniquement en étant en spectateur"
 cannot-run-on-self: "%prefix% &cVous ne pouvez pas utiliser cette commande sur vous-même !"
 upload-log: "%prefix% &fLe fichier de débogage a été téléversé vers : %url%"
@@ -71,9 +71,9 @@ help:
     - "/grim history <player> [page] &f- &7Affiche les alertes précédentes du joueur"
     - "&7======================"
 
-grim-history-load-failure: "%prefix% &cLe sous-système d'historique n'a pas pu être chargé ! Vérifiez la console du serveur pour les erreurs."
-grim-history-disabled: "%prefix% &cLe sous‑système d’historique est désactivé!"
+jester-history-load-failure: "%prefix% &cLe sous-système d'historique n'a pas pu être chargé ! Vérifiez la console du serveur pour les erreurs."
+jester-history-disabled: "%prefix% &cLe sous‑système d’historique est désactivé!"
 # Valid placeholders: %prefix% %player% %page% %maxPages%
-grim-history-header: "%prefix% &bAffichage des journaux pour &f%player% (&f%page%&b/&f%maxPages%&f)"
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: "%prefix% &8[&f%server%&8] &bÉchec &f%check% (x&c%vl%&f) &7%verbose% (&bil y a %timeago%&7)"
+jester-history-header: "%prefix% &bAffichage des journaux pour &f%player% (&f%page%&b/&f%maxPages%&f)"
+# Valid placeholders: %prefix% %jester_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+jester-history-entry: "%prefix% &8[&f%server%&8] &bÉchec &f%check% (x&c%vl%&f) &7%verbose% (&bil y a %timeago%&7)"

@@ -13,7 +13,7 @@ public record CommandRegister(CommandService service) implements StartableInitab
             }
         } catch (Throwable t) {
             // This is the ultimate safety net. If command registration fails, Grim keeps running.
-            LogUtil.error("Failed to register commands! Grim will run without command support.", t);
+            LogUtil.error("Failed to register commands! Jester will run without command support.", t);
         }
     }
 }

@@ -7,8 +7,8 @@ import static ac.jester.anticheat.utils.common.arguments.ArgumentUtils.string;
 
 public class CommonGrimArguments {
 
-    private final static SystemArgumentFactory FACTORY = SystemArgumentFactory.Builder.of("Grim")
-            .optionModifier(builder -> builder.key("Grim" + builder.options().getKey()))
+    private final static SystemArgumentFactory FACTORY = SystemArgumentFactory.Builder.of("Jester")
+            .optionModifier(builder -> builder.key("Jester" + builder.options().getKey()))
             .supportEnv()
             .build();
 
