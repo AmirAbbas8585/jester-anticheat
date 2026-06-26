@@ -561,9 +561,9 @@ public class CheckManager {
         inited = true;
 
         final String[] permissions = {
-                "grim.exempt.",
-                "grim.nosetback.",
-                "grim.nomodifypacket.",
+                "jester.exempt.",
+                "jester.nosetback.",
+                "jester.nomodifypacket.",
         };
 
         for (final AbstractCheck check : allChecks.values()) {

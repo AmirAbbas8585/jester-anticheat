@@ -29,7 +29,7 @@ public class JavaVersion implements StartableInitable {
         if (version < 17) {
             LogUtil.warn("You are running an outdated Java version, please update it to at least Java 17 (your version is " + javaVersion + ").");
             LogUtil.warn("JesterAC will no longer support this version of Java in a future release.");
-            LogUtil.warn("See https://github.com/GrimAnticheat/Grim/wiki/Updating-to-Java-17 for more information.");
+            LogUtil.warn("Please update your server's Java version for full support.");
         }
     }
 }

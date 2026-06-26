@@ -15,7 +15,7 @@ reload-failed: "%prefix% &cFailed to reload config."
 player-not-found: "%prefix% &cSpeler is vrijgesteld of offline!"
 player-not-this-server: "%prefix% &cSpeler is niet op deze server!"
 sender-not-found: "%prefix% &cJe kunt dit commando niet gebruiken als je vrijgesteld bent!"
-spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"/grim stopspectating\">\n%prefix% &fKlik hier om terug te keren naar de vorige locatie\n</hover></click>"
+spectate-return: "<click:run_command:/jester stopspectating><hover:show_text:\"/jester stopspectating\">\n%prefix% &fKlik hier om terug te keren naar de vorige locatie\n</hover></click>"
 cannot-spectate-return: "%prefix% &cJe kunt dit alleen doen nadat je een speler hebt bekeken"
 cannot-run-on-self: "%prefix% &cJe kunt dit commando niet op jezelf gebruiken!"
 upload-log: "%prefix% &fDebug geüpload naar: %url%"
@@ -71,9 +71,9 @@ help:
     - "/grim history <player> [pagina] &f- &7Toont eerdere waarschuwingen voor de speler"
     - "&7======================"
 
-grim-history-load-failure: "%prefix% &cGeschiedenissubsysteem kon niet worden geladen! Controleer de serverconsole op fouten."
-grim-history-disabled: "%prefix% &cHet geschiedenissubsysteem is uitgeschakeld!"
+jester-history-load-failure: "%prefix% &cGeschiedenissubsysteem kon niet worden geladen! Controleer de serverconsole op fouten."
+jester-history-disabled: "%prefix% &cHet geschiedenissubsysteem is uitgeschakeld!"
 # Valid placeholders: %prefix% %player% %page% %maxPages%
-grim-history-header: "%prefix% &bLogbestanden tonen voor &f%player% (&f%page%&b/&f%maxPages%&f)"
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: "%prefix% &8[&f%server%&8] &bMislukt &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% geleden&7)"
+jester-history-header: "%prefix% &bLogbestanden tonen voor &f%player% (&f%page%&b/&f%maxPages%&f)"
+# Valid placeholders: %prefix% %jester_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+jester-history-entry: "%prefix% &8[&f%server%&8] &bMislukt &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% geleden&7)"

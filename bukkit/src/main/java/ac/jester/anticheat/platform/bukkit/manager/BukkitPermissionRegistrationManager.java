@@ -10,7 +10,7 @@ public class BukkitPermissionRegistrationManager implements PermissionRegistrati
     /**
      * Registers a permission with the specified default value on Bukkit.
      * This method is only called for dynamic permissions (e.g., check-specific permissions
-     * like "grim.exempt.checkname") that are generated at runtime. Most other static permissions
+     * like "jester.exempt.checkname") that are generated at runtime. Most other static permissions
      * (e.g., "jester.exempt", "jester.alerts.enable-on-join") are registered with their defaults
      * in the `plugin.yml` file, which is defined in the Bukkit Gradle build script.
      *
@@ -18,7 +18,7 @@ public class BukkitPermissionRegistrationManager implements PermissionRegistrati
      * and permission checks immediately on startup. If the permission already exists, its default
      * value is updated to match the specified value.</p>
      *
-     * @param name         The permission node to register (e.g., "grim.exempt.checkname").
+     * @param name         The permission node to register (e.g., "jester.exempt.checkname").
      * @param defaultValue The default value for the permission.
      */
     @Override

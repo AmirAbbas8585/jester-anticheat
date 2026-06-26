@@ -21,7 +21,7 @@ public class BaseConfigManager {
     @Getter
     private boolean printAlertsToConsole = false;
     @Getter
-    private String prefix = "&bGrim &8»";
+    private String prefix = "&#c19a6bᴊᴇꜱᴛᴇʀ &8»";
     @Getter
     private String disconnectTimeout;
     @Getter
@@ -55,7 +55,7 @@ public class BaseConfigManager {
         }
 
         printAlertsToConsole = config.getBooleanElse("alerts.print-to-console", true);
-        prefix = config.getStringElse("prefix", "&bGrim &8»");
+        prefix = config.getStringElse("prefix", "&#c19a6bᴊᴇꜱᴛᴇʀ &8»");
 
         disconnectTimeout = config.getStringElse("disconnect.timeout", "<lang:disconnect.timeout>");
         disconnectClosed = config.getStringElse("disconnect.closed", "<lang:disconnect.timeout>");

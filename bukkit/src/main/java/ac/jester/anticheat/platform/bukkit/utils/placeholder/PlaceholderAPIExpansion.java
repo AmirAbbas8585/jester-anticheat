@@ -41,7 +41,7 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
         Set<String> variableReplacements = GrimAPI.INSTANCE.getExternalAPI().getVariableReplacements().keySet();
         ArrayList<String> placeholders = new ArrayList<>(staticReplacements.size() + variableReplacements.size());
         for (String s : staticReplacements) {
-            placeholders.add(s.equals("%grim_version%") ? "%jester_version%" : "%jester_" + s.replaceAll("%", "") + "%");
+            placeholders.add(s.equals("%jester_version%") ? "%jester_version%" : "%jester_" + s.replaceAll("%", "") + "%");
         }
         for (String s : variableReplacements) {
             placeholders.add(s.equals("%player%") ? "%jester_player%" : "%jester_player_" + s.replaceAll("%", "") + "%");
@@ -52,7 +52,7 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
     @Override
     public String onRequest(OfflinePlayer offlinePlayer, @NotNull String params) {
         for (Map.Entry<String, String> entry : GrimAPI.INSTANCE.getExternalAPI().getStaticReplacements().entrySet()) {
-            String key = entry.getKey().equals("%grim_version%")
+            String key = entry.getKey().equals("%jester_version%")
                     ? "version"
                     : entry.getKey().replaceAll("%", "");
             if (params.equalsIgnoreCase(key)) {

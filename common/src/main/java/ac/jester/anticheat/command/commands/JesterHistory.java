@@ -23,7 +23,7 @@ public class JesterHistory implements BuildableCommand {
         commandManager.command(
                 commandManager.commandBuilder("jester", "jac")
                         .literal("history", "hist")
-                        .permission("grim.help")
+                        .permission("jester.help")
                         .required("target", StringParser.stringParser(), adapter.onlinePlayerSuggestions())
                         .optional("page", IntegerParser.integerParser())
                         .permission("jester.history")
@@ -38,13 +38,13 @@ public class JesterHistory implements BuildableCommand {
 
         if (!GrimAPI.INSTANCE.getViolationDatabaseManager().isEnabled()) {
             String msg = GrimAPI.INSTANCE.getConfigManager().getConfig()
-                    .getStringElse("grim-history-disabled",
+                    .getStringElse("jester-history-disabled",
                             "%prefix% &cHistory subsystem is disabled!");
             sender.sendMessage(MessageUtil.miniMessage(msg));
             return;
         } else if (!GrimAPI.INSTANCE.getViolationDatabaseManager().isLoaded()) {
             String msg = GrimAPI.INSTANCE.getConfigManager().getConfig()
-                    .getStringElse("grim-history-load-failure",
+                    .getStringElse("jester-history-load-failure",
                             "%prefix% &cHistory subsystem failed to load! Check server console for errors.");
             sender.sendMessage(MessageUtil.miniMessage(msg));
             return;
@@ -52,9 +52,9 @@ public class JesterHistory implements BuildableCommand {
 
         GrimAPI.INSTANCE.getScheduler().getAsyncScheduler().runNow(GrimAPI.INSTANCE.getGrimPlugin(), () -> {
             int entriesPerPage = GrimAPI.INSTANCE.getConfigManager().getConfig().getIntElse("history.entries-per-page", 15);
-            String header = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringElse("grim-history-header",
+            String header = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringElse("jester-history-header",
                     "%prefix% &bShowing logs for &f%player% (&f%page%&b/&f%maxPages%&f)");
-            String logFormat = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringElse("grim-history-entry",
+            String logFormat = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringElse("jester-history-entry",
                     "%prefix% &8[&f%server%&8] &bFailed &f%check% (x&c%vl%&f) &7%verbose% (&b%timeago% ago&7)");
 
             OfflinePlatformPlayer targetPlayer = GrimAPI.INSTANCE.getPlatformPlayerFactory().getOfflineFromName(target);
@@ -74,7 +74,7 @@ public class JesterHistory implements BuildableCommand {
                 Violation log = logs.get(i);
                 sender.sendMessage(MessageUtil.miniMessage(MessageUtil.replacePlaceholders(sender, logFormat
                         .replace("%player%", targetPlayer.getName())
-                        .replace("%grim_version%", log.JesterVersion())
+                        .replace("%jester_version%", log.JesterVersion())
                         .replace("%client_brand%", log.clientBrand())
                         .replace("%client_version%", log.clientVersion())
                         .replace("%server_version%", log.serverVersion())

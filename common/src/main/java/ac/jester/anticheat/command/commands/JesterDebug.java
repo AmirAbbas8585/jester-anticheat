@@ -33,7 +33,7 @@ public class JesterDebug implements BuildableCommand {
         // Register "consoledebug" subcommand
         Command.Builder<Sender> consoleDebugCommand = grimCommand
                 .literal("consoledebug", Description.of("Toggle console debug output for a player"))
-                .permission("grim.consoledebug")
+                .permission("jester.consoledebug")
                 .required("target", adapter.singlePlayerSelectorParser())
                 .handler(this::handleConsoleDebug);
 

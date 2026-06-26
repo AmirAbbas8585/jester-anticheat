@@ -16,7 +16,7 @@ reload-failed: '%prefix% &cFailed to reload config.'
 player-not-found: '%prefix% &cPlayer is exempt or offline!'
 player-not-this-server: '%prefix% &cPlayer is not on this server!'
 sender-not-found: '%prefix% &cYou cannot be exempt to use this command!'
-spectate-return: '<click:run_command:/grim stopspectating><hover:show_text:"/grim stopspectating">%prefix% &#c19a6bClick here to return to your previous location</hover></click>'
+spectate-return: '<click:run_command:/jester stopspectating><hover:show_text:"/jester stopspectating">%prefix% &#c19a6bClick here to return to your previous location</hover></click>'
 cannot-spectate-return: '%prefix% &cYou can only do this after spectating a player'
 cannot-run-on-self: '%prefix% &cYou cannot use this command on yourself!'
 upload-log: '%prefix% &fUploaded debug log to: &#c19a6b%url%'
@@ -68,9 +68,9 @@ help:
     - '&#c19a6b/jester history <player> [page] &8— &7Violation history'
     - '&8&m                                        '
 
-grim-history-load-failure: '%prefix% &cHistory subsystem failed to load! Check console for errors.'
-grim-history-disabled: '%prefix% &cHistory subsystem is disabled!'
+jester-history-load-failure: '%prefix% &cHistory subsystem failed to load! Check console for errors.'
+jester-history-disabled: '%prefix% &cHistory subsystem is disabled!'
 # Valid placeholders: %prefix% %player% %page% %maxPages%
-grim-history-header: '%prefix% &7Showing logs for &#c19a6b%player% &8(&#c19a6b%page%&8/&#c19a6b%maxPages%&8)'
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: '%prefix% &8[&f%server%&8] &7failed &#c19a6b%check% &8(&#c19a6bx%vl%&8) &7%verbose% &8(&#c19a6b%timeago% ago&8)'
+jester-history-header: '%prefix% &7Showing logs for &#c19a6b%player% &8(&#c19a6b%page%&8/&#c19a6b%maxPages%&8)'
+# Valid placeholders: %prefix% %jester_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+jester-history-entry: '%prefix% &8[&f%server%&8] &7failed &#c19a6b%check% &8(&#c19a6bx%vl%&8) &7%verbose% &8(&#c19a6b%timeago% ago&8)'
