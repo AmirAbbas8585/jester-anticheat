@@ -58,7 +58,6 @@ public class CloudCommandService implements CommandService {
         new JesterDebug().register(commandManager, commandAdapter);
         new JesterAlerts().register(commandManager, commandAdapter);
         new JesterProfile().register(commandManager, commandAdapter);
-        new JesterSendAlert().register(commandManager, commandAdapter);
         new JesterHelp().register(commandManager, commandAdapter);
         new JesterHistory().register(commandManager, commandAdapter);
         new JesterReload().register(commandManager, commandAdapter);

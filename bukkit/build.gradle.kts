@@ -187,11 +187,6 @@ bukkit {
             default = Permission.Default.OP
         }
 
-        register("jester.sendalert") {
-            description = "Manually send a cheater alert"
-            default = Permission.Default.OP
-        }
-
         register("jester.setback") {
             description = "Manually setback a player"
             default = Permission.Default.OP
@@ -305,7 +300,10 @@ val proguardJar = tasks.register<proguard.gradle.ProGuardTask>("proguardJar") {
     val shadow = tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar")
     dependsOn(shadow)
 
-    injars(shadow.flatMap { it.archiveFile })
+    // Strip the own-server-only region AFK feature from the public obf jar.
+    // (JesterAntiCheatPlugin tolerates the class being absent at runtime.)
+    injars(mapOf("filter" to "!ac/jester/anticheat/platform/bukkit/afk/**"),
+            shadow.flatMap { it.archiveFile })
     val obfName = "${rootProject.name}-${project.name}-${rootProject.version}-obf.jar"
     outjars(layout.buildDirectory.file("libs/$obfName"))
 

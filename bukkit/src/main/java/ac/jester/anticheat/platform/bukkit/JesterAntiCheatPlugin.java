@@ -107,9 +107,15 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
         Bukkit.getPluginManager().registerEvents(
                 new ac.jester.anticheat.platform.bukkit.listeners.FreezeListener(), this);
 
-        // Region-scoped AFK enforcement (starts after hooks so WorldGuard is ready)
-        afkManager = new ac.jester.anticheat.platform.bukkit.afk.AfkManager(this);
-        afkManager.start();
+        // Region-scoped AFK enforcement (own-server build only). This feature is
+        // stripped from the obfuscated public jar, so its class may be absent —
+        // tolerate that and run without it instead of crashing on enable.
+        try {
+            afkManager = new ac.jester.anticheat.platform.bukkit.afk.AfkManager(this);
+            afkManager.start();
+        } catch (Throwable absentOrFailed) {
+            afkManager = null;
+        }
 
         // Violation log GUI (/jester logs <player>)
         ac.jester.anticheat.platform.bukkit.gui.ViolationLogGui logGui =
@@ -130,10 +136,6 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
         if (afkManager != null) afkManager.stop();
         HookManager.disable();
         GrimAPI.INSTANCE.stop();
-    }
-
-    public ac.jester.anticheat.platform.bukkit.afk.AfkManager getAfkManager() {
-        return afkManager;
     }
 
     @Override
