@@ -104,6 +104,22 @@ public class OffsetHandler extends Check implements PostPredictionCheck {
             return;
         }
 
+        // Just entered/left a vehicle (boat/horse/minecart) or was teleported in
+        // the last few ticks (server /tp, a setback, a plugin warp/portal). Both
+        // move the player's real position out from under the prediction while it
+        // resettles — a well-known transient false-flag source (boats on
+        // ViaBackwards were reported in real logs). The engine already adds
+        // uncertainty for these, but a residual one-tick offset can still slip
+        // past the threshold, so decay and skip outright like the other
+        // transient states above. These windows are only a handful of ticks, so
+        // a real sustained fly/speed hack is unaffected.
+        if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(4)
+                || player.uncertaintyHandler.lastTeleportTicks.hasOccurredSince(2)) {
+            advantageGained *= setbackDecayMultiplier;
+            removeOffsetLenience();
+            return;
+        }
+
         // While sneaking (vanilla shift), movement is slow and the prediction is
         // noticeably noisier near block edges — especially on ViaBackwards/1.8
         // clients whose sneak movement differs. A speed/fly cheat is pointless at
