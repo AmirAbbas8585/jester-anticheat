@@ -309,7 +309,7 @@ val proguardJar = tasks.register<proguard.gradle.ProGuardTask>("proguardJar") {
     // (JesterAntiCheatPlugin tolerates the class being absent at runtime.)
     injars(mapOf("filter" to "!ac/jester/anticheat/platform/bukkit/afk/**"),
             shadow.flatMap { it.archiveFile })
-    val obfName = "${rootProject.name}-${project.name}-${rootProject.version}-obf.jar"
+    val obfName = "${rootProject.name}-${rootProject.version}-obf.jar"
     outjars(layout.buildDirectory.file("libs/$obfName"))
 
     // The JDK itself as library references (modules our code + deps touch).

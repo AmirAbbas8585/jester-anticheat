@@ -16,7 +16,8 @@ BuildConfig.init(project)
 
 val baseVersion = "0.0.1"
 group = "ac.jester.anticheat"
-version = VersionUtil.computeVersion(baseVersion)
+// Clean, fixed version label for the beta (no git/lite build suffixes).
+version = "$baseVersion-beta"
 description = "Jester Anti Cheat - Advanced Minecraft Anti-Cheat."
 
 ext["timestamp"] = System.currentTimeMillis().toString()
