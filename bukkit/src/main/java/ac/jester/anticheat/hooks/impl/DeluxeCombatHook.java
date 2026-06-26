@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * actually wired to anything — no listener ever called the former, and no
  * check ever consulted the latter, so this "tolerance" never did anything
  * despite the config explicitly claiming it was active. Real logs showed
- * Simulation false-flagging with large (~0.14-0.33), isolated, one-off offset
+ * MovementA false-flagging with large (~0.14-0.33), isolated, one-off offset
  * spikes — consistent with a non-vanilla knockback velocity the general
  * movement predictor (unlike AntiKB, which reads the actual sent packet
  * directly) doesn't fully account for. Listening for EntityDamageEvent on the

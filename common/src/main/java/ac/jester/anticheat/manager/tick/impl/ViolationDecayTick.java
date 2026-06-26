@@ -9,7 +9,7 @@ import ac.jester.anticheat.player.GrimPlayer;
 // Check.violations is only ever incremented by flag() — nothing was calling
 // Check.reward() (which subtracts each check's own `decay` value, configured
 // per-check) except one unrelated VehicleC path. That meant every check's VL
-// (Timer, TimerLimit, Simulation, RotationPlace, AutoParkour, ...) silently
+// (Timer, PacketLimit, MovementA, RotationPlace, AutoParkour, ...) silently
 // accumulated for the player's whole session and never came back down: a
 // handful of harmless blips spread over an hour (a lag spike, a half-block
 // edge, an alt-tab freeze) would eventually cross max-violations and kick,

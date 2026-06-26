@@ -38,7 +38,7 @@ public final class BukkitExemptionProvider extends ExemptionProvider {
     // ticks after standing up false flag movement checks. 1.5s wasn't always
     // enough for the prediction engine's bounding box to fully resettle before
     // the player's first post-stand-up jump, which has now also been fixed at
-    // the OffsetHandler level (see Simulation.advantageGained reset), but keep
+    // the OffsetHandler level (see MovementA.advantageGained reset), but keep
     // this generously long since it's cheap and other checks rely on it too.
     private static final long STAND_UP_GRACE_MS = 3000L;
     private final Map<UUID, Long> lastSeated = new ConcurrentHashMap<>();

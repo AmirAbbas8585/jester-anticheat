@@ -299,7 +299,7 @@ public class CheckManager {
         prePredictionChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
                 .put(Timer.class, new Timer(player))
                 .put(TickTimer.class, new TickTimer(player))
-                .put(TimerLimit.class, new TimerLimit(player))
+                .put(PacketLimit.class, new PacketLimit(player))
                 .put(CrashA.class, new CrashA(player))
                 .put(CrashC.class, new CrashC(player))
                 .put(VehicleTimer.class, new VehicleTimer(player))

@@ -45,7 +45,7 @@ public abstract class ExemptionProvider {
     /**
      * True if the player took combat damage (vanilla or plugin-applied, e.g.
      * DeluxeCombat's custom knockback) in the last ~500ms. The general movement
-     * predictor (Simulation) can mispredict for a tick or two right after a
+     * predictor (MovementA) can mispredict for a tick or two right after a
      * non-trivial velocity change — not an exploit, just a hard-to-predict
      * physics moment.
      */

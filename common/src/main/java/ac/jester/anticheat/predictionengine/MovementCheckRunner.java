@@ -401,7 +401,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             // un-gated version could mark bouncy-block uncertainty just from the
             // expanded search box brushing the side of an adjacent bed, which is
             // exactly the kind of bed-collision mismatch our own bed-threshold
-            // workaround (Simulation.bed-threshold) was band-aiding around.
+            // workaround (MovementA.bed-threshold) was band-aiding around.
             if (BlockTags.BEDS.contains(data.getType()) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_12)
                     && Math.abs((pair.second().getY() + 0.5625D) - player.y) <= player.getMovementThreshold()) {
                 player.uncertaintyHandler.isSteppingOnBouncyBlock = true;
