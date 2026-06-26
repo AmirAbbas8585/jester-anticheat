@@ -42,7 +42,7 @@ public final class ConfigMigrator {
     }
 
     /**
-     * @param userFile     e.g. plugins/SkyAntiCheat/config.yml
+     * @param userFile     e.g. plugins/JesterAntiCheat/config.yml
      * @param resourcePath bundled default, e.g. "config/en.yml"
      */
     public static void migrate(File userFile, String resourcePath) {

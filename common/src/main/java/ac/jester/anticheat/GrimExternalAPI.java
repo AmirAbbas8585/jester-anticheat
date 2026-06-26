@@ -186,12 +186,12 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
         }
         // Update variables
         updateVariables();
-        // SkyAC per-check settings (max-violations, punishable, punishment-commands,
-        // enabled, ...) are cached in SkyCheckConfig and were previously only ever
-        // loaded once at plugin start — /skyac reload silently did nothing for any
+        // JesterAC per-check settings (max-violations, punishable, punishment-commands,
+        // enabled, ...) are cached in JesterCheckConfig and were previously only ever
+        // loaded once at plugin start — /jester reload silently did nothing for any
         // of them (only raw threshold fields read directly by each Check.onReload
         // were live). Clear that cache here so every reload actually takes effect.
-        ac.jester.anticheat.manager.SkyCheckConfig.reloadGlobals(configManager);
+        ac.jester.anticheat.manager.JesterCheckConfig.reloadGlobals(configManager);
         // Database connection (type/host/credentials) was previously only ever
         // read once at plugin start — changing database.type in config.yml and
         // reloading silently kept writing to the OLD database until a full

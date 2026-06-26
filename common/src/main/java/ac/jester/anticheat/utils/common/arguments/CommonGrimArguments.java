@@ -18,7 +18,7 @@ public class CommonGrimArguments {
     public final static SystemArgument<Platform> PLATFORM_OVERRIDE = FACTORY.create(platform("PlatformOverride"));
 
     /**
-     * Enables "Fast Bypass" mode for chat messages sent by SkyAC.
+     * Enables "Fast Bypass" mode for chat messages sent by JesterAC.
      * <p>
      * <b>BENEFIT:</b> Messages are sent directly as packets, significantly improving
      * performance and reducing server overhead especially when lots of alerts are being sent.

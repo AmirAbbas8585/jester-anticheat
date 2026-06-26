@@ -19,12 +19,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MySQL/SQLite database manager for SkyAntiCheat.
+ * MySQL/SQLite database manager for JesterAntiCheat.
  *
  * Stores:
- *   - skyac_violations   : per-player per-check violation history
- *   - skyac_punishments  : punishment log (what command, when, what check)
- *   - skyac_profiles     : player profiles (UUID, username, client version, brand)
+ *   - jester_violations   : per-player per-check violation history
+ *   - jester_punishments  : punishment log (what command, when, what check)
+ *   - jester_profiles     : player profiles (UUID, username, client version, brand)
  *
  * All DB operations are async to avoid TPS impact.
  * Uses HikariCP connection pool (already in Grim's dependencies).
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  *   type: sqlite          # or "mysql"
  *   host: localhost
  *   port: 3306
- *   database: skyac
+ *   database: jester
  *   username: root
  *   password: ''
  *   pool-size: 5
@@ -46,7 +46,7 @@ public final class DatabaseManager {
     private static HikariDataSource dataSource;
     private static final ExecutorService asyncExecutor =
             Executors.newFixedThreadPool(2, r -> {
-                Thread t = new Thread(r, "SkyAC-DB");
+                Thread t = new Thread(r, "JesterAC-DB");
                 t.setDaemon(true);
                 return t;
             });
@@ -54,14 +54,14 @@ public final class DatabaseManager {
     private static boolean enabled = false;
     private static long retentionMs;
     // Identifies which connection the current pool was built from — lets init()
-    // tell whether /skyac reload actually needs to reconnect (type/host/db/user/
+    // tell whether /jester reload actually needs to reconnect (type/host/db/user/
     // password/pool-size changed) or can leave a perfectly good pool alone.
     private static String connectionSignature = null;
     private static boolean purgeTaskScheduled = false;
 
     /**
      * Connects (or reconnects) to the database. Safe to call on every
-     * /skyac reload, not just at startup: previously this only ever ran once at
+     * /jester reload, not just at startup: previously this only ever ran once at
      * plugin start, so changing database.type (or host/credentials) in
      * config.yml and reloading silently kept talking to the OLD database until
      * a full server restart.
@@ -86,7 +86,7 @@ public final class DatabaseManager {
         String type = config.getStringElse("database.type", "sqlite");
         String host = config.getStringElse("database.host", "localhost");
         int port = config.getIntElse("database.port", 3306);
-        String db = config.getStringElse("database.database", "skyac");
+        String db = config.getStringElse("database.database", "jester");
         String user = config.getStringElse("database.username", "root");
         String pass = config.getStringElse("database.password", "");
         int poolSize = config.getIntElse("database.pool-size", 5);
@@ -102,7 +102,7 @@ public final class DatabaseManager {
         hikari.setConnectionTimeout(10_000);
         hikari.setIdleTimeout(600_000);
         hikari.setMaxLifetime(1_800_000);
-        hikari.setPoolName("SkyAC-Pool");
+        hikari.setPoolName("JesterAC-Pool");
         hikari.addDataSourceProperty("cachePrepStmts", "true");
         hikari.addDataSourceProperty("prepStmtCacheSize", "250");
 
@@ -114,7 +114,7 @@ public final class DatabaseManager {
             hikari.setDriverClassName("com.mysql.cj.jdbc.Driver");
         } else {
             // SQLite fallback — no extra dep needed on Paper
-            String path = "plugins/SkyAntiCheat/skyac.db";
+            String path = "plugins/JesterAntiCheat/jester.db";
             hikari.setJdbcUrl("jdbc:sqlite:" + path);
             hikari.setDriverClassName("org.sqlite.JDBC");
             hikari.setMaximumPoolSize(1);
@@ -173,7 +173,7 @@ public final class DatabaseManager {
         if (!enabled || dataSource == null || retentionMs <= 0) return;
         long cutoff = System.currentTimeMillis() - retentionMs;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM skyac_violations WHERE flagged_at < ?")) {
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM jester_violations WHERE flagged_at < ?")) {
             ps.setLong(1, cutoff);
             int deleted = ps.executeUpdate();
             if (deleted > 0) {
@@ -190,7 +190,7 @@ public final class DatabaseManager {
         String ai = mysql ? "AUTO_INCREMENT" : "AUTOINCREMENT";
         try (Connection conn = dataSource.getConnection()) {
             conn.createStatement().executeUpdate(
-                "CREATE TABLE IF NOT EXISTS skyac_violations (" +
+                "CREATE TABLE IF NOT EXISTS jester_violations (" +
                 "    id         INTEGER PRIMARY KEY " + ai + "," +
                 "    uuid       VARCHAR(36) NOT NULL," +
                 "    username   VARCHAR(16) NOT NULL," +
@@ -202,19 +202,19 @@ public final class DatabaseManager {
                 "    flagged_at BIGINT NOT NULL" +
                 ")");
             // Upgrade pre-existing tables that lack the newer columns
-            addColumnQuietly(conn, "ALTER TABLE skyac_violations ADD COLUMN ping INTEGER NOT NULL DEFAULT 0");
-            addColumnQuietly(conn, "ALTER TABLE skyac_violations ADD COLUMN tps DOUBLE NOT NULL DEFAULT 20");
+            addColumnQuietly(conn, "ALTER TABLE jester_violations ADD COLUMN ping INTEGER NOT NULL DEFAULT 0");
+            addColumnQuietly(conn, "ALTER TABLE jester_violations ADD COLUMN tps DOUBLE NOT NULL DEFAULT 20");
             // MySQL has no "CREATE INDEX IF NOT EXISTS" — a duplicate-index error
             // on restart is expected and harmless, so swallow it per-index
-            createIndexQuietly(conn, "CREATE INDEX idx_viol_uuid ON skyac_violations(uuid)");
-            createIndexQuietly(conn, "CREATE INDEX idx_viol_check ON skyac_violations(check_name)");
+            createIndexQuietly(conn, "CREATE INDEX idx_viol_uuid ON jester_violations(uuid)");
+            createIndexQuietly(conn, "CREATE INDEX idx_viol_check ON jester_violations(check_name)");
             // Time-range queries (website charts / recent activity)
-            createIndexQuietly(conn, "CREATE INDEX idx_viol_time ON skyac_violations(flagged_at)");
-            createIndexQuietly(conn, "CREATE INDEX idx_pun_uuid ON skyac_punishments(uuid)");
-            createIndexQuietly(conn, "CREATE INDEX idx_pun_time ON skyac_punishments(punished_at)");
+            createIndexQuietly(conn, "CREATE INDEX idx_viol_time ON jester_violations(flagged_at)");
+            createIndexQuietly(conn, "CREATE INDEX idx_pun_uuid ON jester_punishments(uuid)");
+            createIndexQuietly(conn, "CREATE INDEX idx_pun_time ON jester_punishments(punished_at)");
 
             conn.createStatement().executeUpdate(
-                "CREATE TABLE IF NOT EXISTS skyac_punishments (" +
+                "CREATE TABLE IF NOT EXISTS jester_punishments (" +
                 "    id          INTEGER PRIMARY KEY " + ai + "," +
                 "    uuid        VARCHAR(36) NOT NULL," +
                 "    username    VARCHAR(16) NOT NULL," +
@@ -224,7 +224,7 @@ public final class DatabaseManager {
                 ")");
 
             conn.createStatement().executeUpdate(
-                "CREATE TABLE IF NOT EXISTS skyac_profiles (" +
+                "CREATE TABLE IF NOT EXISTS jester_profiles (" +
                 "    uuid           VARCHAR(36) PRIMARY KEY," +
                 "    username       VARCHAR(16) NOT NULL," +
                 "    client_version VARCHAR(16)," +
@@ -288,7 +288,7 @@ public final class DatabaseManager {
         CompletableFuture.runAsync(() -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
-                         "INSERT INTO skyac_violations (uuid, username, check_name, vl, verbose, ping, tps, flagged_at) VALUES (?,?,?,?,?,?,?,?)")) {
+                         "INSERT INTO jester_violations (uuid, username, check_name, vl, verbose, ping, tps, flagged_at) VALUES (?,?,?,?,?,?,?,?)")) {
                 ps.setString(1, uuid.toString());
                 ps.setString(2, username);
                 ps.setString(3, checkName);
@@ -310,7 +310,7 @@ public final class DatabaseManager {
         CompletableFuture.runAsync(() -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
-                         "INSERT INTO skyac_punishments (uuid, username, check_name, command, punished_at) VALUES (?,?,?,?,?)")) {
+                         "INSERT INTO jester_punishments (uuid, username, check_name, command, punished_at) VALUES (?,?,?,?,?)")) {
                 ps.setString(1, uuid.toString());
                 ps.setString(2, username);
                 ps.setString(3, checkName);
@@ -329,8 +329,8 @@ public final class DatabaseManager {
         CompletableFuture.runAsync(() -> {
             try (Connection conn = dataSource.getConnection()) {
                 String sql = isMySQL()
-                        ? "INSERT INTO skyac_profiles (uuid, username, client_version, client_brand, last_seen) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE username=?, client_version=?, client_brand=?, last_seen=?"
-                        : "INSERT OR REPLACE INTO skyac_profiles (uuid, username, client_version, client_brand, last_seen) VALUES (?,?,?,?,?)";
+                        ? "INSERT INTO jester_profiles (uuid, username, client_version, client_brand, last_seen) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE username=?, client_version=?, client_brand=?, last_seen=?"
+                        : "INSERT OR REPLACE INTO jester_profiles (uuid, username, client_version, client_brand, last_seen) VALUES (?,?,?,?,?)";
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     long now = System.currentTimeMillis();
                     ps.setString(1, uuid.toString());
@@ -381,7 +381,7 @@ public final class DatabaseManager {
             List<ViolationEntry> entries = new ArrayList<>();
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
-                         "SELECT username, check_name, vl, verbose, ping, tps, flagged_at FROM skyac_violations " +
+                         "SELECT username, check_name, vl, verbose, ping, tps, flagged_at FROM jester_violations " +
                          "WHERE username = ? ORDER BY flagged_at DESC LIMIT ? OFFSET ?")) {
                 ps.setString(1, username);
                 ps.setInt(2, limit);

@@ -8,7 +8,7 @@ import ac.jester.anticheat.manager.AlertManagerImpl;
 import ac.jester.anticheat.manager.AlertRateLimiter;
 import ac.jester.anticheat.manager.FreezeManager;
 import ac.jester.anticheat.manager.InitManager;
-import ac.jester.anticheat.manager.SkyCheckConfig;
+import ac.jester.anticheat.manager.JesterCheckConfig;
 import ac.jester.anticheat.manager.SpectateManager;
 import ac.jester.anticheat.manager.TickManager;
 import ac.jester.anticheat.manager.config.BaseConfigManager;
@@ -87,8 +87,8 @@ public final class GrimAPI {
 
     public void start() {
         checkInitialized();
-        // Load SkyAC per-check config and database
-        SkyCheckConfig.reloadGlobals(configManager.getConfig());
+        // Load JesterAC per-check config and database
+        JesterCheckConfig.reloadGlobals(configManager.getConfig());
         ac.jester.anticheat.database.DatabaseManager.init(configManager.getConfig());
         initManager.start();
     }

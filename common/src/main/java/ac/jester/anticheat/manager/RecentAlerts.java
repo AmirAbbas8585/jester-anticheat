@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Per-player circular buffer storing the last N alert entries.
- * Used by /skyac check to display recent violations without requiring the database.
+ * Used by /jester check to display recent violations without requiring the database.
  */
 public final class RecentAlerts {
 

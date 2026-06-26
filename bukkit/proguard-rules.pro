@@ -42,7 +42,7 @@
 # ── Entry points inside our own code (reflection / server contracts) ──────────
 # The Bukkit plugin main class is named in plugin.yml and instantiated by the
 # server — its name and lifecycle methods must survive.
--keep class ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin { *; }
+-keep class ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin { *; }
 
 # Bukkit dispatches events to @EventHandler methods reflectively.
 -keepclassmembers class * implements org.bukkit.event.Listener {

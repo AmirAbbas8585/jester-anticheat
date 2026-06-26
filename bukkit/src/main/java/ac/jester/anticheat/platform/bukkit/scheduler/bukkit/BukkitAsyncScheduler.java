@@ -4,7 +4,7 @@ import ac.grim.grimac.api.plugin.GrimPlugin;
 import ac.jester.anticheat.platform.api.scheduler.AsyncScheduler;
 import ac.jester.anticheat.platform.api.scheduler.PlatformScheduler;
 import ac.jester.anticheat.platform.api.scheduler.TaskHandle;
-import ac.jester.anticheat.platform.bukkit.SkyAntiCheatPlugin;
+import ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.jetbrains.annotations.NotNull;
@@ -17,13 +17,13 @@ public class BukkitAsyncScheduler implements AsyncScheduler {
 
     @Override
     public TaskHandle runNow(@NotNull GrimPlugin plugin, @NotNull Runnable task) {
-        return new BukkitTaskHandle(bukkitScheduler.runTaskAsynchronously(SkyAntiCheatPlugin.LOADER, task));
+        return new BukkitTaskHandle(bukkitScheduler.runTaskAsynchronously(JesterAntiCheatPlugin.LOADER, task));
     }
 
     @Override
     public TaskHandle runDelayed(@NotNull GrimPlugin plugin, @NotNull Runnable task, long delay, @NotNull TimeUnit timeUnit) {
         return new BukkitTaskHandle(bukkitScheduler.runTaskLaterAsynchronously(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 task,
                 PlatformScheduler.convertTimeToTicks(delay, timeUnit)
         ));
@@ -32,7 +32,7 @@ public class BukkitAsyncScheduler implements AsyncScheduler {
     @Override
     public TaskHandle runAtFixedRate(@NotNull GrimPlugin plugin, @NotNull Runnable task, long delay, long period, @NotNull TimeUnit timeUnit) {
         return new BukkitTaskHandle(bukkitScheduler.runTaskTimerAsynchronously(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 task,
                 PlatformScheduler.convertTimeToTicks(delay, timeUnit),
                 PlatformScheduler.convertTimeToTicks(period, timeUnit)
@@ -42,7 +42,7 @@ public class BukkitAsyncScheduler implements AsyncScheduler {
     @Override
     public TaskHandle runAtFixedRate(@NotNull GrimPlugin plugin, @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
         return new BukkitTaskHandle(bukkitScheduler.runTaskTimerAsynchronously(
-                SkyAntiCheatPlugin.LOADER,
+                JesterAntiCheatPlugin.LOADER,
                 task,
                 initialDelayTicks,
                 periodTicks
@@ -51,6 +51,6 @@ public class BukkitAsyncScheduler implements AsyncScheduler {
 
     @Override
     public void cancel(@NotNull GrimPlugin plugin) {
-        bukkitScheduler.cancelTasks(SkyAntiCheatPlugin.LOADER);
+        bukkitScheduler.cancelTasks(JesterAntiCheatPlugin.LOADER);
     }
 }

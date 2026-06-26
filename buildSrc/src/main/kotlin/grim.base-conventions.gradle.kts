@@ -68,7 +68,7 @@ tasks {
                 "bungee.yml",
                 "velocity-plugin.json",
                 "fabric.mod.json",
-                "SkyAntiCheat.properties"
+                "JesterAntiCheat.properties"
             )
         ) {
             expand(properties)

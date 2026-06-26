@@ -26,7 +26,7 @@ public interface PermissionRegistrationManager {
      * autocomplete immediately, improving user experience and compatibility with
      * older or less dynamic permission systems.</p>
      *
-     * @param name         The permission node to register (e.g., "skyac.exempt").
+     * @param name         The permission node to register (e.g., "jester.exempt").
      * @param defaultValue The default value for the permission, using the cross-platform
      *                     {@link PermissionDefaultValue} enum.
      */

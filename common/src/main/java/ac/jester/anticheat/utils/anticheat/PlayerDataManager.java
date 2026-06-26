@@ -41,7 +41,7 @@ public class PlayerDataManager {
         if (user.getUUID() != null) {
             // Has exempt permission
             GrimPlayer grimPlayer = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(user);
-            if (grimPlayer != null && grimPlayer.hasPermission("skyac.exempt")) {
+            if (grimPlayer != null && grimPlayer.hasPermission("jester.exempt")) {
                 exemptUsers.add(user);
                 return false;
             }

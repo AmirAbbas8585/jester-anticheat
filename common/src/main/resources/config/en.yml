@@ -8,7 +8,7 @@
 # ║     choose which command runs (kick, ban, ...).                            ║
 # ║   • Values that aren't set per-check fall back to "alert-defaults" below.  ║
 # ║   • Colours accept legacy codes (&a) and hex (&#rrggbb).                   ║
-# ║   • Edit, then run /skyac reload in-game to apply without a restart.       ║
+# ║   • Edit, then run /jester reload in-game to apply without a restart.       ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 # Shown at the start of every plugin message.
@@ -34,7 +34,7 @@ alerts:
 verbose:
     print-to-console: false
 
-# Toggle alerts on join for players with skyac.alerts permission
+# Toggle alerts on join for players with jester.alerts permission
 toggle-alerts-on-join: true
 
 # Transient-state grace: movement/timer checks don't flag during these windows
@@ -95,16 +95,16 @@ alert-defaults:
 # Database (MySQL or SQLite)
 # ─────────────────────────────────────────────────────────────────────────────
 # All violations, punishments, and player profiles are logged here — usable
-# later from a website (tables: skyac_violations, skyac_punishments,
-# skyac_profiles; each row has ping/tps/timestamp).
-# SQLite file: plugins/JesterAntiCheat/skyac.db — for website access from
+# later from a website (tables: jester_violations, jester_punishments,
+# jester_profiles; each row has ping/tps/timestamp).
+# SQLite file: plugins/JesterAntiCheat/jester.db — for website access from
 # another host, switch type to mysql.
 database:
     enabled: true
     type: sqlite          # sqlite or mysql
     host: localhost
     port: 3306
-    database: skyac
+    database: jester
     username: root
     password: ''
     pool-size: 5
@@ -1309,28 +1309,28 @@ brands-enabled: '%prefix% <white>ʙʀᴀɴᴅꜱ</white> <color:#a9c8ff>ᴇɴᴀ
 brands-disabled: '%prefix% <white>ʙʀᴀɴᴅꜱ</white> <color:#ff5348>ᴅɪꜱᴀʙʟᴇᴅ</color>'
 
 # ─────────────────────────────────────────────────────────────────────────────
-# /skyac help output — one line per entry, supports MiniMessage & legacy colors
+# /jester help output — one line per entry, supports MiniMessage & legacy colors
 # ─────────────────────────────────────────────────────────────────────────────
 help:
     - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
     - '%prefix% <color:#c19a6b><bold>ᴊᴇꜱᴛᴇʀ ᴀɴᴛɪ ᴄʜᴇᴀᴛ</bold></color> <dark_gray>—</dark_gray> <white>ᴄᴏᴍᴍᴀɴᴅ ʀᴇꜰᴇʀᴇɴᴄᴇ</white>'
     - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
-    - '%prefix% <color:#a9c8ff>/skyac alerts</color> <white>—</white> <gray>Toggle violation alerts</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac verbose</color> <white>—</white> <gray>Toggle verbose alerts</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac violations <player></color> <white>—</white> <gray>Per-check VL breakdown</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac info <player></color> <white>—</white> <gray>Detailed player state</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac cps <player></color> <white>—</white> <gray>Show click-per-second info</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac history <player></color> <white>—</white> <gray>Violation history log</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac freeze <player></color> <white>—</white> <gray>Toggle freeze on a player</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac setback <player></color> <white>—</white> <gray>Manually setback a player</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac tp <player></color> <white>—</white> <gray>Teleport to a player</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac spectate <player></color> <white>—</white> <gray>Spectate a player</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac clearviolations <player></color> <white>—</white> <gray>Clear all violations</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac stats</color> <white>—</white> <gray>Server-wide anticheat statistics</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac perf</color> <white>—</white> <gray>Performance metrics</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac reload</color> <white>—</white> <gray>Reload configuration</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac debug <player></color> <white>—</white> <gray>Toggle debug mode for player</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac list</color> <white>—</white> <gray>List tracked players</gray>'
-    - '%prefix% <color:#a9c8ff>/skyac version</color> <white>—</white> <gray>Plugin version info</gray>'
+    - '%prefix% <color:#a9c8ff>/jester alerts</color> <white>—</white> <gray>Toggle violation alerts</gray>'
+    - '%prefix% <color:#a9c8ff>/jester verbose</color> <white>—</white> <gray>Toggle verbose alerts</gray>'
+    - '%prefix% <color:#a9c8ff>/jester violations <player></color> <white>—</white> <gray>Per-check VL breakdown</gray>'
+    - '%prefix% <color:#a9c8ff>/jester info <player></color> <white>—</white> <gray>Detailed player state</gray>'
+    - '%prefix% <color:#a9c8ff>/jester cps <player></color> <white>—</white> <gray>Show click-per-second info</gray>'
+    - '%prefix% <color:#a9c8ff>/jester history <player></color> <white>—</white> <gray>Violation history log</gray>'
+    - '%prefix% <color:#a9c8ff>/jester freeze <player></color> <white>—</white> <gray>Toggle freeze on a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester setback <player></color> <white>—</white> <gray>Manually setback a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester tp <player></color> <white>—</white> <gray>Teleport to a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester spectate <player></color> <white>—</white> <gray>Spectate a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester clearviolations <player></color> <white>—</white> <gray>Clear all violations</gray>'
+    - '%prefix% <color:#a9c8ff>/jester stats</color> <white>—</white> <gray>Server-wide anticheat statistics</gray>'
+    - '%prefix% <color:#a9c8ff>/jester perf</color> <white>—</white> <gray>Performance metrics</gray>'
+    - '%prefix% <color:#a9c8ff>/jester reload</color> <white>—</white> <gray>Reload configuration</gray>'
+    - '%prefix% <color:#a9c8ff>/jester debug <player></color> <white>—</white> <gray>Toggle debug mode for player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester list</color> <white>—</white> <gray>List tracked players</gray>'
+    - '%prefix% <color:#a9c8ff>/jester version</color> <white>—</white> <gray>Plugin version info</gray>'
     - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
 
