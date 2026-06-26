@@ -1,0 +1,76 @@
+# Color codes: legacy '&' codes (&8, &f, &#c19a6b ...), '&#RRGGBB' and bare '#RRGGBB'
+# hex codes, and MiniMessage tags (<bold>, <click:...>) are all supported.
+prefix: '&#c19a6bᴀᴄ &8»'
+
+alerts-enabled: '%prefix% &fAnticheat detections have been successfully &aenabled&f.'
+alerts-disabled: '%prefix% &fAnticheat detections have been &cdisabled&f.'
+verbose-enabled: '%prefix% &fVerbose alerts have been successfully &aenabled&f.'
+verbose-disabled: '%prefix% &fVerbose alerts have been &cdisabled&f.'
+brands-enabled: '%prefix% &fClient brand alerts have been successfully &aenabled&f.'
+brands-disabled: '%prefix% &fClient brand alerts have been &cdisabled&f.'
+client-brand-format: '%prefix% &f%player% &7joined using &f%brand%'
+console-specify-target: '%prefix% &cYou must specify a target as the console!'
+reloading: '%prefix% &7Reloading config...'
+reloaded: '%prefix% &fConfig has been reloaded.'
+reload-failed: '%prefix% &cFailed to reload config.'
+player-not-found: '%prefix% &cPlayer is exempt or offline!'
+player-not-this-server: '%prefix% &cPlayer is not on this server!'
+sender-not-found: '%prefix% &cYou cannot be exempt to use this command!'
+spectate-return: '<click:run_command:/grim stopspectating><hover:show_text:"/grim stopspectating">%prefix% &#c19a6bClick here to return to your previous location</hover></click>'
+cannot-spectate-return: '%prefix% &cYou can only do this after spectating a player'
+cannot-run-on-self: '%prefix% &cYou cannot use this command on yourself!'
+upload-log: '%prefix% &fUploaded debug log to: &#c19a6b%url%'
+upload-log-start: '%prefix% &7Uploading log... please wait'
+upload-log-not-found: '%prefix% &cUnable to find that log'
+upload-log-upload-failure: '%prefix% &cSomething went wrong while uploading. See console for details.'
+disconnect:
+    timeout: "<lang:disconnect.timeout>"
+    closed: "<lang:disconnect.closed>"
+    error: "&cAn error occurred whilst processing packets. Please contact the administrators."
+    blacklisted-forge: "&cYour Forge version is blacklisted due to inbuilt reach hacks.<newline>&#c19a6bAffected versions: 1.18.2 – 1.19.3<newline><newline>&7See: https://github.com/MinecraftForge/MinecraftForge/issues/9309"
+logs-unavailable: '%prefix% &cLog GUI unavailable — make sure the database is enabled.'
+run-as-player: '%prefix% &cThis command can only be used by players!'
+run-as-player-or-console: '%prefix% &cThis command can only be used by players or the console!'
+
+# Valid placeholders: %prefix% %player% %check_name% %vl% %ping% %verbose%
+# Unified palette: #c19a6b (accent/numbers) · #ff5348 (check) · #a9c8ff (player) · &f (white)
+# Hover (full player details) and click-to-teleport are added to the whole line automatically.
+alerts-format: '%prefix% <color:#a9c8ff>%player%</color> <white>failed</white> <color:#ff5348>%check_name%</color> <dark_gray>[</dark_gray><color:#c19a6b>x%vl%</color> <dark_gray>|</dark_gray> <color:#c19a6b>%ping%ms</color><dark_gray>]</dark_gray>'
+alerts-format-proxy: '%prefix% <dark_gray>[</dark_gray><color:#ff5348>ᴘʀᴏxʏ</color><dark_gray>]</dark_gray> <color:#a9c8ff>%player%</color> <white>failed</white> <color:#ff5348>%check_name%</color> <dark_gray>[</dark_gray><color:#c19a6b>x%vl%</color><dark_gray>]</dark_gray>'
+experimental-symbol: ''
+
+profile:
+    - '&8&m                                        '
+    - '%prefix% &fProfile for &#c19a6b%player%'
+    - ''
+    - '&7• &fPing: &#c19a6b%ping%ms'
+    - '&7• &fVersion: &#c19a6b%version%'
+    - '&7• &fClient Brand: &#c19a6b%brand%'
+    - '&7• &fH-Sensitivity: &#c19a6b%h_sensitivity%%'
+    - '&7• &fV-Sensitivity: &#c19a6b%v_sensitivity%%'
+    - '&7• &fFastMath: &#c19a6b%fast_math%'
+    - '&8&m                                        '
+help:
+    - '&8&m                                        '
+    - '%prefix% &#c19a6bꜱᴋʏᴀɴᴛɪᴄʜᴇᴀᴛ &8— &fʜᴇʟᴘ'
+    - ''
+    - '&#c19a6b/skyac alerts &8— &7Toggle alerts'
+    - '&#c19a6b/skyac brands &8— &7Toggle brands'
+    - '&#c19a6b/skyac info <player> &8— &7View player info'
+    - '&#c19a6b/skyac profile <player> &8— &7View player profile'
+    - '&#c19a6b/skyac help &8— &7View this help message'
+    - '&#c19a6b/skyac debug <player> &8— &7Toggle prediction debug'
+    - '&#c19a6b/skyac perf &8— &7Performance metrics'
+    - '&#c19a6b/skyac reload &8— &7Reload configuration'
+    - '&#c19a6b/skyac spectate <player> &8— &7Spectate a player'
+    - '&#c19a6b/skyac verbose &8— &7Toggle verbose flags'
+    - '&#c19a6b/skyac log [0-255] &8— &7Upload debug log'
+    - '&#c19a6b/skyac history <player> [page] &8— &7Violation history'
+    - '&8&m                                        '
+
+grim-history-load-failure: '%prefix% &cHistory subsystem failed to load! Check console for errors.'
+grim-history-disabled: '%prefix% &cHistory subsystem is disabled!'
+# Valid placeholders: %prefix% %player% %page% %maxPages%
+grim-history-header: '%prefix% &7Showing logs for &#c19a6b%player% &8(&#c19a6b%page%&8/&#c19a6b%maxPages%&8)'
+# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+grim-history-entry: '%prefix% &8[&f%server%&8] &7failed &#c19a6b%check% &8(&#c19a6bx%vl%&8) &7%verbose% &8(&#c19a6b%timeago% ago&8)'
