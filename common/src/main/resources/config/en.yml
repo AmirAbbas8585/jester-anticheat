@@ -150,14 +150,11 @@ integrations:
 #  ◆────────────────────────────────────────────────────────────────────────◆
 #    UPDATES  ·  tell the console + staff when a newer build is out
 #  ◆────────────────────────────────────────────────────────────────────────◆
-# Checks Modrinth for newer releases. Points at the project's version API by
-# default; the highest published version_number wins. You can also point it at a
-# plain-text URL you host whose first line is just the version (e.g. 0.0.2).
-# Empty url = off.
+# Checks Modrinth for newer releases of this plugin and notifies the console +
+# staff. The update source is fixed (the official Modrinth project) and cannot be
+# changed here — only turned on/off.
 update-checker:
     enabled: true
-    # Modrinth version API (default) or any plain-text "latest version" endpoint.
-    url: 'https://api.modrinth.com/v2/project/jester-anticheat/version'
     # Re-check every N minutes while the server runs (0 = only once at startup).
     interval-minutes: 180
     # Permission a player needs to be told about updates on join.
