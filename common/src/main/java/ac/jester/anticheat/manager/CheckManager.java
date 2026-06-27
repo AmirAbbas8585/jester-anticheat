@@ -143,6 +143,8 @@ public class CheckManager {
                 .put(ac.jester.anticheat.checks.impl.misc.ResourcePackState.class,
                         new ac.jester.anticheat.checks.impl.misc.ResourcePackState(player))
                 .put(Reach.class, new Reach(player))
+                .put(ac.jester.anticheat.checks.impl.combat.ReachB.class,
+                        new ac.jester.anticheat.checks.impl.combat.ReachB(player))
                 .put(AutoClickerA.class, new AutoClickerA(player))
                 .put(AutoClickerB.class, new AutoClickerB(player))
                 .put(KillAuraA.class, new KillAuraA(player))

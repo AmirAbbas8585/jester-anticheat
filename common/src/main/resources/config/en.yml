@@ -382,6 +382,21 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
 
+    # Reach (ReachB) — independent reach check with its own entity tracking +
+    # light ping rewind. Alert-only by default: lag/desync on target positions
+    # makes reach FP-prone, so it's padded and conservative — watch its flags and
+    # tune ReachB.* below before enabling kicks.
+    ReachB:
+        enabled: true
+        punishable: false
+        max-violations: 12
+        alert-interval: 1
+        dont-alert-until: 4
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
     # AutoClicker A — statistical consistency
     AutoClickerA:
         enabled: true
@@ -1048,6 +1063,17 @@ Reach:
     # processed a tick late, briefly inflating the measured hit distance. Real
     # reach hacks are 3.3+ blocks, far beyond this.
     sneak-lenience: 0.1
+
+# ReachB — our own reach check (entity tracking + ping rewind). A hit flags when
+# eye-to-(padded)-hitbox distance exceeds: max-reach + base-lenience +
+# ping*ping-lenience-per-ms, sustained min-consecutive times. Loosen the
+# lenience values if legit high-ping PvP flags; tighten to catch smaller reach.
+ReachB:
+    max-reach: 3.0
+    hitbox-pad: 0.30
+    base-lenience: 0.30
+    ping-lenience-per-ms: 0.003
+    min-consecutive: 4
 
 # AutoBlock — max ping before the check is skipped (ms)
 AutoBlock:
