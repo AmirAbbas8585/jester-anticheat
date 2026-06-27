@@ -57,11 +57,11 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
     }
 
     public static boolean canSendAlerts() {
-        return usingProxy && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("alerts.proxy.send", false) && !GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers().isEmpty();
+        return usingProxy && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("alerts.network.send", false) && !GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers().isEmpty();
     }
 
     public static boolean canReceiveAlerts() {
-        return usingProxy && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("alerts.proxy.receive", false) && GrimAPI.INSTANCE.getAlertManager().hasAlertListeners();
+        return usingProxy && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("alerts.network.receive", false) && GrimAPI.INSTANCE.getAlertManager().hasAlertListeners();
     }
 
     // TODO (Cross-Platform) check if new getBooleanFromFile impl is correct

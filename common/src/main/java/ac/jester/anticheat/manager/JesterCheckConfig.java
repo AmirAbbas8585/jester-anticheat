@@ -49,7 +49,7 @@ public final class JesterCheckConfig {
         // GUI) into what they catch WITHOUT risking a false kick — unless this
         // is explicitly turned on, no experimental check can punish, no matter
         // what an individual checks.<Name>.punishable says.
-        experimentalChecksPunishable = config.getBooleanElse("experimental-checks-punishable", false);
+        experimentalChecksPunishable = config.getBooleanElse("beta-checks-punishable", false);
         // Grace window (ms) after a player joins, during which movement/timer
         // checks don't flag (mid-air spawn, chunk loading, ...).
         ac.jester.anticheat.player.GrimPlayer.joinGraceMs =
