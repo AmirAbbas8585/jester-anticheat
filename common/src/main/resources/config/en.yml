@@ -810,6 +810,21 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
 
+    # Aim (AimGCD) — independent rotation-quantization aimbot check. Alert-only by
+    # default: rotation float precision makes a single universal threshold
+    # imperfect, so watch its flags and calibrate AimGCD.* below before enabling
+    # kicks. Tune min-gcd from real logs (the gcd= value in the alert).
+    AimGCD:
+        enabled: true
+        punishable: false
+        max-violations: 15
+        alert-interval: 1
+        dont-alert-until: 4
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
     # TriggerBot — attacking the same tick the crosshair lands on a target
     TriggerBot:
         enabled: true
@@ -1195,6 +1210,24 @@ AimA:
     min-consecutive: 15
     # Only judge rotations within this many ticks after an attack
     combat-window-ticks: 40
+
+# AimGCD — independent rotation-quantization aimbot detector (our own check).
+# Collects yaw/pitch deltas during combat, expands them to integers, and computes
+# their GCD. A human's deltas share their mouse sensitivity step (GCD stays
+# high); an aimbot's computed angles don't (GCD collapses near zero).
+AimGCD:
+    # Degrees -> integer scale. Higher = finer, but too high lets float noise
+    # break a legit player's GCD; too low loses precision. 8192 is a safe middle.
+    expander: 8192.0
+    # Rolling number of rotation deltas analysed at once.
+    window-size: 40
+    # GCD at/below this counts as "no common step" (aimbot). Calibrate from the
+    # gcd= value printed in real alerts: set it a bit under what humans produce.
+    min-gcd: 40
+    # Bad windows in a row before flagging (debounce).
+    min-consecutive: 6
+    # Only judge rotations within this many ms after an attack.
+    combat-window-ms: 1500
 
 # TriggerBot — attack arriving within max-acquire-ticks of the crosshair
 # landing on the target, min-consecutive times in a row (humans need 3-5 ticks)
