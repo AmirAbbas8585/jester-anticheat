@@ -57,7 +57,7 @@ public class PacketLimit extends Timer {
     @Override
     public void onReload(ConfigManager config) {
         super.onReload(config);
-        limitAbuseOverPing = config.getLongElse(getConfigName() + ".ping-abuse-limit-threshold", 1000L);
+        limitAbuseOverPing = config.getLongElse(getConfigName() + ".high-ping-cap-ms", 1000L);
         if (limitAbuseOverPing != -1) {
             limitAbuseOverPing *= (long) 1e6;
         }

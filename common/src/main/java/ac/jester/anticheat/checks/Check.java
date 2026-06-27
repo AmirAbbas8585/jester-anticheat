@@ -165,8 +165,8 @@ public class Check extends GrimProcessor implements AbstractCheck {
 
     @Override
     public final void reload(ConfigManager configuration) {
-        decay = configuration.getDoubleElse(configName + ".decay", decay);
-        setbackVL = configuration.getDoubleElse(configName + ".setbackvl", setbackVL);
+        decay = configuration.getDoubleElse(configName + ".clear-per-second", decay);
+        setbackVL = configuration.getDoubleElse(configName + ".rubberband-at", setbackVL);
         displayName = configuration.getStringElse(configName + ".displayname", checkName);
         description = configuration.getStringElse(configName + ".description", description);
 

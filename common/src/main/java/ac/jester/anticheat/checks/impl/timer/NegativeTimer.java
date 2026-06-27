@@ -48,6 +48,6 @@ public class NegativeTimer extends Timer implements PostPredictionCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        clockDrift = (long) (config.getDoubleElse(getConfigName() + ".drift", 1200.0) * 1e6);
+        clockDrift = (long) (config.getDoubleElse(getConfigName() + ".max-behind-ms", 1200.0) * 1e6);
     }
 }

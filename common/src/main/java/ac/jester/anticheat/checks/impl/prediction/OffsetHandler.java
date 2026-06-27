@@ -262,23 +262,23 @@ public class OffsetHandler extends Check implements PostPredictionCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        setbackDecayMultiplier = config.getDoubleElse("MovementA.setback-decay-multiplier", 0.999);
-        threshold = config.getDoubleElse("MovementA.threshold", 0.001);
-        sneakThreshold = config.getDoubleElse("MovementA.sneak-threshold", 0.015);
-        carpetThreshold = config.getDoubleElse("MovementA.carpet-threshold", 0.02);
-        bedThreshold = config.getDoubleElse("MovementA.bed-threshold", 0.035);
+        setbackDecayMultiplier = config.getDoubleElse("MovementA.buildup-keep-ratio", 0.999);
+        threshold = config.getDoubleElse("MovementA.min-offset", 0.001);
+        sneakThreshold = config.getDoubleElse("MovementA.min-offset-sneak", 0.015);
+        carpetThreshold = config.getDoubleElse("MovementA.min-offset-carpet", 0.02);
+        bedThreshold = config.getDoubleElse("MovementA.min-offset-bed", 0.035);
         // water-threshold was declared and used below but NEVER read here, so it
         // was always 0.0 — the water tolerance (Math.max with waterThreshold) did
         // nothing, which is why in-water MovementA false flags kept being
         // reported. Now actually loaded from config.
-        waterThreshold = config.getDoubleElse("MovementA.water-threshold", 0.04);
-        pingThresholdBaseline = config.getIntElse("MovementA.ping-threshold-baseline-ms", 60);
-        pingThresholdPerMs = config.getDoubleElse("MovementA.ping-threshold-per-ms", 0.00003);
-        immediateSetbackThreshold = config.getDoubleElse("MovementA.immediate-setback-threshold", 0.1);
-        maxAdvantage = config.getDoubleElse("MovementA.max-advantage", 1);
-        maxCeiling = config.getDoubleElse("MovementA.max-ceiling", 4);
-        setbackViolationThreshold = config.getDoubleElse("MovementA.setback-violation-threshold", 1);
-        flightToggleGraceMs = config.getIntElse("MovementA.flight-toggle-grace-ms", 1000);
+        waterThreshold = config.getDoubleElse("MovementA.min-offset-water", 0.04);
+        pingThresholdBaseline = config.getIntElse("MovementA.lag-grace-start-ms", 60);
+        pingThresholdPerMs = config.getDoubleElse("MovementA.lag-grace-per-ms", 0.00003);
+        immediateSetbackThreshold = config.getDoubleElse("MovementA.instant-rubberband-offset", 0.1);
+        maxAdvantage = config.getDoubleElse("MovementA.rubberband-after-buildup", 1);
+        maxCeiling = config.getDoubleElse("MovementA.buildup-limit", 4);
+        setbackViolationThreshold = config.getDoubleElse("MovementA.rubberband-after-vl", 1);
+        flightToggleGraceMs = config.getIntElse("MovementA.fly-toggle-grace-ms", 1000);
         if (maxAdvantage == -1) maxAdvantage = Double.MAX_VALUE;
         if (immediateSetbackThreshold == -1) immediateSetbackThreshold = Double.MAX_VALUE;
     }

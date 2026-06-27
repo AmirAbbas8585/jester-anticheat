@@ -52,6 +52,6 @@ public class NoSlow extends Check implements PostPredictionCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        offsetToFlag = config.getDoubleElse(getConfigName() + ".threshold", 0.001);
+        offsetToFlag = config.getDoubleElse(getConfigName() + ".min-offset", 0.001);
     }
 }
