@@ -141,16 +141,6 @@ database:
 # Plugin Compatibility
 # ─────────────────────────────────────────────────────────────────────────────
 compatibility:
-    # CrazyEnchantments — its custom enchants aren't carried in packets, so the
-    # plugin reads them from the held tool's LORE. List the enchant NAMES exactly
-    # as they appear in lore (case-insensitive). mining-enchants feed into
-    # FastBreak's speed prediction; area-break-enchants make NukerA skip a player
-    # (Blast breaks several blocks per click). Adjust to match your CE config.
-    crazyenchantments:
-        mining-enchants:
-            - 'Haste'
-        area-break-enchants:
-            - 'Blast'
     # Exempt GSit sitting/crawling/laying players from movement checks
     gsit-exempt-movement: true
     # Extra tolerance ticks when sitting player just stood up

@@ -83,11 +83,6 @@ public final class NukerA extends Check implements PacketCheck {
 
         if (type != PacketType.Play.Client.PLAYER_DIGGING) return;
 
-        // Area-break custom enchant (e.g. CrazyEnchantments Blast) legitimately
-        // breaks several blocks per click — read off the held tool by the hook —
-        // so it isn't nuking. Skip this check entirely for such a player.
-        if (ac.jester.anticheat.hooks.ExemptionProvider.safe().hasAreaBreakEnchant(player)) return;
-
         WrapperPlayClientPlayerDigging digging = new WrapperPlayClientPlayerDigging(event);
         DiggingAction action = digging.getAction();
 

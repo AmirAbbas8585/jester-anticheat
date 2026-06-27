@@ -50,14 +50,6 @@ public class FastBreak extends Check implements BlockBreakCheck {
         speedTolerance = Math.max(1.0, config.getDoubleElse(getConfigName() + ".speed-tolerance", 2.0));
     }
 
-    // Extra mining-speed factor from a custom-enchant plugin (e.g. CrazyEnchantments
-    // Haste) read off the held tool by the hook — applied to the predicted speed so
-    // the actual enchant level is accounted for instead of a blanket loosening.
-    private double customMiningFactor() {
-        int lvl = ac.jester.anticheat.hooks.ExemptionProvider.safe().getCustomMiningSpeedLevel(player);
-        return lvl > 0 ? 1 + 0.2 * (lvl + 1) : 1.0;
-    }
-
     // The block the player is currently breaking
     Vector3i targetBlockPosition = null;
     // The maximum amount of damage the player deals to the block
@@ -114,7 +106,7 @@ public class FastBreak extends Check implements BlockBreakCheck {
             // enchant) legitimately breaks this block in under the assumed minimum
             // aiming delay — so don't penalise the short gap between such breaks.
             boolean fastTool = maximumBlockDamage > 0
-                    && Math.ceil(1 / (maximumBlockDamage * speedTolerance * customMiningFactor())) * 50 < 275;
+                    && Math.ceil(1 / (maximumBlockDamage * speedTolerance)) * 50 < 275;
 
             if (breakDelay >= 275 || lastBreakWasInstant || recentCustomBlock || fastTool) { // Reduce buffer if "close enough", or the last break was instant/custom/fast (no minimum delay applies)
                 blockDelayBalance *= 0.9;
@@ -134,7 +126,7 @@ public class FastBreak extends Check implements BlockBreakCheck {
         if (blockBreak.action == DiggingAction.FINISHED_DIGGING && targetBlockPosition != null) {
             // speedTolerance inflates the predicted mining damage so breaking
             // faster than vanilla predicts (custom enchants) isn't a violation.
-            double predictedTime = Math.ceil(1 / (maximumBlockDamage * speedTolerance * customMiningFactor())) * 50;
+            double predictedTime = Math.ceil(1 / (maximumBlockDamage * speedTolerance)) * 50;
             double realTime = System.currentTimeMillis() - startBreak;
             double diff = predictedTime - realTime;
 
