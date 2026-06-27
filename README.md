@@ -5,15 +5,16 @@
 
 ---
 
-**Jester Anti Cheat** is a packet-based anti-cheat that **runs on Paper 1.19 –
-latest** (tested on **1.21.4** and **1.21.11**) and **protects players on 1.8.9+**
-through ViaVersion / ViaBackwards. It is focused on low false-positives across
-mixed client versions and behind proxies, and ships a large set of movement,
-combat, world, and packet checks, each fully configurable per-server.
+**Jester Anti Cheat** is a packet-based anti-cheat built on the Grim engine, so
+it runs on the **same server range as Grim** — Bukkit / Spigot / Paper / Purpur /
+Folia, **1.8.x through latest** (`api-version 1.13`, tested by us on **1.21.4**
+and **1.21.11**). It is focused on low false-positives across mixed client
+versions and behind proxies, and ships a large set of movement, combat, world,
+and packet checks, each fully configurable per-server.
 
-> **Versions:** the *server* must be Paper 1.19 or newer (this is the Modrinth
-> "game version" range). *Player clients* from 1.8.9 upward are supported via
-> ViaVersion on that modern server.
+> **Versions:** the load range matches upstream Grim (`api-version 1.13`); older
+> clients are additionally covered via ViaVersion. We test primarily on current
+> 1.21.x; the wide range comes from the Grim engine.
 
 > `jester` is the umbrella brand for a family of plugins; this repository is the
 > anti-cheat (**Jester Anti Cheat**).

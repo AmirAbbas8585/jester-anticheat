@@ -78,8 +78,11 @@ bukkit {
     main = "ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin"
     website = "https://modrinth.com/plugin/jester-anticheat"
     // Minimum server version. Bukkit has no "max" field — the plugin loads on
-    // this version and every newer one automatically.
-    apiVersion = "1.19"
+    // this version and every newer one automatically. Matches upstream Grim
+    // (1.13), so the load range is the same as the Grim engine itself; servers
+    // older than 1.13 don't enforce this field and load it in legacy mode, and
+    // pre-1.13 clients are covered via ViaVersion on a modern server.
+    apiVersion = "1.13"
     foliaSupported = true
 
     if (!BuildConfig.shadePE) {
