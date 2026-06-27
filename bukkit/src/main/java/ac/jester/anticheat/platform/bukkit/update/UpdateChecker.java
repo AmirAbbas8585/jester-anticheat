@@ -22,15 +22,19 @@ import java.util.regex.Pattern;
  * staff with the notify permission see it when they join (handled in
  * PacketPlayerJoinQuit via {@link UpdateState}).
  *
- * Two URL formats are understood automatically:
- *   - the Modrinth API, e.g. https://api.modrinth.com/v2/project/jester-anticheat/version
- *     (the JSON is scanned for "version_number" entries and the highest wins), or
- *   - a plain-text endpoint whose first line is just the version, e.g. "0.0.2".
+ * The source is the project's Modrinth version API — hardcoded on purpose so a
+ * server owner cannot repoint it from config (only {@code update-checker.enabled}
+ * and the interval are configurable). The JSON is scanned for "version_number"
+ * entries and the highest wins.
  *
  * Runs on its own daemon thread, so it never touches the main/region thread and
- * is safe on Folia. Contacts nothing unless update-checker.url is set.
+ * is safe on Folia.
  */
 public final class UpdateChecker {
+
+    /** Fixed update source — not configurable. */
+    private static final String UPDATE_URL =
+            "https://api.modrinth.com/v2/project/jester-anticheat/version";
 
     private static final Pattern LEADING_VERSION = Pattern.compile("^(\\d+(?:\\.\\d+)*)");
     // Matches "version_number":"x.y.z" in the Modrinth /version API response.
@@ -48,9 +52,6 @@ public final class UpdateChecker {
         var cfg = GrimAPI.INSTANCE.getConfigManager().getConfig();
         if (!cfg.getBooleanElse("update-checker.enabled", true)) return;
 
-        String url = cfg.getStringElse("update-checker.url", "");
-        if (url == null || url.isBlank()) return; // nothing to check against yet
-
         final String current = plugin.getDescription().getVersion();
         final int intervalMinutes = Math.max(0, cfg.getIntElse("update-checker.interval-minutes", 180));
 
@@ -59,7 +60,7 @@ public final class UpdateChecker {
             t.setDaemon(true);
             return t;
         });
-        Runnable task = () -> check(url, current);
+        Runnable task = () -> check(UPDATE_URL, current);
         if (intervalMinutes > 0) {
             executor.scheduleAtFixedRate(task, 5, intervalMinutes * 60L, TimeUnit.SECONDS);
         } else {
