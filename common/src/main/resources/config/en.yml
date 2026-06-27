@@ -11,6 +11,10 @@
 # ║   • Edit, then run /jester reload in-game to apply without a restart.       ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    ALERTS  ·  how violation alerts look and where they go
+#  ◆────────────────────────────────────────────────────────────────────────◆
+
 # Shown at the start of every plugin message.
 prefix: '&#c19a6bᴊᴇꜱᴛᴇʀ &8»'
 
@@ -37,6 +41,10 @@ verbose:
 # Toggle alerts on join for players with jester.alerts permission
 toggle-alerts-on-join: true
 
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    DETECTION  ·  transient grace windows + experimental-check policy
+#  ◆────────────────────────────────────────────────────────────────────────◆
+
 # Transient-state grace: movement/timer checks don't flag during these windows
 # because the client legitimately desyncs (no kick for a state it didn't cause).
 movement-grace:
@@ -59,28 +67,10 @@ experimental-checks: true
 experimental-checks-punishable: false
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Update checker
-# Notifies the console at startup, and staff (with the permission below) on join,
-# when a newer version is available. Since this is a private build there is no
-# public version feed, so point it at a URL YOU host whose contents are just the
-# latest version string (e.g. a file containing: 0.0.2). Leave url empty to turn
-# the whole feature off.
-# ─────────────────────────────────────────────────────────────────────────────
-update-checker:
-    enabled: true
-    # Plain-text endpoint returning the latest version, e.g. https://yoursite/jester.txt
-    url: ''
-    # Re-check every N minutes while the server runs (0 = only once at startup).
-    interval-minutes: 180
-    # Permission a player needs to be told about updates on join.
-    notify-permission: 'jester.update'
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Alert Rate Limiting (prevents alert spam)
-# These are GLOBAL defaults — override per-check under "checks:" below.
-# ─────────────────────────────────────────────────────────────────────────────
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    DEFAULTS  ·  fallback alert + punish behaviour for every check
+#    (anything a check doesn't set itself under "checks:" comes from here)
+#  ◆────────────────────────────────────────────────────────────────────────◆
 alert-defaults:
     # Send alert every N violations. 1 = every violation. 2 = every 2nd. 5 = every 5th.
     alert-interval: 1
@@ -109,9 +99,10 @@ alert-defaults:
     # to restore the old instant behaviour. Per-check override: punish-grace-ms.
     punish-grace-ms: 2000
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Database (MySQL or SQLite)
-# ─────────────────────────────────────────────────────────────────────────────
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    STORAGE  ·  where violations / punishments / profiles are logged
+#  ◆────────────────────────────────────────────────────────────────────────◆
+# SQLite by default, or switch type to mysql for remote/website access.
 # All violations, punishments, and player profiles are logged here — usable
 # later from a website (tables: jester_violations, jester_punishments,
 # jester_profiles; each row has ping/tps/timestamp).
@@ -137,9 +128,9 @@ database:
     # permanent record) — only the high-volume raw violation log is.
     violation-retention-hours: 6
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Plugin Compatibility
-# ─────────────────────────────────────────────────────────────────────────────
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    COMPATIBILITY  ·  play nice with other plugins (auto-detected)
+#  ◆────────────────────────────────────────────────────────────────────────◆
 compatibility:
     # Exempt GSit sitting/crawling/laying players from movement checks
     gsit-exempt-movement: true
@@ -156,12 +147,26 @@ compatibility:
     # LPX is active — skip duplicate packet exploit checks
     lpx-skip-duplicate-checks: true
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Movement prediction engine — replays each player's movement server-side and
-# compares it to what they sent. "offset" is how far the two disagree per tick;
-# a real fly/speed hack sustains a large offset, normal play produces tiny ones.
-# The thresholds below set how much offset is tolerated in each situation.
-# ─────────────────────────────────────────────────────────────────────────────
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    UPDATES  ·  tell the console + staff when a newer build is out
+#  ◆────────────────────────────────────────────────────────────────────────◆
+# No public version feed, so point it at a URL YOU host whose contents are just
+# the latest version string (e.g. a file containing: 0.0.2). Empty url = off.
+update-checker:
+    enabled: true
+    # Plain-text endpoint returning the latest version, e.g. https://yoursite/jester.txt
+    url: ''
+    # Re-check every N minutes while the server runs (0 = only once at startup).
+    interval-minutes: 180
+    # Permission a player needs to be told about updates on join.
+    notify-permission: 'jester.update'
+
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    ENGINE  ·  movement-prediction tuning
+#  ◆────────────────────────────────────────────────────────────────────────◆
+# Replays each player's movement server-side and compares it to what they sent.
+# "offset" is how far the two disagree per tick; a real fly/speed hack sustains a
+# large offset, normal play produces tiny ones. Thresholds below set tolerance.
 MovementA:
     setback-decay-multiplier: 0.999
     # Per-tick offset that counts as a violation. Half-blocks (slabs, chests,
@@ -272,8 +277,10 @@ Knockback:
     threshold: 0.001
     immediate-setback-threshold: 0.1
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Per-check settings. Every check accepts the same keys:
+#  ◆════════════════════════════════════════════════════════════════════════◆
+#    CHECKS  ·  one block per check — the heart of the config
+#  ◆════════════════════════════════════════════════════════════════════════◆
+# Every check accepts the same keys:
 #   enabled            — run the check at all
 #   punishable         — may it run its punishment-commands, or only alert?
 #   max-violations     — violations needed before the punishment fires
