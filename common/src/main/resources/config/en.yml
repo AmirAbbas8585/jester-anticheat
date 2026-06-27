@@ -34,9 +34,8 @@ alerts:
     network:
         send: true
         receive: true
-
-verbose:
-    print-to-console: false
+    # Also mirror verbose alerts (every single flag) to the console.
+    verbose-to-console: false
 
 # Toggle alerts on join for players with jester.alerts permission
 toggle-alerts-on-join: true
@@ -162,7 +161,7 @@ update-checker:
     notify-permission: 'jester.update'
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
-#    ENGINE  ·  movement-prediction tuning
+#    MOVEMENT  ·  physics & speed tuning
 #  ◆────────────────────────────────────────────────────────────────────────◆
 # Replays each player's movement server-side and compares it to what they sent.
 # "offset" is how far the two disagree per tick; a real fly/speed hack sustains a
