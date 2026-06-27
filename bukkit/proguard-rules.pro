@@ -36,8 +36,33 @@
 # ── Keep everything that is NOT our own source ────────────────────────────────
 # Every non-ac.jester.anticheat class (JDK refs, any non-relocated lib) stays.
 -keep class !ac.jester.anticheat.** { *; }
-# Relocated/shaded libraries live under our package but must NOT be renamed.
--keep class ac.jester.anticheat.shaded.** { *; }
+
+# Relocated/shaded third-party libraries must NOT be renamed (reflection-heavy).
+# Listed explicitly so that the relocated engine under shaded.core.** is the ONE
+# shaded package left obfuscatable — that renames the engine's class names (which
+# still contained the upstream brand) so they don't appear in the public jar.
+-keep class ac.jester.anticheat.shaded.configuralize.** { *; }
+-keep class ac.jester.anticheat.shaded.com.** { *; }
+-keep class ac.jester.anticheat.shaded.gson.** { *; }
+-keep class ac.jester.anticheat.shaded.maps.** { *; }
+-keep class ac.jester.anticheat.shaded.fastutil.** { *; }
+-keep class ac.jester.anticheat.shaded.okhttp3.** { *; }
+-keep class ac.jester.anticheat.shaded.okio.** { *; }
+-keep class ac.jester.anticheat.shaded.snakeyaml.** { *; }
+-keep class ac.jester.anticheat.shaded.json.** { *; }
+-keep class ac.jester.anticheat.shaded.intellij.** { *; }
+-keep class ac.jester.anticheat.shaded.jetbrains.** { *; }
+-keep class ac.jester.anticheat.shaded.incendo.** { *; }
+-keep class ac.jester.anticheat.shaded.geantyref.** { *; }
+-keep class ac.jester.anticheat.shaded.zaxxer.** { *; }
+
+# The relocated engine (shaded.core.**) IS obfuscated. Adapt anything that
+# resolves those classes by string/resource so reflection & service loading keep
+# working after the rename: Class.forName() literals, service-file names and
+# their contents.
+-adaptclassstrings ac.jester.anticheat.shaded.core.**
+-adaptresourcefilenames META-INF/services/**
+-adaptresourcefilecontents META-INF/services/**
 
 # ── Entry points inside our own code (reflection / server contracts) ──────────
 # The Bukkit plugin main class is named in plugin.yml and instantiated by the
