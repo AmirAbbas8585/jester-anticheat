@@ -27,7 +27,7 @@ public class ExperimentalChecksFeature implements GrimFeature {
 
     @Override
     public boolean isEnabledInConfig(GrimPlayer player, ConfigManager config) {
-        return config.getBooleanElse("experimental-checks", false);
+        return config.getBooleanElse("beta-checks", false);
     }
 
 }

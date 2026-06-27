@@ -31,7 +31,7 @@ alerts:
     #   receive — also show alerts forwarded here from those other servers.
     # Needs bungeecord/velocity enabled in spigot.yml / paper-global.yml
     # (detected automatically).
-    proxy:
+    network:
         send: true
         receive: true
 
@@ -42,7 +42,7 @@ verbose:
 toggle-alerts-on-join: true
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
-#    DETECTION  ·  transient grace windows + experimental-check policy
+#    DETECTION  ·  transient grace windows + beta-check policy
 #  ◆────────────────────────────────────────────────────────────────────────◆
 
 # Transient-state grace: movement/timer checks don't flag during these windows
@@ -58,13 +58,13 @@ movement-grace:
 # false-flag legitimate play (e.g. a fast key combo on 1.21.2+). They stay ON so
 # staff still see their alerts/logs, but — thanks to the next option — they only
 # warn, never punish, until you explicitly trust one.
-experimental-checks: true
+beta-checks: true
 
-# Master safety switch for the checks above: while this is false, NO experimental
-# check can kick/ban, even if its own punishable is true — it can only alert/log.
+# Master safety switch for the checks above: while this is false, NO beta check
+# can kick/ban, even if its own punishable is true — it can only alert/log.
 # Turn it on only after you've watched a specific check flag correctly with no
 # false positives.
-experimental-checks-punishable: false
+beta-checks-punishable: false
 
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
@@ -129,9 +129,9 @@ database:
     violation-retention-hours: 6
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
-#    COMPATIBILITY  ·  play nice with other plugins (auto-detected)
+#    INTEGRATIONS  ·  play nice with other plugins (auto-detected)
 #  ◆────────────────────────────────────────────────────────────────────────◆
-compatibility:
+integrations:
     # Exempt GSit sitting/crawling/laying players from movement checks
     gsit-exempt-movement: true
     # Extra tolerance ticks when sitting player just stood up
