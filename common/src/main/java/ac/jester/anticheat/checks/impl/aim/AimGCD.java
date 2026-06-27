@@ -32,6 +32,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPl
  * threshold imperfect).
  */
 @CheckData(name = "Aim", configName = "AimGCD",
+        experimental = true,
         description = "Combat rotations not quantized to a mouse sensitivity (aimbot)")
 public final class AimGCD extends Check implements PacketCheck {
 

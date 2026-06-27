@@ -5,6 +5,7 @@ import ac.jester.anticheat.hooks.impl.DeluxeCombatHook;
 import ac.jester.anticheat.hooks.impl.GSitHook;
 import ac.jester.anticheat.hooks.impl.ItemsAdderHook;
 import ac.jester.anticheat.hooks.impl.WorldGuardHook;
+import ac.jester.anticheat.GrimAPI;
 import ac.jester.anticheat.player.GrimPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -34,6 +35,13 @@ public final class BukkitExemptionProvider extends ExemptionProvider {
         this.deluxeCombat = deluxeCombat;
     }
 
+    // Reads an integrations.<key> toggle (default ON). These let admins turn a
+    // specific compatibility behaviour off without uninstalling the plugin —
+    // previously the keys existed in config but nothing actually honoured them.
+    private static boolean integ(String key) {
+        return GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("integrations." + key, true);
+    }
+
     // GSit dismounting teleports the player — without a grace window the first
     // ticks after standing up false flag movement checks. 1.5s wasn't always
     // enough for the prediction engine's bounding box to fully resettle before
@@ -45,7 +53,7 @@ public final class BukkitExemptionProvider extends ExemptionProvider {
 
     @Override
     public boolean isSitting(GrimPlayer player) {
-        if (!gsit.isAvailable() || player.uuid == null) return false;
+        if (!integ("gsit-exempt-movement") || !gsit.isAvailable() || player.uuid == null) return false;
 
         // Look up by NAME (not UUID): in offline/proxy setups grim's player.uuid
         // and the Bukkit UUID the hook keys by can differ. gsit.isSittingByName
@@ -66,21 +74,21 @@ public final class BukkitExemptionProvider extends ExemptionProvider {
 
     @Override
     public boolean canFly(GrimPlayer player) {
-        if (!worldGuard.isAvailable() || player.uuid == null) return false;
+        if (!integ("worldguard-fly-regions") || !worldGuard.isAvailable() || player.uuid == null) return false;
         Player bukkit = Bukkit.getPlayer(player.uuid);
         return bukkit != null && worldGuard.canFly(bukkit);
     }
 
     @Override
     public double getSpeedMultiplier(GrimPlayer player) {
-        if (!auraSkills.isAvailable() || player.uuid == null) return 1.0;
+        if (!integ("auraskills-movement-boost") || !auraSkills.isAvailable() || player.uuid == null) return 1.0;
         Player bukkit = Bukkit.getPlayer(player.uuid);
         return bukkit != null ? auraSkills.getSpeedMultiplier(bukkit) : 1.0;
     }
 
     @Override
     public double getJumpMultiplier(GrimPlayer player) {
-        if (!auraSkills.isAvailable() || player.uuid == null) return 1.0;
+        if (!integ("auraskills-movement-boost") || !auraSkills.isAvailable() || player.uuid == null) return 1.0;
         Player bukkit = Bukkit.getPlayer(player.uuid);
         return bukkit != null ? auraSkills.getJumpMultiplier(bukkit) : 1.0;
     }
@@ -96,13 +104,13 @@ public final class BukkitExemptionProvider extends ExemptionProvider {
 
     @Override
     public boolean hasRecentCustomBlockBreak(GrimPlayer player) {
-        if (!itemsAdder.isAvailable() || player.uuid == null) return false;
+        if (!integ("itemsadder-custom-blocks") || !itemsAdder.isAvailable() || player.uuid == null) return false;
         return itemsAdder.hasRecentCustomBreak(player.uuid);
     }
 
     @Override
     public boolean hasRecentCombatKnockback(GrimPlayer player) {
-        if (!deluxeCombat.isAvailable() || player.uuid == null) return false;
+        if (!integ("deluxecombat-kb-tolerance") || !deluxeCombat.isAvailable() || player.uuid == null) return false;
         return deluxeCombat.hasRecentCustomKB(player.uuid);
     }
 }

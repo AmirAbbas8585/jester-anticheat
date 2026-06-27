@@ -35,6 +35,7 @@ import java.util.Map;
  * logs. Self-contained — its own entity tracking, no shared prediction state.
  */
 @CheckData(name = "Reach", configName = "ReachB",
+        experimental = true,
         description = "Hitting entities from beyond a plausible reach distance")
 public final class ReachB extends Check implements PacketCheck {
 

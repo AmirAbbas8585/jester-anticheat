@@ -79,7 +79,7 @@ public final class AlertManagerImpl implements AlertManager, ConfigReloadable, S
     @Override
     public void reload(ConfigManager config) {
         setConsoleAlertsEnabled(config.getBooleanElse("alerts.print-to-console", true), true);
-        setConsoleVerboseEnabled(config.getBooleanElse("verbose.print-to-console", false), true);
+        setConsoleVerboseEnabled(config.getBooleanElse("alerts.verbose-to-console", false), true);
 
         AlertType.NORMAL.enableMessage = config.getStringElse("alerts-enabled", "%prefix% &fAlerts enabled");
         AlertType.NORMAL.disableMessage = config.getStringElse("alerts-disabled", "%prefix% &fAlerts disabled");
