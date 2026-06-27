@@ -51,20 +51,6 @@ public abstract class ExemptionProvider {
      */
     public abstract boolean hasRecentCombatKnockback(GrimPlayer player);
 
-    /**
-     * Mining-speed level from a custom-enchant plugin (e.g. CrazyEnchantments
-     * Haste) on the player's held tool, or 0 if none. These enchants aren't in
-     * the packets, so FastBreak feeds this into its break-speed prediction.
-     */
-    public abstract int getCustomMiningSpeedLevel(GrimPlayer player);
-
-    /**
-     * True if the player's held tool has an area-break custom enchant (e.g.
-     * CrazyEnchantments Blast) that breaks several blocks per click — NukerA
-     * skips its multi-block / rate checks for such a player.
-     */
-    public abstract boolean hasAreaBreakEnchant(GrimPlayer player);
-
     /** No-op implementation used when no platform registers one. */
     public static final ExemptionProvider NOOP = new ExemptionProvider() {
         @Override public boolean isSitting(GrimPlayer p) { return false; }
@@ -74,8 +60,6 @@ public abstract class ExemptionProvider {
         @Override public boolean isPvpDisabled(GrimPlayer p) { return false; }
         @Override public boolean hasRecentCustomBlockBreak(GrimPlayer p) { return false; }
         @Override public boolean hasRecentCombatKnockback(GrimPlayer p) { return false; }
-        @Override public int getCustomMiningSpeedLevel(GrimPlayer p) { return 0; }
-        @Override public boolean hasAreaBreakEnchant(GrimPlayer p) { return false; }
     };
 
     /** Convenience: returns instance or NOOP if none registered. */

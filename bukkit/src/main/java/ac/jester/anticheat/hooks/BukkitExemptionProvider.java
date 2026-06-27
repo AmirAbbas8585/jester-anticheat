@@ -1,7 +1,6 @@
 package ac.jester.anticheat.hooks;
 
 import ac.jester.anticheat.hooks.impl.AuraSkillsHook;
-import ac.jester.anticheat.hooks.impl.CrazyEnchantmentsHook;
 import ac.jester.anticheat.hooks.impl.DeluxeCombatHook;
 import ac.jester.anticheat.hooks.impl.GSitHook;
 import ac.jester.anticheat.hooks.impl.ItemsAdderHook;
@@ -26,15 +25,13 @@ public final class BukkitExemptionProvider extends ExemptionProvider {
     private final AuraSkillsHook auraSkills;
     private final ItemsAdderHook itemsAdder;
     private final DeluxeCombatHook deluxeCombat;
-    private final CrazyEnchantmentsHook crazyEnchantments;
 
-    public BukkitExemptionProvider(GSitHook gsit, WorldGuardHook worldGuard, AuraSkillsHook auraSkills, ItemsAdderHook itemsAdder, DeluxeCombatHook deluxeCombat, CrazyEnchantmentsHook crazyEnchantments) {
+    public BukkitExemptionProvider(GSitHook gsit, WorldGuardHook worldGuard, AuraSkillsHook auraSkills, ItemsAdderHook itemsAdder, DeluxeCombatHook deluxeCombat) {
         this.gsit = gsit;
         this.worldGuard = worldGuard;
         this.auraSkills = auraSkills;
         this.itemsAdder = itemsAdder;
         this.deluxeCombat = deluxeCombat;
-        this.crazyEnchantments = crazyEnchantments;
     }
 
     // GSit dismounting teleports the player — without a grace window the first
@@ -107,17 +104,5 @@ public final class BukkitExemptionProvider extends ExemptionProvider {
     public boolean hasRecentCombatKnockback(GrimPlayer player) {
         if (!deluxeCombat.isAvailable() || player.uuid == null) return false;
         return deluxeCombat.hasRecentCustomKB(player.uuid);
-    }
-
-    @Override
-    public int getCustomMiningSpeedLevel(GrimPlayer player) {
-        if (!crazyEnchantments.isAvailable() || player.uuid == null) return 0;
-        return crazyEnchantments.getMiningLevel(player.uuid);
-    }
-
-    @Override
-    public boolean hasAreaBreakEnchant(GrimPlayer player) {
-        if (!crazyEnchantments.isAvailable() || player.uuid == null) return false;
-        return crazyEnchantments.hasAreaBreak(player.uuid);
     }
 }
