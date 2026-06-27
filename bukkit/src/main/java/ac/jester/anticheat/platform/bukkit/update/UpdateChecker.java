@@ -17,11 +17,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Lightweight update checker. Fetches the latest version string from a
- * configurable URL — a plain-text endpoint the server owner hosts, e.g. a file
- * whose contents are just "0.0.2" — and, if it's newer than the running version,
- * logs it to the console and lets staff with the notify permission see it when
- * they join (handled in PacketPlayerJoinQuit via {@link UpdateState}).
+ * Lightweight update checker. Fetches the latest version from a configurable URL
+ * and, if it's newer than the running version, logs it to the console and lets
+ * staff with the notify permission see it when they join (handled in
+ * PacketPlayerJoinQuit via {@link UpdateState}).
+ *
+ * Two URL formats are understood automatically:
+ *   - the Modrinth API, e.g. https://api.modrinth.com/v2/project/jester-anticheat/version
+ *     (the JSON is scanned for "version_number" entries and the highest wins), or
+ *   - a plain-text endpoint whose first line is just the version, e.g. "0.0.2".
  *
  * Runs on its own daemon thread, so it never touches the main/region thread and
  * is safe on Folia. Contacts nothing unless update-checker.url is set.
@@ -29,6 +33,9 @@ import java.util.regex.Pattern;
 public final class UpdateChecker {
 
     private static final Pattern LEADING_VERSION = Pattern.compile("^(\\d+(?:\\.\\d+)*)");
+    // Matches "version_number":"x.y.z" in the Modrinth /version API response.
+    private static final Pattern MODRINTH_VERSION =
+            Pattern.compile("\"version_number\"\\s*:\\s*\"([^\"]+)\"");
 
     private final JavaPlugin plugin;
     private ScheduledExecutorService executor;
@@ -66,7 +73,7 @@ public final class UpdateChecker {
 
     private void check(String url, String current) {
         try {
-            String latest = fetch(url);
+            String latest = extractLatest(fetch(url));
             if (latest == null || latest.isEmpty()) return;
             boolean newer = isNewer(latest, current);
             UpdateState.set(newer, current, latest);
@@ -83,14 +90,40 @@ public final class UpdateChecker {
         con.setRequestMethod("GET");
         con.setConnectTimeout(5000);
         con.setReadTimeout(5000);
-        con.setRequestProperty("User-Agent", "JesterAntiCheat-UpdateChecker");
+        con.setRequestProperty("Accept", "application/json");
+        con.setRequestProperty("User-Agent",
+                "AmirAbbas8585/jester-anticheat (Modrinth update check)");
         try (BufferedReader in = new BufferedReader(
                 new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-            String line = in.readLine();
-            return line == null ? null : line.trim();
+            StringBuilder body = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) body.append(line).append('\n');
+            return body.toString();
         } finally {
             con.disconnect();
         }
+    }
+
+    /**
+     * Pulls the latest version out of the response body. If it looks like the
+     * Modrinth API (has "version_number" fields) we take the highest of them;
+     * otherwise we fall back to treating the first line as a plain version string.
+     */
+    static String extractLatest(String body) {
+        if (body == null || body.isBlank()) return null;
+        Matcher m = MODRINTH_VERSION.matcher(body);
+        String best = null;
+        while (m.find()) {
+            String v = m.group(1);
+            if (best == null || isNewer(v, best)) best = v;
+        }
+        if (best != null) return best;
+        // Plain-text endpoint: first non-empty line is the version.
+        for (String line : body.split("\\R")) {
+            String t = line.trim();
+            if (!t.isEmpty()) return t;
+        }
+        return null;
     }
 
     /** True if {@code latest} parses to a strictly higher version than {@code current}. */
