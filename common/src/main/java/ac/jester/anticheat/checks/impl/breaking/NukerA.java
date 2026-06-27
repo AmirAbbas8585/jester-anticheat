@@ -1,5 +1,6 @@
 package ac.jester.anticheat.checks.impl.breaking;
 
+import ac.grim.grimac.api.config.ConfigManager;
 import ac.jester.anticheat.checks.Check;
 import ac.jester.anticheat.checks.CheckData;
 import ac.jester.anticheat.checks.type.PacketCheck;
@@ -45,8 +46,12 @@ public final class NukerA extends Check implements PacketCheck {
 
     // Rolling break rate: timestamps of FINISHED breaks
     private final ArrayDeque<Long> finishedBreaks = new ArrayDeque<>();
-    private static final int BREAK_WINDOW_SECONDS = 3;
-    private static final int MAX_BREAKS_PER_WINDOW = 15; // ~5 breaks/second max for survival
+    // Configurable so servers with area-break enchants (e.g. CrazyEnchantments
+    // Blast) — whose effect the anticheat can't read from packets — can raise the
+    // ceiling instead of getting false Nuker flags. Defaults match vanilla survival.
+    private int windowSeconds = 3;
+    private int maxBreaksPerWindow = 15; // ~5 breaks/second max for survival
+    private int maxSimultaneous = 3;     // distinct START positions in one tick
 
     // "Nuker" by definition breaks many DIFFERENT blocks rapidly. Repeatedly
     // re-attempting the SAME block position (e.g. a block a protection plugin
@@ -56,6 +61,13 @@ public final class NukerA extends Check implements PacketCheck {
 
     public NukerA(GrimPlayer player) {
         super(player);
+    }
+
+    @Override
+    public void onReload(ConfigManager config) {
+        maxBreaksPerWindow = config.getIntElse(getConfigName() + ".max-breaks-per-window", 15);
+        windowSeconds = Math.max(1, config.getIntElse(getConfigName() + ".window-seconds", 3));
+        maxSimultaneous = Math.max(2, config.getIntElse(getConfigName() + ".max-simultaneous", 3));
     }
 
     @Override
@@ -79,7 +91,7 @@ public final class NukerA extends Check implements PacketCheck {
             long posHash = ((long) pos.getX() & 0x3FFFFFF) | (((long) pos.getZ() & 0x3FFFFFF) << 26) | ((long) pos.getY() << 52);
             diggingPositionsThisTick.add(posHash);
 
-            if (diggingPositionsThisTick.size() >= 3) {
+            if (diggingPositionsThisTick.size() >= maxSimultaneous) {
                 flagAndAlert(String.format("simultaneous_starts=%d in one tick", diggingPositionsThisTick.size()));
                 diggingPositionsThisTick.clear();
             }
@@ -97,7 +109,7 @@ public final class NukerA extends Check implements PacketCheck {
             finishedBreaks.addLast(now);
 
             // Evict old entries
-            long cutoff = now - (BREAK_WINDOW_SECONDS * 1000L);
+            long cutoff = now - (windowSeconds * 1000L);
             while (!finishedBreaks.isEmpty() && finishedBreaks.peekFirst() < cutoff) {
                 finishedBreaks.pollFirst();
             }
@@ -105,9 +117,9 @@ public final class NukerA extends Check implements PacketCheck {
             // Skip rate check for Creative mode (instant break is normal)
             if (player.gamemode == com.github.retrooper.packetevents.protocol.player.GameMode.CREATIVE) return;
 
-            if (finishedBreaks.size() > MAX_BREAKS_PER_WINDOW) {
-                double rate = (double) finishedBreaks.size() / BREAK_WINDOW_SECONDS;
-                flagAndAlert(String.format("rate=%.1f/s in %ds window", rate, BREAK_WINDOW_SECONDS));
+            if (finishedBreaks.size() > maxBreaksPerWindow) {
+                double rate = (double) finishedBreaks.size() / windowSeconds;
+                flagAndAlert(String.format("rate=%.1f/s in %ds window", rate, windowSeconds));
                 finishedBreaks.clear();
             }
         }

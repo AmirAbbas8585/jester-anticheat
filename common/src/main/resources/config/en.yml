@@ -1088,6 +1088,17 @@ KillAuraD:
     # Consecutive bad-angle attacks required before flagging
     min-consecutive: 3
 
+# NukerA — multi-block / break-rate detection.
+# Raise these if you use area-break enchants (e.g. CrazyEnchantments Blast),
+# whose extra block breaks the anticheat can't see in the packets and would
+# otherwise read as nuking. Defaults match vanilla survival.
+NukerA:
+    # Max COMPLETED block breaks allowed within window-seconds before flagging.
+    max-breaks-per-window: 15
+    window-seconds: 3
+    # Distinct blocks started in a single client tick before flagging.
+    max-simultaneous: 3
+
 # NukerB — direction-span detection thresholds
 NukerB:
     max-span-degrees: 120.0

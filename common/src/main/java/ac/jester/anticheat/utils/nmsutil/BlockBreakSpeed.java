@@ -124,13 +124,19 @@ public class BlockBreakSpeed {
         float speedMultiplier = data.speedMultiplier;
 
         if (speedMultiplier > 1.0f) {
+            // Raw vanilla Efficiency bonus from the ACTUAL enchant level — this
+            // formula is correct for any level, including over-vanilla ones like
+            // Efficiency 10.
+            int digSpeed = tool.getEnchantmentLevel(EnchantmentTypes.BLOCK_EFFICIENCY);
+            float enchantBonus = digSpeed > 0 ? digSpeed * digSpeed + 1 : 0;
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21)) {
-                speedMultiplier += (float) player.compensatedEntities.self.getAttributeValue(Attributes.MINING_EFFICIENCY);
+                // On 1.21+ vanilla uses a mining-efficiency attribute, but it may
+                // not fully reflect an over-max Efficiency level — take whichever
+                // is larger so a high Efficiency is always counted (no false flag).
+                float attr = (float) player.compensatedEntities.self.getAttributeValue(Attributes.MINING_EFFICIENCY);
+                speedMultiplier += Math.max(attr, enchantBonus);
             } else {
-                int digSpeed = tool.getEnchantmentLevel(EnchantmentTypes.BLOCK_EFFICIENCY);
-                if (digSpeed > 0) {
-                    speedMultiplier += digSpeed * digSpeed + 1;
-                }
+                speedMultiplier += enchantBonus;
             }
         }
 
