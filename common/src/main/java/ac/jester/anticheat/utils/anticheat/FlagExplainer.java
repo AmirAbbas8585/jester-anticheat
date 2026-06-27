@@ -48,7 +48,7 @@ public final class FlagExplainer {
             case "FastBreak" -> explainFastBreak(v, sb);
             case "GroundSpoof" -> explainGroundSpoof(v, sb);
             case "Nuker", "NukerA", "NukerB" -> explainNuker(v, sb);
-            case "FarBreak", "Reach" -> explainDistance(checkName, v, sb);
+            case "FarBreak", "Reach", "ReachB" -> explainDistance(checkName, v, sb);
             case "AutoClicker", "AutoClickerA" -> explainAutoClickerA(v, sb);
             case "AutoClickerB" -> explainAutoClickerB(v, sb);
             case "TransactionOrder" -> explainTransactionOrder(v, sb);
@@ -72,7 +72,7 @@ public final class FlagExplainer {
     /** True for checks whose accuracy is meaningfully affected by latency. */
     private static boolean wantsPingNote(String check) {
         return switch (check) {
-            case "Reach", "FarBreak", "TimerA", "PacketLimit", "Timer", "AutoClickerB",
+            case "Reach", "ReachB", "FarBreak", "TimerA", "PacketLimit", "Timer", "AutoClickerB",
                  "KillAuraD", "TriggerBot", "AutoBlock", "Criticals", "Knockback",
                  "AntiKB", "MovementA" -> true;
             default -> false;
@@ -157,7 +157,7 @@ public final class FlagExplainer {
 
     private static void explainDistance(String check, String v, StringBuilder sb) {
         Matcher m = DISTANCE_MAX.matcher(v);
-        boolean reach = check.equals("Reach");
+        boolean reach = check.equals("Reach") || check.equals("ReachB");
         if (m.find()) {
             double dist = Double.parseDouble(m.group(1));
             double max = Double.parseDouble(m.group(2));
