@@ -21,10 +21,36 @@ tasks.named<ShadowJar>("shadowJar") {
             // NoSuchMethodError on every alert and disconnects the player.
             relocate("net.kyori", "ac.jester.anticheat.shaded.kyori")
         }
-        // The Grim engine API/glue our forked code links against. Relocating it
-        // strips the "grim" package from the distributed jar entirely (the source
-        // still imports ac.grim.grimac — that's compile-time only). Target is
-        // under shaded.* so ProGuard keeps it working rather than obfuscating it.
+        // The bundled engine API/glue our forked code links against. shadowJar
+        // relocation (unlike ProGuard obfuscation) rewrites class references AND
+        // the string constants used by the engine's own reflection, so it can
+        // rename both the package AND the brand-named classes without breaking it.
+        // The specific per-class rules below (longest-first so prefixes like
+        // GrimEvent/GrimEventHandler don't collide) rename the brand-named classes;
+        // the trailing package rule moves everything else. Source still imports
+        // ac.grim.grimac — that's compile-time only, against the API dependency.
+        relocate("ac.grim.grimac.internal.plugin.resolver.GrimExtensionResolver", "ac.jester.anticheat.shaded.core.internal.plugin.resolver.JesterExtensionResolver")
+        relocate("ac.grim.grimac.internal.plugin.resolver.GrimExtensionManager", "ac.jester.anticheat.shaded.core.internal.plugin.resolver.JesterExtensionManager")
+        relocate("ac.grim.grimac.api.event.events.GrimVerboseCheckEvent", "ac.jester.anticheat.shaded.core.api.event.events.JesterVerboseCheckEvent")
+        relocate("ac.grim.grimac.api.event.events.GrimReloadEvent", "ac.jester.anticheat.shaded.core.api.event.events.JesterReloadEvent")
+        relocate("ac.grim.grimac.api.plugin.GrimPluginDescription", "ac.jester.anticheat.shaded.core.api.plugin.JesterPluginDescription")
+        relocate("ac.grim.grimac.api.event.events.GrimCheckEvent", "ac.jester.anticheat.shaded.core.api.event.events.JesterCheckEvent")
+        relocate("ac.grim.grimac.api.event.events.GrimJoinEvent", "ac.jester.anticheat.shaded.core.api.event.events.JesterJoinEvent")
+        relocate("ac.grim.grimac.api.event.events.GrimQuitEvent", "ac.jester.anticheat.shaded.core.api.event.events.JesterQuitEvent")
+        relocate("ac.grim.grimac.api.event.events.GrimUserEvent", "ac.jester.anticheat.shaded.core.api.event.events.JesterUserEvent")
+        relocate("ac.grim.grimac.api.event.GrimEventListener", "ac.jester.anticheat.shaded.core.api.event.JesterEventListener")
+        relocate("ac.grim.grimac.api.plugin.BasicGrimPlugin", "ac.jester.anticheat.shaded.core.api.plugin.BasicJesterPlugin")
+        relocate("ac.grim.grimac.api.event.GrimEventHandler", "ac.jester.anticheat.shaded.core.api.event.JesterEventHandler")
+        relocate("ac.grim.grimac.api.events.GrimReloadEvent", "ac.jester.anticheat.shaded.core.api.events.JesterReloadEvent")
+        relocate("ac.grim.grimac.api.events.GrimUserEvent", "ac.jester.anticheat.shaded.core.api.events.JesterUserEvent")
+        relocate("ac.grim.grimac.api.events.GrimQuitEvent", "ac.jester.anticheat.shaded.core.api.events.JesterQuitEvent")
+        relocate("ac.grim.grimac.api.events.GrimJoinEvent", "ac.jester.anticheat.shaded.core.api.events.JesterJoinEvent")
+        relocate("ac.grim.grimac.api.plugin.GrimPlugin", "ac.jester.anticheat.shaded.core.api.plugin.JesterPlugin")
+        relocate("ac.grim.grimac.api.event.GrimEvent", "ac.jester.anticheat.shaded.core.api.event.JesterEvent")
+        relocate("ac.grim.grimac.api.GrimAbstractAPI", "ac.jester.anticheat.shaded.core.api.JesterAbstractAPI")
+        relocate("ac.grim.grimac.api.GrimAPIProvider", "ac.jester.anticheat.shaded.core.api.JesterAPIProvider")
+        relocate("ac.grim.grimac.api.GrimIdentity", "ac.jester.anticheat.shaded.core.api.JesterIdentity")
+        relocate("ac.grim.grimac.api.GrimUser", "ac.jester.anticheat.shaded.core.api.JesterUser")
         relocate("ac.grim.grimac", "ac.jester.anticheat.shaded.core")
         // slf4j is intentionally NOT shaded — HikariCP references org.slf4j and
         // Paper already provides slf4j-api with a working (log4j) provider.
