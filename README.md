@@ -5,10 +5,15 @@
 
 ---
 
-**Jester Anti Cheat** is a packet-based anti-cheat for Paper **1.19 – latest**
-(primarily tuned and tested on **1.21.4**), focused on low false-positives across
-mixed client versions (ViaBackwards / 1.8+) and behind proxies. It ships a large set of movement, combat, world, and packet checks, each
-fully configurable per-server.
+**Jester Anti Cheat** is a packet-based anti-cheat that **runs on Paper 1.19 –
+latest** (tested on **1.21.4** and **1.21.11**) and **protects players on 1.8.9+**
+through ViaVersion / ViaBackwards. It is focused on low false-positives across
+mixed client versions and behind proxies, and ships a large set of movement,
+combat, world, and packet checks, each fully configurable per-server.
+
+> **Versions:** the *server* must be Paper 1.19 or newer (this is the Modrinth
+> "game version" range). *Player clients* from 1.8.9 upward are supported via
+> ViaVersion on that modern server.
 
 > `jester` is the umbrella brand for a family of plugins; this repository is the
 > anti-cheat (**Jester Anti Cheat**).
@@ -47,10 +52,14 @@ API (`ac.grim.grimac`) as its packet/movement-prediction core.
 
 - Grim AntiCheat — https://github.com/GrimAnticheat/Grim (GPL-3.0)
 
-This is a **modified, rebranded** distribution of that engine. The branding,
-configuration, several original checks (e.g. `AimGCD`, `ReachB`), and many
-false-positive / plugin-compatibility fixes are our own work, layered on top of
-the Grim engine.
+This is a **modified, rebranded** distribution built on that engine. On top of
+Grim's movement-prediction core, this project ships a large suite of checks that
+are **not part of upstream Grim** — roughly **40+ extra checks** spanning combat
+(KillAura, Reach, TriggerBot, Criticals, Crystal/Anchor/Bed aura), inventory &
+auto-* (AutoClicker, AutoTotem, AutoArmor, AutoPot, ChestStealer, …), and world
+(Nuker, Tower, Scaffold, VeinMiner, PacketMine) — plus original checks such as
+`AimGCD` and `ReachB`, the branding/configuration, and many false-positive and
+plugin-compatibility fixes.
 
 ## License
 
