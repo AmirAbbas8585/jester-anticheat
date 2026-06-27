@@ -21,11 +21,13 @@ public final class HookManager {
     private static WorldGuardHook worldGuardHook;
     private static ItemsAdderHook itemsAdderHook;
     private static LPXHook lpxHook;
+    private static CrazyEnchantmentsHook crazyEnchantmentsHook;
 
     public static void init() {
         register(gsitHook = new GSitHook());
         register(deluxeCombatHook = new DeluxeCombatHook());
         register(auraSkillsHook = new AuraSkillsHook());
+        register(crazyEnchantmentsHook = new CrazyEnchantmentsHook());
         // WorldGuard hook is registered for region-NAME queries (no-AFK zones).
         // The optional FLIGHT/PVP flag queries bind best-effort inside the hook,
         // so a missing FLIGHT flag no longer disables it.
@@ -34,7 +36,7 @@ public final class HookManager {
         register(lpxHook = new LPXHook());
 
         // Register platform exemption provider so common-module checks can query hooks
-        ExemptionProvider.register(new BukkitExemptionProvider(gsitHook, worldGuardHook, auraSkillsHook, itemsAdderHook, deluxeCombatHook));
+        ExemptionProvider.register(new BukkitExemptionProvider(gsitHook, worldGuardHook, auraSkillsHook, itemsAdderHook, deluxeCombatHook, crazyEnchantmentsHook));
 
         if (activeHooks.isEmpty()) {
             LogUtil.info("No compatibility hooks active (no supported plugins installed).");
