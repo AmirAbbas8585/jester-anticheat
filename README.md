@@ -30,11 +30,8 @@ fully configurable per-server.
 Requires JDK 21.
 
 ```bash
-# normal build (readable jar)
+# normal build (this is the release jar)
 ./gradlew :bukkit:shadowJar
-
-# obfuscated build (private distribution)
-./gradlew :bukkit:proguardJar -Pobfuscate=true
 ```
 
 Artifacts are written to `bukkit/build/libs/`.
@@ -43,6 +40,23 @@ Artifacts are written to `bukkit/build/libs/`.
 
 All commands live under `/jester` (alias `/jac`). Run `/jester` for the full list.
 
+## Credits
+
+Jester Anti Cheat is built on the **Grim** anti-cheat engine and uses the Grim
+API (`ac.grim.grimac`) as its packet/movement-prediction core.
+
+- Grim AntiCheat — https://github.com/GrimAnticheat/Grim (GPL-3.0)
+
+This is a **modified, rebranded** distribution of that engine. The branding,
+configuration, several original checks (e.g. `AimGCD`, `ReachB`), and many
+false-positive / plugin-compatibility fixes are our own work, layered on top of
+the Grim engine.
+
 ## License
 
-Private project — all rights reserved. Not for redistribution.
+Because it is built on Grim (GPL-3.0), Jester Anti Cheat is itself licensed under
+the **GNU General Public License v3.0** — see [LICENSE](LICENSE).
+
+You are free to use, study, modify and redistribute it under the terms of the
+GPLv3. If you distribute it (modified or not), you must keep it **open-source**
+under the GPLv3 and **preserve the Grim attribution above**.
