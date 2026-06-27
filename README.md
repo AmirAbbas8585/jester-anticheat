@@ -19,6 +19,13 @@ and packet checks, each fully configurable per-server.
 > `jester` is the umbrella brand for a family of plugins; this repository is the
 > anti-cheat (**Jester Anti Cheat**).
 
+## Requirements
+
+- **[PacketEvents](https://modrinth.com/plugin/packetevents) — required.** The
+  plugin will not enable without it.
+- **ViaVersion + ViaBackwards** *(optional)* — only needed to protect players on
+  client versions older than your server.
+
 ## Highlights
 
 - **Per-check configuration** — every check has its own `enabled`, `punishable`,
@@ -61,6 +68,9 @@ auto-* (AutoClicker, AutoTotem, AutoArmor, AutoPot, ChestStealer, …), and worl
 (Nuker, Tower, Scaffold, VeinMiner, PacketMine) — plus original checks such as
 `AimGCD` and `ReachB`, the branding/configuration, and many false-positive and
 plugin-compatibility fixes.
+
+Parts of the development (refactoring, new checks, tuning) were done with the help
+of **Claude** (Anthropic) as a coding assistant.
 
 ## License
 
