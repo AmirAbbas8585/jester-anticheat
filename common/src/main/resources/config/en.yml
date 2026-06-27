@@ -130,11 +130,14 @@ database:
 #  ◆────────────────────────────────────────────────────────────────────────◆
 #    INTEGRATIONS  ·  play nice with other plugins (auto-detected)
 #  ◆────────────────────────────────────────────────────────────────────────◆
+# Each toggle is AUTO-DETECTED: it only does anything when the matching plugin
+# is actually installed and enabled. If the plugin isn't present the toggle is
+# simply ignored (no errors), so leaving these on is always safe. Set one to
+# false to force that specific compatibility behaviour OFF even when the plugin
+# IS installed.
 integrations:
     # Exempt GSit sitting/crawling/laying players from movement checks
     gsit-exempt-movement: true
-    # Extra tolerance ticks when sitting player just stood up
-    gsit-grace-ticks: 3
     # Soften velocity checks for DeluxeCombat/CrazyEnchantments custom knockback
     deluxecombat-kb-tolerance: true
     # AuraSkills: account for speed/jump bonuses in movement checks
@@ -143,8 +146,6 @@ integrations:
     worldguard-fly-regions: true
     # ItemsAdder: use custom block hardness for FastBreak/Nuker checks
     itemsadder-custom-blocks: true
-    # LPX is active — skip duplicate packet exploit checks
-    lpx-skip-duplicate-checks: true
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
 #    UPDATES  ·  tell the console + staff when a newer build is out
@@ -167,7 +168,7 @@ update-checker:
 # "offset" is how far the two disagree per tick; a real fly/speed hack sustains a
 # large offset, normal play produces tiny ones. Thresholds below set tolerance.
 MovementA:
-    setback-decay-multiplier: 0.999
+    buildup-keep-ratio: 0.999
     # Per-tick offset that counts as a violation. Half-blocks (slabs, chests,
     # trapped chests) and Via/ItemsAdder collision quirks produce tiny offsets.
     # Real production logs across many UNRELATED players repeatedly showed the
@@ -178,7 +179,7 @@ MovementA:
     # reproduce an identical number across unrelated players. That signature
     # means this is a deterministic engine/physics quirk (likely a common
     # movement transition, e.g. landing/step-up), not cheating. Raised well
-    # above that whole cluster; immediate-setback-threshold below still
+    # above that whole cluster; instant-rubberband-offset below still
     # catches a genuinely large single-tick jump regardless.
     # Loosened again for the public beta — reports of stray flags on normal
     # movement persisted at 0.02, so the base bar is raised. A real fly/speed
@@ -188,8 +189,8 @@ MovementA:
     # with no sneak/carpet/bed/water — the same deterministic engine-quirk
     # signature, sitting just above the old 0.025 bar. 0.04 clears that whole
     # cluster; a real speed/fly hack sustains far larger offsets (0.1+).
-    threshold: 0.04
-    # Higher threshold applied only while the player is sneaking (vanilla shift).
+    min-offset: 0.04
+    # Higher offset bar applied only while the player is sneaking (vanilla shift).
     # Sneak movement near block edges (slabs/stairs/chests), especially on
     # ViaBackwards/1.8 clients, produces noisy offsets up to ~0.01-0.03 that are
     # NOT cheating. Real production logs showed a sustained, repeating offset
@@ -198,47 +199,47 @@ MovementA:
     # instead of above it. Sneak speed is too slow for speed/fly to matter, so
     # raising this further is safe; only weakens detection of a hack that's
     # already pointless to run while sneaking.
-    sneak-threshold: 0.04
+    min-offset-sneak: 0.04
     # Higher threshold while standing on carpet (any color, or moss carpet).
     # Carpet's collision box is only 1/16 block tall, and real logs showed a
     # sustained ~0.015-0.018 offset just from walking normally on it (not
     # sneaking) — a known collision-simulation quirk for this thin shape,
     # not a speed exploit (carpet doesn't change movement speed).
-    carpet-threshold: 0.03
+    min-offset-carpet: 0.03
     # Higher threshold while on/near a bed. Beds have an asymmetric, reduced-
     # height collision shape (head/foot halves) — real logs showed a sustained,
     # repeating ~0.028-0.031 offset (the exact same value recurring — a
     # deterministic engine quirk, not noise) from jump-spamming on a bed
     # corner. Not a speed exploit; jumping on a bed doesn't change speed.
-    bed-threshold: 0.035
+    min-offset-bed: 0.035
     # Higher threshold while in water. Buoyancy/current/swim-pose physics is the
     # most false-positive-prone movement to simulate exactly (depth strider,
     # dolphin's grace, current pushes, hitbox pose change) and a speed/fly hack
     # is far less useful underwater anyway. Reported as a recurring source of
     # stray MovementA flags, so this is tolerant by design.
-    water-threshold: 0.04
-    immediate-setback-threshold: 0.1
+    min-offset-water: 0.04
+    instant-rubberband-offset: 0.1
     # Extra per-tick offset tolerance added per ms of ping above the baseline.
     # Higher ping = more uncertainty about exactly when an input applied, which
     # shows up as small extra offset that isn't cheating. Raised for the beta
     # since most reported false flags came from 70-150ms players and mobile
     # (PojavLauncher) jitter.
-    ping-threshold-baseline-ms: 60
-    ping-threshold-per-ms: 0.00005
+    lag-grace-start-ms: 60
+    lag-grace-per-ms: 0.00005
     # Allow a little accumulated advantage before a setback, so a single odd tick
     # landing on a slab/chest edge doesn't rubber-band a legit player.
-    max-advantage: 3
-    max-ceiling: 4
-    setback-violation-threshold: 1
+    rubberband-after-buildup: 3
+    buildup-limit: 4
+    rubberband-after-vl: 1
     # Grace window (ms) after a /fly toggle during which the offset is ignored —
     # toggling flight briefly desyncs the ability bit and spikes the prediction.
     # Raise if your flight plugin resyncs slowly.
-    flight-toggle-grace-ms: 1000
+    fly-toggle-grace-ms: 1000
     # Violations removed per second while the player isn't flagging. Kept high so
     # the occasional harmless physics blip between bursts of normal play fades out
     # before it can ever stack up to a punishment. A real fly/speed hack flags
     # every tick it's active, far faster than this clears.
-    decay: 1.0
+    clear-per-second: 1.0
 
 # Timer — detects clients running their game clock faster than real time.
 # (These tuning keys use the name "TimerA"; the checks.TimerA block further down
@@ -249,32 +250,32 @@ TimerA:
     # naturally bunches up, so a generous value here avoids false flags. It only
     # affects the lower bound — running AHEAD (what a timer hack does) is still
     # caught regardless.
-    drift: 250.0
+    max-behind-ms: 250.0
     # Violations removed per second while not flagging.
-    decay: 0.5
+    clear-per-second: 0.5
 
 PacketLimit:
-    # Same proxy/ViaBackwards jitter slack as TimerA.drift.
-    drift: 250.0
-    decay: 0.5
+    # Same proxy/ViaBackwards jitter slack as TimerA.max-behind-ms.
+    max-behind-ms: 250.0
+    clear-per-second: 0.5
     # Above this ping (ms), cap how much "fall behind" advantage accumulates,
     # to stop high-ping abuse. Raised from the 1000ms default since the proxy
     # hop itself adds baseline latency on top of the player's real ping.
-    ping-abuse-limit-threshold: 2000
+    high-ping-cap-ms: 2000
 
 Phase:
-    setbackvl: 1
-    decay: 0.005
+    rubberband-at: 1
+    clear-per-second: 0.005
 
 NoSlow:
-    threshold: 0.001
-    setbackvl: 5
-    decay: 0.05
+    min-offset: 0.001
+    rubberband-at: 5
+    clear-per-second: 0.05
 
 Knockback:
-    setback-decay-multiplier: 0.999
-    threshold: 0.001
-    immediate-setback-threshold: 0.1
+    buildup-keep-ratio: 0.999
+    min-offset: 0.001
+    instant-rubberband-offset: 0.1
 
 #  ◆════════════════════════════════════════════════════════════════════════◆
 #    CHECKS  ·  one block per check — the heart of the config
@@ -1348,7 +1349,7 @@ AutoClickerB:
     # connection (e.g. a mobile client) that occasionally produces the
     # multi-swing-in-one-tick pattern clears between incidents instead of slowly
     # creeping toward a kick over a whole session.
-    decay: 1.0
+    clear-per-second: 1.0
     # Number of multi-swing-in-one-tick bursts within burst-window-ms before a
     # violation is counted (a single coincidental burst is network noise, a real
     # macro does it repeatedly).

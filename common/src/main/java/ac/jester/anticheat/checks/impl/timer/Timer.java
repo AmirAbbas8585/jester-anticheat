@@ -120,6 +120,6 @@ public class Timer extends Check implements PacketCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        clockDrift = (long) (config.getDoubleElse(getConfigName() + ".drift", 120.0) * 1e6);
+        clockDrift = (long) (config.getDoubleElse(getConfigName() + ".max-behind-ms", 120.0) * 1e6);
     }
 }
