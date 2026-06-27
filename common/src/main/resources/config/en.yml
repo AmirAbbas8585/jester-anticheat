@@ -179,7 +179,12 @@ MovementA:
     # Loosened again for the public beta — reports of stray flags on normal
     # movement persisted at 0.02, so the base bar is raised. A real fly/speed
     # hack still produces a sustained, much larger offset every tick.
-    threshold: 0.025
+    # Raised once more (0.025 -> 0.04): real logs showed a player flagging a
+    # tight, recurring cluster of offsets around .033-.039 at a perfect 20 TPS
+    # with no sneak/carpet/bed/water — the same deterministic engine-quirk
+    # signature, sitting just above the old 0.025 bar. 0.04 clears that whole
+    # cluster; a real speed/fly hack sustains far larger offsets (0.1+).
+    threshold: 0.04
     # Higher threshold applied only while the player is sneaking (vanilla shift).
     # Sneak movement near block edges (slabs/stairs/chests), especially on
     # ViaBackwards/1.8 clients, produces noisy offsets up to ~0.01-0.03 that are
