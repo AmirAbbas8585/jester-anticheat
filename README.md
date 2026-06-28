@@ -65,8 +65,8 @@ Grim's movement-prediction core, this project ships a large suite of checks that
 are **not part of upstream Grim** — roughly **40+ extra checks** spanning combat
 (KillAura, Reach, TriggerBot, Criticals, Crystal/Anchor/Bed aura), inventory &
 auto-* (AutoClicker, AutoTotem, AutoArmor, AutoPot, ChestStealer, …), and world
-(Nuker, Tower, Scaffold, VeinMiner, PacketMine) — plus original checks such as
-`AimGCD` and `ReachB`, the branding/configuration, and many false-positive and
+(Nuker, Tower, Scaffold, VeinMiner, PacketMine) — plus an original `ReachB`
+check, the branding/configuration, and many false-positive and
 plugin-compatibility fixes.
 
 Parts of the development (refactoring, new checks, tuning) were done with the help

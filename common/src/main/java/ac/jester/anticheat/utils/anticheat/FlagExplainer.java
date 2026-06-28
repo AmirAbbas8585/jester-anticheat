@@ -258,7 +258,6 @@ public final class FlagExplainer {
             case "AutoTool" -> "The player switched to the optimal tool the same tick they started mining, every time.";
             case "PacketMine" -> "A block's start- and finish-dig packets arrived in the same tick (instant break).";
             case "AimA" -> "Combat rotations weren't quantized to any mouse sensitivity step — the signature of computed (aimbot) aim.";
-            case "AimGCD" -> "During combat, the player's rotation deltas shared no common 'sensitivity step' (their GCD collapsed near zero) — a human mouse always has one, a computed/aimbot rotation doesn't. A very low gcd= is more suspicious; calibrate min-gcd if legit players reach it.";
             case "TriggerBot" -> "The player attacked the exact tick their crosshair first landed on a target.";
             case "MeteorDetector" -> "The client's fingerprint matched a known hacked client (e.g. Meteor).";
             case "NoFall" -> "The player claimed to be on ground when they weren't, to avoid fall damage.";

@@ -130,8 +130,6 @@ public class CheckManager {
         packetChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
                 .put(CompensatedCameraEntity.class, player.cameraEntity)
                 .put(ac.jester.anticheat.checks.impl.aim.AimA.class, aimA)
-                .put(ac.jester.anticheat.checks.impl.aim.AimGCD.class,
-                        new ac.jester.anticheat.checks.impl.aim.AimGCD(player))
                 .put(ac.jester.anticheat.checks.impl.combat.TriggerBot.class,
                         new ac.jester.anticheat.checks.impl.combat.TriggerBot(player))
                 .put(ac.jester.anticheat.checks.impl.vehicle.BoatFly.class,
