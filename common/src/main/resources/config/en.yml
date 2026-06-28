@@ -824,12 +824,12 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
 
-    # Aim (AimGCD) — independent rotation-quantization aimbot check. Alert-only by
-    # default: rotation float precision makes a single universal threshold
-    # imperfect, so watch its flags and calibrate AimGCD.* below before enabling
-    # kicks. Tune min-gcd from real logs (the gcd= value in the alert).
+    # Aim (AimGCD) — independent rotation-quantization aimbot check. DISABLED by
+    # default: the integer-GCD approach collapses to gcd=1 for legitimate players
+    # too (it false-flags everyone), so it is turned off until the algorithm is
+    # reworked to a floating-point GCD. Leave this off.
     AimGCD:
-        enabled: true
+        enabled: false
         punishable: false
         max-violations: 15
         alert-interval: 1
