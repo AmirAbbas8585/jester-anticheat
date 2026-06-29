@@ -1,4 +1,4 @@
-import net.minecrell.pluginyml.bukkit.BukkitPluginDescription.Permission
+﻿import net.minecrell.pluginyml.bukkit.BukkitPluginDescription.Permission
 import versioning.BuildConfig
 
 plugins {
@@ -77,7 +77,7 @@ bukkit {
     author = "Jester"
     main = "ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin"
     website = "https://modrinth.com/plugin/jester-anticheat"
-    // Minimum server version. Bukkit has no "max" field — the plugin loads on
+    // Minimum server version. Bukkit has no "max" field â€” the plugin loads on
     // this version and every newer one automatically. Matches upstream Grim
     // (1.13), so the load range is the same as the Grim engine itself; servers
     // older than 1.13 don't enforce this field and load it in legacy mode, and
@@ -287,60 +287,4 @@ tasks {
             attributes["paperweight-mappings-namespace"] = "mojang"
         }
     }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Obfuscated build for public distribution (Modrinth).
-//
-// Two artifacts from one codebase:
-//   • normal:      ./gradlew :bukkit:shadowJar           (own server, readable)
-//   • obfuscated:  ./gradlew :bukkit:proguardJar -Pobfuscate=true   (Modrinth)
-//
-// proguardJar takes the shaded jar and runs ProGuard over it, renaming only our
-// own ac.jester.anticheat.** source (libraries are left intact) and stripping
-// debug info, producing *-obf.jar — non-trivially-decompilable, source private.
-// Rules live in bukkit/proguard-rules.pro. TEST ON A SERVER BEFORE PUBLISHING.
-// ─────────────────────────────────────────────────────────────────────────────
-val proguardJar = tasks.register<proguard.gradle.ProGuardTask>("proguardJar") {
-    group = "build"
-    description = "Obfuscates the shaded jar for public (Modrinth) distribution."
-
-    val shadow = tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar")
-    dependsOn(shadow)
-
-    // Strip the own-server-only region AFK feature from the public obf jar.
-    // (JesterAntiCheatPlugin tolerates the class being absent at runtime.)
-    injars(mapOf("filter" to "!ac/jester/anticheat/platform/bukkit/afk/**"),
-            shadow.flatMap { it.archiveFile })
-    val obfName = "${rootProject.name}-${rootProject.version}-obf.jar"
-    outjars(layout.buildDirectory.file("libs/$obfName"))
-
-    // The JDK itself as library references (modules our code + deps touch).
-    // Use the project's Java 21 TOOLCHAIN jmods, NOT the JVM running Gradle —
-    // that may be much newer (e.g. JDK 25), whose class-file version ProGuard
-    // can't yet read. The plugin's bytecode is Java 21, so 21 library refs match.
-    val toolchainHome = javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }.get().metadata.installationPath.asFile.absolutePath
-    listOf(
-        "java.base", "java.sql", "java.naming", "java.logging",
-        "java.management", "java.desktop", "jdk.unsupported"
-    ).forEach { module ->
-        libraryjars(
-            mapOf("jarfilter" to "!**.jar", "filter" to "!module-info.class"),
-            "$toolchainHome/jmods/$module.jmod"
-        )
-    }
-    // compileOnly deps (paper-api, and packetevents in lite mode) aren't inside
-    // the shaded jar — feed the compile classpath so references resolve. Any
-    // overlap with already-shaded classes is harmless (-ignorewarnings).
-    libraryjars(configurations.getByName("compileClasspath"))
-
-    configuration(file("proguard-rules.pro"))
-    printmapping(layout.buildDirectory.file("proguard/mapping.txt"))
-}
-
-// When -Pobfuscate=true, the standard assemble/build also produces the obf jar.
-if (BuildConfig.obfuscate) {
-    tasks.named("assemble") { dependsOn(proguardJar) }
 }
