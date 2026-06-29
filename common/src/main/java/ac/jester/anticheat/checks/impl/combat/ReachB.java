@@ -15,6 +15,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDe
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityRelativeMove;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityRelativeMoveAndRotation;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityVelocity;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 
 import java.util.HashMap;
@@ -34,8 +35,7 @@ import java.util.Map;
  * added, so only clear reach flags. Alert-only by default; calibrate from real
  * logs. Self-contained — its own entity tracking, no shared prediction state.
  */
-@CheckData(name = "Reach", configName = "ReachB",
-        experimental = true,
+@CheckData(name = "ReachB", configName = "ReachB",
         description = "Hitting entities from beyond a plausible reach distance")
 public final class ReachB extends Check implements PacketCheck {
 
@@ -48,8 +48,10 @@ public final class ReachB extends Check implements PacketCheck {
     private double baseLenience = 0.30;  // flat tolerance on top of maxReach
     private double pingLeniencePerMs = 0.003; // extra blocks per ms of ping
     private int minConsecutive = 4;      // bad hits in a row before flagging
+    private long knockbackGraceMs = 600; // ignore hits shortly after taking knockback
 
     private int consecutiveBad = 0;
+    private long lastSelfKnockbackMs = 0; // when the player last took knockback/velocity
 
     public ReachB(GrimPlayer player) {
         super(player);
@@ -62,6 +64,7 @@ public final class ReachB extends Check implements PacketCheck {
         baseLenience = config.getDoubleElse("ReachB.base-lenience", 0.30);
         pingLeniencePerMs = config.getDoubleElse("ReachB.ping-lenience-per-ms", 0.003);
         minConsecutive = Math.max(1, config.getIntElse("ReachB.min-consecutive", 4));
+        knockbackGraceMs = config.getLongElse("ReachB.knockback-grace-ms", 600);
     }
 
     // ── entity position tracking (server -> client) ───────────────────────────
@@ -90,6 +93,13 @@ public final class ReachB extends Check implements PacketCheck {
         } else if (type == PacketType.Play.Server.DESTROY_ENTITIES) {
             WrapperPlayServerDestroyEntities w = new WrapperPlayServerDestroyEntities(event);
             for (int id : w.getEntityIds()) tracked.remove(id);
+
+        } else if (type == PacketType.Play.Server.ENTITY_VELOCITY) {
+            // The player taking knockback/velocity (e.g. being hit while holding a
+            // shield) briefly desyncs their position from the tracked target — a
+            // common reach false-positive source. Remember when it happened.
+            WrapperPlayServerEntityVelocity w = new WrapperPlayServerEntityVelocity(event);
+            if (w.getEntityId() == player.entityID) lastSelfKnockbackMs = System.currentTimeMillis();
         }
     }
 
@@ -109,6 +119,13 @@ public final class ReachB extends Check implements PacketCheck {
         if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
         WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
         if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+
+        // Skip while the player is being knocked back — their position is desynced
+        // from the tracked entity, which inflates the measured distance.
+        if (System.currentTimeMillis() - lastSelfKnockbackMs < knockbackGraceMs) {
+            consecutiveBad = 0;
+            return;
+        }
 
         Track t = tracked.get(interact.getEntityId());
         if (t == null || t.count == 0) return;
