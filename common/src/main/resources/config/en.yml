@@ -1046,6 +1046,9 @@ checks:
 Reach:
     block-impossible-hits: true
     threshold: 0.05
+    # Extra blocks of reach allowed on top of vanilla 3.0 before flagging.
+    # 0.3 -> effective ~3.3-block limit.
+    extra-reach: 0.3
     # Extra reach margin (blocks) while sneaking — the sneak eye-height change is
     # processed a tick late, briefly inflating the measured hit distance. Real
     # reach hacks are 3.3+ blocks, far beyond this.
@@ -1056,7 +1059,7 @@ Reach:
 # ping*ping-lenience-per-ms, sustained min-consecutive times. Loosen the
 # lenience values if legit high-ping PvP flags; tighten to catch smaller reach.
 ReachB:
-    max-reach: 4.0
+    max-reach: 3.4
     hitbox-pad: 0.30
     base-lenience: 0.30
     ping-lenience-per-ms: 0.003

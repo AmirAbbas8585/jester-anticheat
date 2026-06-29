@@ -64,6 +64,7 @@ public class Reach extends Check implements PacketCheck {
     private boolean cancelImpossibleHits;
     private double threshold;
     private double sneakLenience;
+    private double extraReach;
     private double cancelBuffer; // For the next 4 hits after using reach, we aggressively cancel reach
 
     public Reach(GrimPlayer player) {
@@ -343,7 +344,7 @@ public class Reach extends Check implements PacketCheck {
 
         targetBox.expand(hitboxMargin);
 
-        return maxReach;
+        return maxReach + extraReach;
     }
 
     private static final boolean ATTACK_RANGE_COMPONENT_EXISTS = PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_11);
@@ -353,6 +354,9 @@ public class Reach extends Check implements PacketCheck {
         this.cancelImpossibleHits = config.getBooleanElse("Reach.block-impossible-hits", true);
         this.threshold = config.getDoubleElse("Reach.threshold", 0.0005);
         this.sneakLenience = config.getDoubleElse("Reach.sneak-lenience", 0.1);
+        // Extra blocks of reach allowed on top of the vanilla interaction range
+        // (3.0). 0.3 -> effective ~3.3-block limit before flagging.
+        this.extraReach = config.getDoubleElse("Reach.extra-reach", 0.3);
     }
 
     private enum ResultType {
