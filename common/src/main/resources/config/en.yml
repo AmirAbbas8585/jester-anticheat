@@ -373,7 +373,7 @@ checks:
     Reach:
         enabled: true
         punishable: true
-        max-violations: 12           # More chances before kick (PvP lag tolerance)
+        max-violations: 2            # Low for calibration — raise for production
         alert-interval: 1
         dont-alert-until: 4
         alert-cooldown-ms: 1000
@@ -387,8 +387,8 @@ checks:
     # tune ReachB.* below before enabling kicks.
     ReachB:
         enabled: true
-        punishable: false
-        max-violations: 12
+        punishable: true
+        max-violations: 2            # Low for calibration — raise for production
         alert-interval: 1
         dont-alert-until: 4
         alert-cooldown-ms: 1000
@@ -1064,6 +1064,9 @@ ReachB:
     base-lenience: 0.30
     ping-lenience-per-ms: 0.003
     min-consecutive: 4
+    # Ignore hits for this many ms after the player takes knockback/velocity
+    # (e.g. being hit while holding a shield) — position desync inflates reach.
+    knockback-grace-ms: 600
 
 # AutoBlock — max ping before the check is skipped (ms)
 AutoBlock:
