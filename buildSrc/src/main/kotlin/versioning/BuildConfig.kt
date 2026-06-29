@@ -57,7 +57,6 @@ object BuildConfig {
         _relocate = resolveBool(project, "relocate", altKey = "RELOCATE_JAR", default = true)
         _release = resolveBool(project, "release", default = false)
         _mavenLocalOverride = resolveBool(project, "mavenLocalOverride", altKey = "MAVEN_LOCAL_OVERRIDE", default = false)
-        _obfuscate = resolveBool(project, "obfuscate", altKey = "OBFUSCATE", default = false)
     }
 
     // Unified resolution logic (System > Gradle > Env)
@@ -78,7 +77,6 @@ object BuildConfig {
     private var _relocate: Boolean? = null
     private var _release: Boolean? = null
     private var _mavenLocalOverride: Boolean? = null
-    private var _obfuscate: Boolean? = null
 
     /** If true, shades PacketEvents into the jar. Default: true. */
     val shadePE: Boolean get() = _shadePE
@@ -94,15 +92,5 @@ object BuildConfig {
 
     val mavenLocalOverride: Boolean get() = _mavenLocalOverride
         ?: error("BuildConfig.release accessed before init() was called")
-
-    /**
-     * If true, the shaded bukkit jar is run through ProGuard to obfuscate class,
-     * method and field names, producing a non-decompilable artifact for public
-     * distribution (Modrinth) while keeping the source private. Default: false,
-     * so the normal "own server" build is never obfuscated. Enable with
-     * `-Pobfuscate=true`.
-     */
-    val obfuscate: Boolean get() = _obfuscate
-        ?: error("BuildConfig.obfuscate accessed before init() was called")
 
 }

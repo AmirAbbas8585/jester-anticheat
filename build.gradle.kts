@@ -14,7 +14,7 @@ import versioning.VersionUtil
 
 BuildConfig.init(project)
 
-val baseVersion = "0.0.1"
+val baseVersion = "0.0.3"
 group = "ac.jester.anticheat"
 // Clean, fixed version label for the beta (no git/lite build suffixes).
 version = "$baseVersion-beta"
