@@ -373,7 +373,7 @@ checks:
     Reach:
         enabled: true
         punishable: true
-        max-violations: 2            # Low for calibration — raise for production
+        max-violations: 3
         alert-interval: 1
         dont-alert-until: 4
         alert-cooldown-ms: 1000
@@ -387,8 +387,8 @@ checks:
     # tune ReachB.* below before enabling kicks.
     ReachB:
         enabled: true
-        punishable: true
-        max-violations: 2            # Low for calibration — raise for production
+        punishable: false            # Detection/alert only — never kicks
+        max-violations: 15
         alert-interval: 1
         dont-alert-until: 4
         alert-cooldown-ms: 1000
