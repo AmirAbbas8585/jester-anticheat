@@ -43,7 +43,7 @@ public final class ReachB extends Check implements PacketCheck {
     private final Map<Integer, Track> tracked = new HashMap<>();
     private static final int HISTORY = 20;
 
-    private double maxReach = 3.3;       // vanilla attack range + a small buffer
+    private double maxReach = 4.0;       // vanilla attack range + a generous buffer
     private double hitboxPad = 0.30;     // generous half-width padding (anti-FP)
     private double baseLenience = 0.30;  // flat tolerance on top of maxReach
     private double pingLeniencePerMs = 0.003; // extra blocks per ms of ping
@@ -57,7 +57,7 @@ public final class ReachB extends Check implements PacketCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        maxReach = config.getDoubleElse("ReachB.max-reach", 3.3);
+        maxReach = config.getDoubleElse("ReachB.max-reach", 4.0);
         hitboxPad = config.getDoubleElse("ReachB.hitbox-pad", 0.30);
         baseLenience = config.getDoubleElse("ReachB.base-lenience", 0.30);
         pingLeniencePerMs = config.getDoubleElse("ReachB.ping-lenience-per-ms", 0.003);

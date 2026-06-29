@@ -1056,7 +1056,7 @@ Reach:
 # ping*ping-lenience-per-ms, sustained min-consecutive times. Loosen the
 # lenience values if legit high-ping PvP flags; tighten to catch smaller reach.
 ReachB:
-    max-reach: 3.3
+    max-reach: 4.0
     hitbox-pad: 0.30
     base-lenience: 0.30
     ping-lenience-per-ms: 0.003
