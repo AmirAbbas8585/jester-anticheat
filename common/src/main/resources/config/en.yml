@@ -267,9 +267,13 @@ Phase:
     clear-per-second: 0.005
 
 NoSlow:
-    min-offset: 0.001
+    # Loosened to stop false kicks on high-ping players: a real no-slow cheat
+    # keeps near-full speed while using an item (a large, sustained offset),
+    # whereas lag/desync produces tiny sporadic ones. 0.001 caught the latter.
+    min-offset: 0.02
     rubberband-at: 5
-    clear-per-second: 0.05
+    # Faster VL decay so isolated lag blips clear instead of stacking to a kick.
+    clear-per-second: 0.3
 
 Knockback:
     buildup-keep-ratio: 0.999
