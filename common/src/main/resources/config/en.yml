@@ -403,7 +403,7 @@ checks:
     # AutoClicker A — statistical consistency
     AutoClickerA:
         enabled: true
-        punishable: true
+        punishable: false
         max-violations: 12
         alert-interval: 1
         dont-alert-until: 1
@@ -415,7 +415,7 @@ checks:
     # AutoClicker B — multi-click in one tick
     AutoClickerB:
         enabled: true
-        punishable: true
+        punishable: false
         # Raised from 10 — a chronically jittery connection (e.g. PojavLauncher
         # mobile network) was still slowly accumulating enough violations to get
         # kicked even after requiring repeated bursts.
@@ -525,7 +525,7 @@ checks:
     # Multitask — attacking while actively using an item (eating/potion/bow)
     Multitask:
         enabled: true
-        punishable: true
+        punishable: false
         max-violations: 5
         alert-interval: 1
         dont-alert-until: 2
@@ -689,7 +689,7 @@ checks:
     # FastPlace — placing blocks faster than humanly possible
     FastPlace:
         enabled: true
-        punishable: true
+        punishable: false
         max-violations: 8
         alert-interval: 1
         dont-alert-until: 3
@@ -910,7 +910,7 @@ checks:
     # AutoArmor — equipping multiple armor pieces at superhuman speed
     AutoArmor:
         enabled: true
-        punishable: true
+        punishable: false
         max-violations: 5
         alert-interval: 1
         dont-alert-until: 2
@@ -984,7 +984,7 @@ checks:
     # FastBreak — breaking blocks too quickly
     FastBreak:
         enabled: true
-        punishable: true
+        punishable: false
         max-violations: 8
         alert-interval: 1
         dont-alert-until: 3
@@ -1550,7 +1550,10 @@ FastBow:
 # FastPlace — vanilla's 4-tick right-click cooldown caps placements at 5/sec
 # regardless of click speed; 10 absorbs network jitter. Meteor FastUse ~20/sec.
 FastPlace:
-    max-bps: 10
+    # Raised: fast bridging (god-bridge, moonwalk) legitimately places 12-15
+    # blocks/sec, so 10 false-flagged fast builders. Scaffold cheats place far
+    # more (20+) or perfectly-timed, still well above this.
+    max-bps: 16
 
 # Tower — minimum milliseconds between consecutive under-self placements while jumping
 Tower:
@@ -1598,10 +1601,16 @@ AutoFish:
 # AutoArmor — burst detection thresholds
 AutoArmor:
     # Maximum milliseconds window for counting rapid armor-slot clicks
-    max-burst-ms: 250
-    # How many DISTINCT armor slots clicked within the window before flagging
-    # (double-clicks on a single slot never count twice)
-    burst-threshold: 2
+    max-burst-ms: 200
+    # How many DISTINCT armor slots within the window before flagging. Raised to
+    # 4: a real auto-armor equips the whole set (all 4 pieces) near-instantly,
+    # whereas a player manually equipping fast can click 2-3 slots quickly.
+    burst-threshold: 4
+
+Multitask:
+    # Consecutive incompatible-action ticks before flagging. 2 false-flagged
+    # high-ping players whose packets interleave; 4 needs a sustained pattern.
+    min-consecutive: 4
 
 # AutoRespawn — minimum ms between death and respawn packet
 AutoRespawn:
@@ -1622,7 +1631,9 @@ AutoTool:
 # 2.0 = allow up to twice the predicted speed. Raise it if custom enchants still
 # flag; on a vanilla-only server you can lower it toward 1.0 for stricter checks.
 FastBreak:
-    speed-tolerance: 2.0
+    # Raised for headroom on high-ping / high-tier tools + enchants so legit
+    # fast mining isn't flagged; real instant-break is caught by PacketMine.
+    speed-tolerance: 3.0
 
 # PacketMine — instant-break detection (sub-tick start->finish)
 PacketMine:
@@ -1741,7 +1752,10 @@ AutoClickerA:
     # 20/sec anyway, so there's no exploit value between 20-21; raised to give
     # genuine max-speed clickers room without weakening detection of real
     # macros (which run well above this, e.g. 25-30+ CPS).
-    max-cps: 21.0
+    # Raised: butterfly/drag/jitter clicking are legitimate techniques that
+    # easily exceed 21 CPS, so a low ceiling false-flags fast human clickers.
+    # Real auto-clickers are caught by consistency (min-cv) below, not raw speed.
+    max-cps: 40.0
     # Minimum coefficient of variation for human clicks (lower = auto-clicker)
     min-cv: 0.10
     # Rolling window of click intervals used for analysis
@@ -1769,7 +1783,7 @@ AutoClickerB:
     # Number of multi-swing-in-one-tick bursts within burst-window-ms before a
     # violation is counted (a single coincidental burst is network noise, a real
     # macro does it repeatedly).
-    min-bursts: 4
+    min-bursts: 6
     burst-window-ms: 4000
     # Cancel-before-kick (see AutoClickerA): neutralise the extra swings for a
     # few seconds before any kick can happen.
