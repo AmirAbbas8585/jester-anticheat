@@ -403,7 +403,7 @@ checks:
     # AutoClicker A — statistical consistency
     AutoClickerA:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 12
         alert-interval: 1
         dont-alert-until: 1
@@ -415,7 +415,7 @@ checks:
     # AutoClicker B — multi-click in one tick
     AutoClickerB:
         enabled: true
-        punishable: false
+        punishable: true
         # Raised from 10 — a chronically jittery connection (e.g. PojavLauncher
         # mobile network) was still slowly accumulating enough violations to get
         # kicked even after requiring repeated bursts.
@@ -525,7 +525,7 @@ checks:
     # Multitask — attacking while actively using an item (eating/potion/bow)
     Multitask:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 5
         alert-interval: 1
         dont-alert-until: 2
@@ -689,7 +689,7 @@ checks:
     # FastPlace — placing blocks faster than humanly possible
     FastPlace:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 8
         alert-interval: 1
         dont-alert-until: 3
@@ -910,7 +910,7 @@ checks:
     # AutoArmor — equipping multiple armor pieces at superhuman speed
     AutoArmor:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 5
         alert-interval: 1
         dont-alert-until: 2
@@ -984,7 +984,7 @@ checks:
     # FastBreak — breaking blocks too quickly
     FastBreak:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 8
         alert-interval: 1
         dont-alert-until: 3
