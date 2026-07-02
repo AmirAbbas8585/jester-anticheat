@@ -210,14 +210,23 @@ public class PunishmentManager implements ConfigReloadable {
                 // burst that spiked straight to max-violations decays away first.
                 long streakStart = offenseFirstFlagMs.getOrDefault(punishKey, now);
                 boolean graceElapsed = now - streakStart >= checkCfg.punishGraceMs;
+                // Ping shown in the kick message: the peak ping recorded across
+                // the flags that caused the kick, not the (often already-
+                // recovered) instantaneous ping at this exact tick.
+                int punishPing = offensePeakPing.getOrDefault(punishKey, player.getTransactionPing());
+                // High-ping guard: laggy players desync and false-flag movement/
+                // combat checks, so above this ping we still alert but DON'T kick.
+                // Packet-integrity checks (BadPackets/Crash/Exploit) are ping-
+                // independent and must still enforce, so they bypass the guard.
+                int noPunishAbove = GrimAPI.INSTANCE.getConfigManager().getConfig()
+                        .getIntElse("high-ping.no-punish-above-ms", 400);
+                String cn = check.getCheckName();
+                boolean packetLevel = cn.startsWith("BadPackets") || cn.startsWith("Crash") || cn.startsWith("Exploit");
+                boolean pingBlocksKick = !packetLevel && noPunishAbove > 0 && punishPing > noPunishAbove;
                 // Fire ONCE per offense. add() returns true only the first time
                 // we cross the threshold, so it works even if the VL jumps past
                 // the exact max (e.g. 19 -> 22) or a flag() bypassed alert().
-                if (graceElapsed && punishedChecks.add(punishKey)) {
-                    // Ping shown in the kick message: the peak ping recorded
-                    // across the flags that caused the kick, not the (often
-                    // already-recovered) instantaneous ping at this exact tick.
-                    int punishPing = offensePeakPing.getOrDefault(punishKey, player.getTransactionPing());
+                if (!pingBlocksKick && graceElapsed && punishedChecks.add(punishKey)) {
                     for (String cmd : checkCfg.punishmentCommands) {
                         // MiniMessage tags -> legacy § codes; /kick takes plain text
                         // %ping%/%verbose% let a kick command spell out WHY (e.g.
