@@ -1037,6 +1037,440 @@ checks:
             # (proxy hop, bad mobile connection) rather than an actual timer hack.
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
 
+    # ──────────────────────────────────────────────────────────────────────
+    # Auto-added blocks for the remaining checks so every check is visible and
+    # tweakable here. Defaults to alert-only (punishable: false). Set
+    # punishable: true and add punishment-commands to make one kick.
+    # ──────────────────────────────────────────────────────────────────────
+    # ── aim ──
+    AimDuplicateLook:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    AimModulo360:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── badpackets ──
+    BadPacketsC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsG:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsH:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsI:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsJ:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsK:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsL:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsM:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsN:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsO:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsP:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsQ:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsR:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsS:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsT:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsU:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsV:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsW:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsX:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsY:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    BadPacketsZ:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── baritone ──
+    Baritone:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── breaking ──
+    AirLiquidBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    FarBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    InvalidBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    NoSwingBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    PositionBreakA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    PositionBreakB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    RotationBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    WrongBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── chat ──
+    ChatA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ChatB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ChatC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ChatD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── combat ──
+    Hitboxes:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiInteractA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiInteractB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── crash ──
+    CrashA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashG:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashH:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    CrashI:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── elytra ──
+    ElytraA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraG:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraH:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ElytraI:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── exploit ──
+    ExploitA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ExploitB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── groundspoof ──
+    NoFall:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── misc ──
+    Post:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    ResourcePackState:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── multiactions ──
+    MultiActionsA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiActionsB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiActionsC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiActionsD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiActionsE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiActionsF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiActionsG:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── prediction ──
+    GroundSpoof:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── scaffolding ──
+    DuplicateRotPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    FabricatedPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    FarPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    InvalidPlaceA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    InvalidPlaceB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    MultiPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    PositionPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── sprint ──
+    SprintA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    SprintB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    SprintC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    SprintD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    SprintE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    SprintF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    SprintG:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── timer ──
+    NegativeTimer:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    TickTimer:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    VehicleTimer:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── vehicle ──
+    VehicleA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    VehicleB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    VehicleC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    VehicleD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    VehicleE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+    VehicleF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+    # ── velocity ──
+    Explosion:
+        enabled: true
+        punishable: false
+        max-violations: 20
+
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Check-Specific Fine-Tuning
