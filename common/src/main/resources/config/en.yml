@@ -1505,6 +1505,9 @@ ReachB:
     # Ignore hits for this many ms after the player takes knockback/velocity
     # (e.g. being hit while holding a shield) — position desync inflates reach.
     knockback-grace-ms: 600
+    # Distances above this (blocks) are treated as tracking glitches, not reach
+    # (no real cheat hits from tens of blocks away) — kills high-ping noise.
+    max-plausible-distance: 10.0
 
 # AutoBlock — max ping before the check is skipped (ms)
 AutoBlock:

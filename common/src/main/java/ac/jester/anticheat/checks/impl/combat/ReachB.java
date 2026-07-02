@@ -49,6 +49,7 @@ public final class ReachB extends Check implements PacketCheck {
     private double pingLeniencePerMs = 0.003; // extra blocks per ms of ping
     private int minConsecutive = 4;      // bad hits in a row before flagging
     private long knockbackGraceMs = 600; // ignore hits shortly after taking knockback
+    private double maxPlausibleDistance = 10.0; // above this = tracking glitch, not reach
 
     private int consecutiveBad = 0;
     private long lastSelfKnockbackMs = 0; // when the player last took knockback/velocity
@@ -65,6 +66,7 @@ public final class ReachB extends Check implements PacketCheck {
         pingLeniencePerMs = config.getDoubleElse("ReachB.ping-lenience-per-ms", 0.003);
         minConsecutive = Math.max(1, config.getIntElse("ReachB.min-consecutive", 4));
         knockbackGraceMs = config.getLongElse("ReachB.knockback-grace-ms", 600);
+        maxPlausibleDistance = config.getDoubleElse("ReachB.max-plausible-distance", 10.0);
     }
 
     // ── entity position tracking (server -> client) ───────────────────────────
@@ -147,6 +149,14 @@ public final class ReachB extends Check implements PacketCheck {
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
         double allowed = maxReach + baseLenience + player.getTransactionPing() * pingLeniencePerMs;
+
+        // Absurd distances (tens of blocks) aren't real reach — no cheat hits from
+        // that far. They come from a stale/desynced tracked position (high ping,
+        // target just teleported). Treat as tracking noise, not a violation.
+        if (distance > maxPlausibleDistance) {
+            consecutiveBad = 0;
+            return;
+        }
 
         if (distance > allowed) {
             if (++consecutiveBad >= minConsecutive) {
