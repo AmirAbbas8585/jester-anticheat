@@ -65,6 +65,14 @@ beta-checks: true
 # false positives.
 beta-checks-punishable: false
 
+# High-ping guard. Laggy players desync from the server and false-flag movement
+# and combat checks; above this transaction ping (ms) a check still ALERTS but
+# won't KICK, so you never punish someone for lag. Packet-integrity checks
+# (BadPackets / Crash / Exploit) are ping-independent and always enforce.
+# Set to 0 to disable the guard (kick regardless of ping).
+high-ping:
+    no-punish-above-ms: 400
+
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
 #    DEFAULTS  ·  fallback alert + punish behaviour for every check
@@ -267,10 +275,11 @@ Phase:
     clear-per-second: 0.005
 
 NoSlow:
-    # Loosened to stop false kicks on high-ping players: a real no-slow cheat
-    # keeps near-full speed while using an item (a large, sustained offset),
-    # whereas lag/desync produces tiny sporadic ones. 0.001 caught the latter.
-    min-offset: 0.02
+    # A real no-slow cheat keeps near-full speed while using an item — the
+    # offset is large and sustained (~0.15+ blocks/tick). Lag/desync produces
+    # tiny sporadic ones. Set well above the lag band so only real no-slow trips
+    # it (the old 0.001 caught pure lag and false-kicked high-ping players).
+    min-offset: 0.05
     rubberband-at: 5
     # Faster VL decay so isolated lag blips clear instead of stacking to a kick.
     clear-per-second: 0.3
@@ -1047,428 +1056,624 @@ checks:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     AimModulo360:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── badpackets ──
     BadPacketsC:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsD:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsE:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsF:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsG:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsH:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsI:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsJ:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsK:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsL:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsM:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsN:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsO:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsP:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsQ:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsR:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsS:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsT:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsU:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsV:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsW:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsX:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsY:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     BadPacketsZ:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── baritone ──
     Baritone:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── breaking ──
     AirLiquidBreak:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     FarBreak:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     InvalidBreak:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiBreak:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     NoSwingBreak:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     PositionBreakA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     PositionBreakB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     RotationBreak:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     WrongBreak:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── chat ──
     ChatA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ChatB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ChatC:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ChatD:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── combat ──
     Hitboxes:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiInteractA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiInteractB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── crash ──
     CrashA:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashB:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashC:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashD:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashE:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashF:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashG:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashH:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     CrashI:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── elytra ──
     ElytraA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraC:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraD:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraE:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraF:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraG:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraH:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ElytraI:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── exploit ──
     ExploitA:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ExploitB:
         enabled: true
-        punishable: false
+        punishable: true
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── groundspoof ──
     NoFall:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── misc ──
     Post:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     ResourcePackState:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── multiactions ──
     MultiActionsA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsC:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsD:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsE:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsF:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsG:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── prediction ──
     GroundSpoof:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── scaffolding ──
     DuplicateRotPlace:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     FabricatedPlace:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     FarPlace:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     InvalidPlaceA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     InvalidPlaceB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiPlace:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     PositionPlace:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── sprint ──
     SprintA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintC:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintD:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintE:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintF:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintG:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── timer ──
     NegativeTimer:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     TickTimer:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     VehicleTimer:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── vehicle ──
     VehicleA:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     VehicleB:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     VehicleC:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     VehicleD:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     VehicleE:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     VehicleF:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
     # ── velocity ──
     Explosion:
         enabled: true
         punishable: false
         max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
 
 
