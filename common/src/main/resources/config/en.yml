@@ -1090,6 +1090,19 @@ checks:
             # (proxy hop, bad mobile connection) rather than an actual timer hack.
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
 
+    # ── ghost-desync checks (our own, experimental → alert-only) ──
+    GhostBlock:
+        enabled: true
+        punishable: false
+        max-violations: 15
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+    GhostItem:
+        enabled: true
+        punishable: false
+        max-violations: 15
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     # ──────────────────────────────────────────────────────────────────────
     # Auto-added blocks for the remaining checks so every check is visible and
     # tweakable here. Defaults to alert-only (punishable: false). Set
@@ -2170,6 +2183,18 @@ help:
     - '%prefix% <color:#a9c8ff>/jester version</color> <white>—</white> <gray>Plugin version info</gray>'
     - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
 
+
+# GhostBlock — placing against a block that is air server-side (ghost-block abuse)
+GhostBlock:
+    # Placements-against-air in a row before flagging (a same-tick break desync
+    # can look like one, so require a short streak).
+    min-consecutive: 2
+
+# GhostItem — using an item the server doesn't see in the player's hand
+GhostItem:
+    min-consecutive: 2
+    # Skip above this ping (ms) — inventory desync grows with latency.
+    max-ping: 600
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
 #    ADVANCED  ·  engine internals — the defaults are right for most servers

@@ -155,6 +155,8 @@ public class CheckManager {
                 .put(AutoTotem.class, new AutoTotem(player))
                 .put(KillAuraD.class, new KillAuraD(player))
                 .put(ChestStealer.class, new ChestStealer(player))
+                .put(ac.jester.anticheat.checks.impl.player.GhostItem.class,
+                        new ac.jester.anticheat.checks.impl.player.GhostItem(player))
                 .put(AutoFish.class, new AutoFish(player))
                 .put(AutoArmor.class, new AutoArmor(player))
                 .put(AutoEat.class, new AutoEat(player))
@@ -283,6 +285,8 @@ public class CheckManager {
                 .put(InvalidPlaceA.class, new InvalidPlaceA(player))
                 .put(InvalidPlaceB.class, new InvalidPlaceB(player))
                 .put(AirLiquidPlace.class, new AirLiquidPlace(player))
+                .put(ac.jester.anticheat.checks.impl.scaffolding.GhostBlock.class,
+                        new ac.jester.anticheat.checks.impl.scaffolding.GhostBlock(player))
                 .put(FastPlace.class, new FastPlace(player))
                 .put(Tower.class, new Tower(player))
                 .put(MultiPlace.class, new MultiPlace(player))
