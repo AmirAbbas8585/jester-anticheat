@@ -43,13 +43,6 @@ public final class Criticals extends Check implements PacketCheck {
         WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
         if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
 
-        // A player riding a vehicle (horse, boat, ...) can never land a critical
-        // hit in vanilla, and while mounted the client doesn't update the
-        // player's own ground/position state (the vehicle moves instead). That
-        // leaves onGround and clientClaimsLastOnGround desynced, which this check
-        // would read as a ground-spoof crit — a false positive. Exempt riders.
-        if (player.inVehicle()) return;
-
         // Need reliable ticking before flagging
         if (!player.isTickingReliablyFor(5)) return;
         if (player.getTransactionPing() > maxPingMs) return;
@@ -58,8 +51,11 @@ public final class Criticals extends Check implements PacketCheck {
         // computed onGround=true. This is not a cheat — it is a timing artifact.
         if (!player.lastOnGround && player.onGround) return;
 
-        // The Criticals signature: server says on ground, client claims air
-        if (player.onGround && !player.clientClaimsLastOnGround) {
+        // The Criticals signature: server says on ground, client claims air.
+        // Excluded while mounted: a rider can't crit in vanilla, and their own
+        // ground state isn't updated while the vehicle moves, so onGround vs
+        // clientClaimsLastOnGround desyncs into a false ground-spoof crit.
+        if (!player.inVehicle() && player.onGround && !player.clientClaimsLastOnGround) {
             flagAndAlert(String.format("onGround=%b clientClaims=%b ping=%dms",
                     player.onGround, player.clientClaimsLastOnGround, player.getTransactionPing()));
         }
