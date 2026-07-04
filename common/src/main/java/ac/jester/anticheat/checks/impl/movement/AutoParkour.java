@@ -49,7 +49,9 @@ public final class AutoParkour extends Check implements PostPredictionCheck {
     @Override
     public void onReload(ConfigManager config) {
         edgeThreshold = config.getDoubleElse("AutoParkour.edge-threshold", 0.70);
-        windowSize = config.getIntElse("AutoParkour.window-size", 8);
+        // Clamp: 0 would divide-by-zero below, and the rolling window is a 32-bit
+        // int bitmask so anything above 31 overflows the shift.
+        windowSize = Math.max(1, Math.min(31, config.getIntElse("AutoParkour.window-size", 8)));
         minEdgeRatio = config.getDoubleElse("AutoParkour.min-edge-ratio", 0.875);
         minSpeedBps = config.getDoubleElse("AutoParkour.min-speed-bps", 0.15);
     }

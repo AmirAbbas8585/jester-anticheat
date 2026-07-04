@@ -78,3 +78,17 @@ jester-history-disabled: '%prefix% &cHistory subsystem is disabled!'
 jester-history-header: '%prefix% &7Showing logs for &#c19a6b%player% &8(&#c19a6b%page%&8/&#c19a6b%maxPages%&8)'
 # Valid placeholders: %prefix% %jester_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
 jester-history-entry: '%prefix% &8[&f%server%&8] &7failed &#c19a6b%check% &8(&#c19a6bx%vl%&8) &7%verbose% &8(&#c19a6b%timeago% ago&8)'
+
+# ── Command responses ────────────────────────────────────────────────────────
+tp-success: '%prefix% &bTeleported to &f%player%&b.'
+cannot-run-on-self: '%prefix% &cYou cannot run that on yourself.'
+setback-success: '%prefix% &bSetback executed for &f%player%&b.'
+rotate-sent: '%prefix% &bRotated &f%player% &bto a random direction &7(yaw=%yaw% pitch=%pitch%)&b.'
+kb-sent: '%prefix% &bKnockback &f(strength=&c%.1f&f) &bsent to &f%player%&b.'
+cps-info: '%prefix% &f%player% &b— CPS: &f%.1f'
+stats-header: '%prefix% &bJesterAntiCheat &8— &fServer Statistics'
+clearviolations-success: '%prefix% &bCleared &f%count% &bcheck(s) for &f%player%&b.'
+freeze-frozen: '%prefix% &f%player% &bhas been &cfrozen&b.'
+freeze-unfrozen: '%prefix% &f%player% &bhas been &aunfrozen&b.'
+freeze-target-notify: '%prefix% &cYou have been &ffrozen &cby a staff member. Do not log out.'
+freeze-target-unfreeze: '%prefix% &aYou have been &funfrozen&a.'
