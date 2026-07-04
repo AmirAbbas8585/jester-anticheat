@@ -35,9 +35,18 @@ import java.util.Set;
 public final class KillAuraB extends Check implements PacketCheck {
 
     private final Set<Integer> entitiesThisTick = new HashSet<>();
+    // Distinct entities attacked within one client tick before flagging. 2 is
+    // vanilla-impossible; raise to 3 if a very laggy setup ever bunches two
+    // legitimate single attacks into one processed tick.
+    private int minTargets = 2;
 
     public KillAuraB(GrimPlayer player) {
         super(player);
+    }
+
+    @Override
+    public void onReload(ac.grim.grimac.api.config.ConfigManager config) {
+        minTargets = Math.max(2, config.getIntElse("KillAuraB.min-targets", 2));
     }
 
     @Override
@@ -55,7 +64,7 @@ public final class KillAuraB extends Check implements PacketCheck {
 
         entitiesThisTick.add(interact.getEntityId());
 
-        if (entitiesThisTick.size() >= 2 && player.isTickingReliablyFor(3)) {
+        if (entitiesThisTick.size() >= minTargets && player.isTickingReliablyFor(3)) {
             flagAndAlert(String.format("targets=%d ping=%dms",
                     entitiesThisTick.size(), player.getTransactionPing()));
             entitiesThisTick.clear();

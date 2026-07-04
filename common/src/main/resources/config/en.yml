@@ -1807,6 +1807,11 @@ InventoryWalk:
     # Consecutive moving ticks (on the ground, not ice) before flag + immediate setback (~300ms)
     min-consecutive: 6
 
+# KillAuraB — attacking multiple distinct entities in one client tick
+KillAuraB:
+    # Distinct entities hit in one tick before flagging (2 = vanilla-impossible).
+    min-targets: 2
+
 # KillAuraC — attacking while a container GUI is open
 KillAuraC:
     # Attacks in a row while a container is open before flagging. Prevents a
