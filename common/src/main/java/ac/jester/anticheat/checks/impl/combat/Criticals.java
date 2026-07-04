@@ -43,6 +43,13 @@ public final class Criticals extends Check implements PacketCheck {
         WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
         if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
 
+        // A player riding a vehicle (horse, boat, ...) can never land a critical
+        // hit in vanilla, and while mounted the client doesn't update the
+        // player's own ground/position state (the vehicle moves instead). That
+        // leaves onGround and clientClaimsLastOnGround desynced, which this check
+        // would read as a ground-spoof crit — a false positive. Exempt riders.
+        if (player.inVehicle()) return;
+
         // Need reliable ticking before flagging
         if (!player.isTickingReliablyFor(5)) return;
         if (player.getTransactionPing() > maxPingMs) return;
