@@ -55,6 +55,18 @@ public class PacketPlayerDigging extends PacketListenerAbstract {
 
         final ItemType material = item.getType();
 
+        // Instant-use throwables fire immediately and NEVER slow the player. The
+        // type-specific branches below don't cover them, so without this an earlier
+        // slow state (e.g. lingering from eating) could persist through the throw
+        // and false-flag NoSlow / Multitask when the player then moves or attacks.
+        if (material == ItemTypes.EGG || material == ItemTypes.SNOWBALL
+                || material == ItemTypes.ENDER_PEARL
+                || material == ItemTypes.EXPERIENCE_BOTTLE || material == ItemTypes.SPLASH_POTION
+                || material == ItemTypes.LINGERING_POTION || material == ItemTypes.FISHING_ROD) {
+            player.packetStateData.setSlowedByUsingItem(false);
+            return;
+        }
+
         // Check for data component stuff on 1.21.4+ (older versions are pain in the ass to support)
         if (RELIABLE_COMPONENT_SYSTEM && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_4)) {
             ItemBehaviour itemBehaviour = ItemBehaviourRegistry.getItemBehaviour(material);
