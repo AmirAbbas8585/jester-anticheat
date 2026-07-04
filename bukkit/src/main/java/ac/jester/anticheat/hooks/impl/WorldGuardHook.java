@@ -45,8 +45,45 @@ public final class WorldGuardHook implements PluginHook {
     private Object pvpFlag;
     private Class<?> flagArrayClass;
 
+    /** Custom StateFlag registered in the plugin's onLoad(). Static because the
+     *  hook instance doesn't exist yet at onLoad time. */
+    public static final String AFK_FLAG_NAME = "jester-afk-blocked";
+    private static Object registeredAfkFlag;
+
     @Override
     public String getPluginName() { return "WorldGuard"; }
+
+    /**
+     * Registers Jester's custom WorldGuard flags. MUST be called from the
+     * plugin's onLoad() — WorldGuard only accepts new flags before it finishes
+     * enabling. Silent no-op if WorldGuard isn't installed or its API changed.
+     *
+     * Admins then mark a no-AFK region with:
+     *   /rg flag &lt;region&gt; jester-afk-blocked allow
+     */
+    public static void registerCustomFlags() {
+        try {
+            Class<?> wgClass = Class.forName("com.sk89q.worldguard.WorldGuard");
+            Object wgInstance = wgClass.getMethod("getInstance").invoke(null);
+            Object registry = wgClass.getMethod("getFlagRegistry").invoke(wgInstance);
+            Class<?> flagClass = Class.forName("com.sk89q.worldguard.protection.flags.Flag");
+            Class<?> stateFlagClass = Class.forName("com.sk89q.worldguard.protection.flags.StateFlag");
+            Object flag = stateFlagClass.getConstructor(String.class, boolean.class)
+                    .newInstance(AFK_FLAG_NAME, false);
+            try {
+                registry.getClass().getMethod("register", flagClass).invoke(registry, flag);
+                registeredAfkFlag = flag;
+                LogUtil.info("Registered WorldGuard flag '" + AFK_FLAG_NAME
+                        + "' — mark no-AFK regions with: /rg flag <region> " + AFK_FLAG_NAME + " allow");
+            } catch (Exception alreadyRegistered) {
+                // A /reload re-runs onLoad — reuse the flag WorldGuard already holds.
+                registeredAfkFlag = registry.getClass().getMethod("get", String.class)
+                        .invoke(registry, AFK_FLAG_NAME);
+            }
+        } catch (Throwable ignored) {
+            // WorldGuard absent or API changed — the AFK flag is simply unavailable.
+        }
+    }
 
     @Override
     public void onEnable() {
@@ -178,6 +215,27 @@ public final class WorldGuardHook implements PluginHook {
             return false;
         }
     }
+
+    /**
+     * True if AFK is blocked at this location — i.e. the player is inside a region
+     * whose {@code jester-afk-blocked} flag is set to {@code allow}. Replaces the
+     * old afk.yml region-name list with native WorldGuard flag control.
+     */
+    public boolean isAfkBlocked(Location location) {
+        if (!available || testState == null || registeredAfkFlag == null || location == null) return false;
+        try {
+            Object query = createQuery.invoke(regionContainer);
+            Object wgLocation = adaptLocation.invoke(null, location);
+            Object flagArr = Array.newInstance(flagArrayClass.getComponentType(), 1);
+            Array.set(flagArr, 0, registeredAfkFlag);
+            return Boolean.TRUE.equals(testState.invoke(query, wgLocation, null, flagArr));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** True if the AFK flag was successfully registered (WorldGuard present). */
+    public boolean isAfkFlagAvailable() { return registeredAfkFlag != null; }
 
     public boolean isAvailable() { return available; }
 

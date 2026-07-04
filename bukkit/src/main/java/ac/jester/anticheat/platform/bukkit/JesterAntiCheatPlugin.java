@@ -81,6 +81,9 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
     @Override
     public void onLoad() {
         LOADER = this;
+        // WorldGuard custom flags MUST be registered here (before WorldGuard
+        // finishes enabling) — used by the AFK system's jester-afk-blocked flag.
+        ac.jester.anticheat.hooks.impl.WorldGuardHook.registerCustomFlags();
         GrimAPI.INSTANCE.load(this, this.getBukkitInitTasks());
     }
 

@@ -22,8 +22,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,7 +53,6 @@ public final class AfkManager implements Listener {
     private final ConcurrentHashMap<UUID, State> states = new ConcurrentHashMap<>();
 
     private boolean enabled;
-    private final Set<String> regions = new HashSet<>();
     private long maxAfkMs;
     private long warnBeforeMs;
     private double minMoveDistSq;
@@ -74,9 +71,6 @@ public final class AfkManager implements Listener {
             LogUtil.info("AFK system disabled in afk.yml.");
             return;
         }
-        if (regions.isEmpty()) {
-            LogUtil.info("AFK system on, but no no-AFK regions configured in afk.yml — nothing will be enforced.");
-        }
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         // Poll once per second on the main thread (WorldGuard region lookups and
@@ -89,8 +83,9 @@ public final class AfkManager implements Listener {
             LogUtil.warn("AFK system could not schedule its task (Folia?). Region AFK enforcement is off.");
             return;
         }
-        LogUtil.info("AFK system active: " + regions.size() + " no-AFK region(s), limit "
-                + (maxAfkMs / 1000) + "s, warn " + (warnBeforeMs / 1000) + "s before.");
+        LogUtil.info("AFK system active: no-AFK zones set via the WorldGuard flag '"
+                + WorldGuardHook.AFK_FLAG_NAME + "', limit " + (maxAfkMs / 1000)
+                + "s, warn " + (warnBeforeMs / 1000) + "s before.");
     }
 
     public void stop() {
@@ -109,8 +104,6 @@ public final class AfkManager implements Listener {
         }
         FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
         enabled = cfg.getBoolean("enabled", true);
-        regions.clear();
-        for (String r : cfg.getStringList("regions")) regions.add(r.toLowerCase());
         maxAfkMs = Math.max(10, cfg.getLong("max-afk-seconds", 900)) * 1000L;
         warnBeforeMs = Math.max(0, cfg.getLong("warn-before-seconds", 60)) * 1000L;
         double dist = cfg.getDouble("min-move-distance", 2.5);
@@ -127,16 +120,18 @@ public final class AfkManager implements Listener {
     private void writeDefault(File file) {
         String def = String.join("\n",
                 "# Jester Anti Cheat — region-scoped AFK enforcement.",
-                "# Players may idle freely EXCEPT inside the WorldGuard regions listed below.",
+                "# Players may idle freely EXCEPT inside WorldGuard regions flagged no-AFK.",
+                "#",
+                "# No-AFK zones are now controlled by a native WorldGuard flag (not a list",
+                "# here). Requires WorldGuard installed. To mark a region as no-AFK, run:",
+                "#",
+                "#     /rg flag <region> jester-afk-blocked allow",
+                "#",
+                "# To stop enforcing it in a region, remove the flag:",
+                "#     /rg flag <region> jester-afk-blocked",
                 "enabled: true",
                 "",
-                "# WorldGuard region ids (lowercase) where AFK is NOT allowed.",
-                "# Requires WorldGuard installed. Leave empty to enforce nowhere.",
-                "regions:",
-                "  - example_farm",
-                "  - grinder",
-                "",
-                "# How long a player may stay AFK inside those regions before being kicked.",
+                "# How long a player may stay AFK inside a flagged region before being kicked.",
                 "max-afk-seconds: 900   # 15 minutes",
                 "",
                 "# Warn the player this many seconds before the kick.",
@@ -253,9 +248,9 @@ public final class AfkManager implements Listener {
     // ── Enforcement ───────────────────────────────────────────────────────────
 
     private void tick() {
-        if (!enabled || regions.isEmpty()) return;
+        if (!enabled) return;
         WorldGuardHook wg = HookManager.getWorldGuard();
-        if (wg == null || !wg.isAvailable()) return; // can't resolve regions
+        if (wg == null || !wg.isAvailable() || !wg.isAfkFlagAvailable()) return; // can't resolve the flag
 
         long now = System.currentTimeMillis();
         for (Player p : plugin.getServer().getOnlinePlayers()) {
@@ -267,7 +262,7 @@ public final class AfkManager implements Listener {
                 continue;
             }
 
-            boolean inZone = wg.isInAnyRegion(p.getLocation(), regions);
+            boolean inZone = wg.isAfkBlocked(p.getLocation());
             if (!inZone) {
                 // Outside a no-AFK region: keep the timer fresh so entering one
                 // starts a new 15-minute window.
