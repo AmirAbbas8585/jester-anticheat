@@ -210,8 +210,8 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
 
             Bukkit.getPluginManager().callEvent(bukkitEvent);
 
-            // /jester reload only reloads Grim's own config — afk.yml is a separate
-            // file, so re-read it here too on a successful reload.
+            // Re-read the AFK settings (now in the main config's `afk:` section)
+            // into the manager's cached fields on a successful reload.
             if (event.isSuccess() && afkManager != null) {
                 GrimAPI.INSTANCE.getScheduler().getGlobalRegionScheduler()
                         .run(GrimAPI.INSTANCE.getGrimPlugin(), afkManager::reload);

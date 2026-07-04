@@ -17,11 +17,8 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -68,7 +65,7 @@ public final class AfkManager implements Listener {
     public void start() {
         loadConfig();
         if (!enabled) {
-            LogUtil.info("AFK system disabled in afk.yml.");
+            LogUtil.info("AFK system disabled (afk.enabled: false).");
             return;
         }
 
@@ -97,66 +94,25 @@ public final class AfkManager implements Listener {
     }
 
     private void loadConfig() {
-        File file = new File(plugin.getDataFolder(), "afk.yml");
-        if (!file.exists()) {
-            plugin.getDataFolder().mkdirs();
-            writeDefault(file);
-        }
-        FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-        enabled = cfg.getBoolean("enabled", true);
-        maxAfkMs = Math.max(10, cfg.getLong("max-afk-seconds", 900)) * 1000L;
-        warnBeforeMs = Math.max(0, cfg.getLong("warn-before-seconds", 60)) * 1000L;
-        double dist = cfg.getDouble("min-move-distance", 2.5);
+        // Merged into the main config.yml under the `afk:` section — no separate
+        // afk.yml anymore.
+        var cfg = ac.jester.anticheat.GrimAPI.INSTANCE.getConfigManager().getConfig();
+        enabled = cfg.getBooleanElse("afk.enabled", true);
+        maxAfkMs = Math.max(10, cfg.getLongElse("afk.max-afk-seconds", 900)) * 1000L;
+        warnBeforeMs = Math.max(0, cfg.getLongElse("afk.warn-before-seconds", 60)) * 1000L;
+        double dist = cfg.getDoubleElse("afk.min-move-distance", 2.5);
         minMoveDistSq = dist * dist;
-        bypassPerm = cfg.getString("bypass-permission", "jester.afk.bypass");
+        bypassPerm = cfg.getStringElse("afk.bypass-permission", "jester.afk.bypass");
         warnMsg = ChatColor.translateAlternateColorCodes('&',
-                cfg.getString("messages.warn",
+                cfg.getStringElse("afk.messages.warn",
                         "&e[AFK] &fYou will be kicked in &c%seconds%s&f for being AFK here. Move to stay."));
         kickMsg = ChatColor.translateAlternateColorCodes('&',
-                cfg.getString("messages.kick",
-                        "&c[AFK]\n&fYou were kicked for being AFK too long in a no-AFK area."));
+                cfg.getStringElse("afk.messages.kick",
+                        "&c[AFK]\n&fYou were kicked for being AFK too long in a no-AFK area."))
+                .replace("\\n", "\n");
     }
 
-    private void writeDefault(File file) {
-        String def = String.join("\n",
-                "# Jester Anti Cheat — region-scoped AFK enforcement.",
-                "# Players may idle freely EXCEPT inside WorldGuard regions flagged no-AFK.",
-                "#",
-                "# No-AFK zones are now controlled by a native WorldGuard flag (not a list",
-                "# here). Requires WorldGuard installed. To mark a region as no-AFK, run:",
-                "#",
-                "#     /rg flag <region> jester-afk-blocked allow",
-                "#",
-                "# To stop enforcing it in a region, remove the flag:",
-                "#     /rg flag <region> jester-afk-blocked",
-                "enabled: true",
-                "",
-                "# How long a player may stay AFK inside a flagged region before being kicked.",
-                "max-afk-seconds: 900   # 15 minutes",
-                "",
-                "# Warn the player this many seconds before the kick.",
-                "warn-before-seconds: 60",
-                "",
-                "# Net horizontal distance (blocks) a player must travel from where they",
-                "# stopped to count as active. Defeats jump-in-place / tiny walk macros that",
-                "# stay on one farming spot. Bigger = stricter. 2.5 is a good default.",
-                "min-move-distance: 2.5",
-                "",
-                "# Players with this permission are never AFK-kicked.",
-                "bypass-permission: jester.afk.bypass",
-                "",
-                "messages:",
-                "  warn: \"&e[AFK] &fYou will be kicked in &c%seconds%s&f for being AFK here. Move to stay.\"",
-                "  kick: \"&c[AFK]\\n&fYou were kicked for being AFK too long in a no-AFK area.\"",
-                "");
-        try (java.io.FileWriter w = new java.io.FileWriter(file)) {
-            w.write(def);
-        } catch (Exception e) {
-            LogUtil.warn("Could not write default afk.yml: " + e);
-        }
-    }
-
-    /** Call from the plugin to re-read afk.yml. */
+    /** Call from the plugin to re-read AFK settings (from the main config.yml). */
     public void reload() {
         boolean wasRunning = taskId != -1;
         loadConfig();
