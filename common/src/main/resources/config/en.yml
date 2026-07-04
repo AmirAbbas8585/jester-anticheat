@@ -1807,6 +1807,13 @@ InventoryWalk:
     # Consecutive moving ticks (on the ground, not ice) before flag + immediate setback (~300ms)
     min-consecutive: 6
 
+# KillAuraC — attacking while a container GUI is open
+KillAuraC:
+    # Attacks in a row while a container is open before flagging. Prevents a
+    # false positive from a single attack that was in-flight when the container
+    # opened (a timing race, not a cheat).
+    min-consecutive: 2
+
 # KillAuraD — angle threshold for looking away from target
 KillAuraD:
     # Entity position tracking lags moving targets — keep this high (135 = clearly behind)

@@ -1,5 +1,6 @@
 package ac.jester.anticheat.checks.impl.combat;
 
+import ac.grim.grimac.api.config.ConfigManager;
 import ac.jester.anticheat.checks.Check;
 import ac.jester.anticheat.checks.CheckData;
 import ac.jester.anticheat.checks.type.PacketCheck;
@@ -25,8 +26,21 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientIn
         description = "Attacking entity while a container GUI is open (impossible in vanilla)")
 public final class KillAuraC extends Check implements PacketCheck {
 
+    // Attacks in a row while a container is open before flagging. A real
+    // killaura-through-GUI attacks continuously while the screen is open; a
+    // single attack coinciding with a container just opening (a queued attack
+    // that was in-flight when the server marked the window open) is a race, not
+    // a cheat — requiring a streak removes that false positive.
+    private int minConsecutive = 2;
+    private int consecutive = 0;
+
     public KillAuraC(GrimPlayer player) {
         super(player);
+    }
+
+    @Override
+    public void onReload(ConfigManager config) {
+        minConsecutive = Math.max(1, config.getIntElse("KillAuraC.min-consecutive", 2));
     }
 
     @Override
@@ -36,11 +50,18 @@ public final class KillAuraC extends Check implements PacketCheck {
         WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
         if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
 
-        // Only flag when a non-player container is open (windowID != 0)
-        if (!player.inventory.hasExternalContainerOpen()) return;
+        // Only flag when a non-player container is open (windowID != 0). No
+        // container open resets the streak.
+        if (!player.inventory.hasExternalContainerOpen()) {
+            consecutive = 0;
+            return;
+        }
 
         if (!player.isTickingReliablyFor(3)) return;
 
-        flagAndAlert("windowId=" + player.inventory.getOpenWindowID() + " ping=" + player.getTransactionPing() + "ms");
+        if (++consecutive >= minConsecutive) {
+            flagAndAlert("windowId=" + player.inventory.getOpenWindowID()
+                    + " streak=" + consecutive + " ping=" + player.getTransactionPing() + "ms");
+        }
     }
 }
