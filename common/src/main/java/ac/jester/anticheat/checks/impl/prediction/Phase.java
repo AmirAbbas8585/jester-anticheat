@@ -44,10 +44,13 @@ public class Phase extends Check implements PostPredictionCheck {
                     WrappedBlockState state = player.compensatedWorld.getBlock((box.minX + box.maxX) / 2, (box.minY + box.maxY) / 2, (box.minZ + box.maxZ) / 2);
 
                     // Shulker boxes grow their collision box upward when opened (the
-                    // lid rises ~0.5 block). A player standing on top is then
-                    // intersected by the grown box without having moved into it —
-                    // that's the block changing shape, not the player phasing.
-                    if (BlockTags.SHULKER_BOXES.contains(state.getType())) {
+                    // lid rises ~0.5 block). A player standing ON TOP is then
+                    // intersected by the grown box without having moved — that's the
+                    // block changing shape, not the player phasing. Only excuse that
+                    // case (feet were in/above the lid-growth zone); actually moving
+                    // INTO a shulker from the side or below still flags.
+                    if (BlockTags.SHULKER_BOXES.contains(state.getType())
+                            && oldBB.minY > box.maxY - 0.51) {
                         continue;
                     }
 

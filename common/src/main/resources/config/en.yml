@@ -21,6 +21,8 @@ prefix: '&#c19a6bᴊᴇꜱᴛᴇʀ &8»'
 alerts:
     # Should alerts be printed to the console?
     print-to-console: true
+    # Make in-game alerts clickable (click to teleport to the player).
+    clickable: true
     # Alert message format. Placeholders: %player% %check_name% %vl% %verbose% %ping% %tps% %version%
     format: '%prefix% &#c19a6b%player% &fhas failed &#c19a6b%check_name% &8[&#c19a6bx%vl% &8| &#c19a6b%ping%ms&8]'
     # Console format (no color codes needed)
@@ -134,6 +136,23 @@ database:
     # forever from routine flags. Punishments are NOT auto-purged (kept as a
     # permanent record) — only the high-volume raw violation log is.
     violation-retention-hours: 6
+
+# Violation HISTORY for /jester history (separate from the logging database
+# above): stores per-player flag history so staff can review offenses later.
+history:
+    enabled: true
+    entries-per-page: 15
+    # Shown in each entry when multiple servers share one MySQL database.
+    server-name: 'server'
+    database:
+        # SQLITE (file, zero setup — recommended) or MYSQL
+        type: 'SQLITE'
+        host: 'localhost'
+        port: 3306
+        database: 'jester'
+        username: 'root'
+        password: 'password'
+
 
 #  ◆────────────────────────────────────────────────────────────────────────◆
 #    INTEGRATIONS  ·  play nice with other plugins (auto-detected)
@@ -288,6 +307,10 @@ Knockback:
     buildup-keep-ratio: 0.999
     min-offset: 0.001
     instant-rubberband-offset: 0.1
+    # Accumulated offset allowed before a rubberband (-1 = unlimited).
+    rubberband-after-buildup: 1.0
+    # Hard cap on how much buildup can accumulate.
+    buildup-limit: 4.0
 
 #  ◆════════════════════════════════════════════════════════════════════════◆
 #    CHECKS  ·  one block per check — the heart of the config
@@ -1688,6 +1711,9 @@ checks:
 # absorbs that while still catching real reach (always 3.3+ blocks).
 Reach:
     block-impossible-hits: true
+    # Also re-check reach at end of tick (catches a few more blatant cases,
+    # slightly stricter — leave off unless you want maximum strictness).
+    enable-post-packet: false
     threshold: 0.05
     # Extra blocks of reach allowed on top of vanilla 3.0 before flagging.
     # 0.3 -> effective ~3.3-block limit.
@@ -1716,6 +1742,8 @@ ReachB:
 
 # AutoBlock — max ping before the check is skipped (ms)
 AutoBlock:
+    # Consecutive attack-while-blocking ticks before flagging.
+    min-consecutive: 2
     max-ping: 500
 
 # Criticals — max ping before the check is skipped (ms)
@@ -1755,6 +1783,8 @@ FastBow:
 # FastPlace — vanilla's 4-tick right-click cooldown caps placements at 5/sec
 # regardless of click speed; 10 absorbs network jitter. Meteor FastUse ~20/sec.
 FastPlace:
+    # Cancel placements at/above this VL (0 = never cancel).
+    cancelVL: 0
     # Raised: fast bridging (god-bridge, moonwalk) legitimately places 12-15
     # blocks/sec, so 10 false-flagged fast builders. Scaffold cheats place far
     # more (20+) or perfectly-timed, still well above this.
@@ -1762,6 +1792,8 @@ FastPlace:
 
 # Tower — minimum milliseconds between consecutive under-self placements while jumping
 Tower:
+    # Cancel tower placements at/above this VL (0 = never cancel).
+    cancelVL: 0
     min-interval-ms: 100
     # Consecutive too-fast placements before flagging (absorbs network jitter)
     min-consecutive: 2
@@ -1860,6 +1892,8 @@ AnchorAura:
 
 # AutoPot — minimum human reaction time after taking damage
 AutoPot:
+    # Consecutive instant-pot patterns before flagging.
+    min-consecutive: 3
     min-react-ms: 80
 
 # AutoWeapon — hotbar switch and attack in the SAME client tick, repeatedly.
@@ -1934,11 +1968,31 @@ AutoParkour:
 
 # ScaffoldGoDown — descending staircase placement thresholds
 ScaffoldGoDown:
+    # Cancel placements at/above this VL (0 = never cancel).
+    cancelVL: 0
     # Maximum ms between consecutive staircase placements
     max-interval-ms: 250
     # How many consecutive downward placements before flagging
     # (skilled manual down-bridgers can sustain short bursts — keep >= 6)
     min-consecutive: 6
+
+ChestStealer:
+    # Clicks per second in a container above which stealing is flagged.
+    max-cps: 22
+    # Minimum ms between two container clicks (below = inhuman).
+    min-interval-ms: 40
+    # Distinct slots looted in one burst before flagging.
+    burst-threshold: 8
+
+
+
+Explosion:
+    # Offset tolerance for explosion knockback mispredictions.
+    threshold: 0.00001
+
+
+
+
 
 # MeteorDetector — detection method toggles
 MeteorDetector:
@@ -1998,6 +2052,10 @@ AutoClickerB:
 # Exploit toggles
 exploit:
     allow-sprint-jumping-when-using-elytra: true
+    # Allow players to build against client-side ghost blocks (true = fewer
+    # false block-place rejections); scan distance for them is 2-4.
+    allow-building-on-ghostblocks: true
+    distance-to-check-for-ghostblocks: 2
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Legacy grouped punishments. The per-check "checks:" blocks above already drive
@@ -2079,3 +2137,31 @@ help:
     - '%prefix% <color:#a9c8ff>/jester version</color> <white>—</white> <gray>Plugin version info</gray>'
     - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
 
+
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    ADVANCED  ·  engine internals — the defaults are right for most servers
+#  ◆────────────────────────────────────────────────────────────────────────◆
+# Above this ping (ms), don't flag players leaving fly mode (ability desync).
+max-ping-out-of-flying: 1000
+# Above this ping (ms), give up predicting firework elytra boosts exactly.
+max-ping-firework-boost: 1000
+# Packets per tick from one player before they're treated as a packet-spam
+# attack (kicked). Raise only if a legit mod legitimately bursts packets.
+packet-spam-threshold: 100
+# Exempt elytra flight from prediction entirely (weakens detection — only for
+# servers with heavily modified elytra physics).
+exempt-elytra: false
+# Enforce vanilla slow movement while using items / sneaking via prediction.
+force-slow-movement: true
+# Enforce vanilla stuck-speed (cobweb, sweet berry) via prediction.
+force-stuck-speed: true
+# Test mode: alerts print to console only, punishments disabled (for staging).
+test-mode: false
+# Ghost-block mitigation: allow players to build against client-side ghost
+# blocks (true = fewer false block-place rejections), and how far around the
+# player to scan for them (2-4).
+# Reset item-usage state on these events (vanilla parity — leave on).
+reset-item-usage-on-attack: true
+reset-item-usage-on-item-update: true
+reset-item-usage-on-item-use: true
+reset-item-usage-on-slot-change: true

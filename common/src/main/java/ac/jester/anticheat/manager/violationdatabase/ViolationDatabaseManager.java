@@ -58,9 +58,9 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
                     } catch (ClassNotFoundException e) {
                         LogUtil.error(
                                 """
-                                        IMPORTANT: Could not load SQLite driver for /grim history database.
+                                        IMPORTANT: Could not load SQLite driver for the /jester history database.
                                         Download the minecraft-sqlite-jdbc mod/plugin for SQLite support, or change history.database.type
-                                        Alternatively set history.enabled=false to remove this message if /grim history support is not desired"""
+                                        Alternatively set history.enabled=false to remove this message if /jester history support is not desired"""
                         );
                         this.database = NoOpViolationDatabase.INSTANCE;
                         loaded = false;
