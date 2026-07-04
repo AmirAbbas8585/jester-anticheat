@@ -5,7 +5,10 @@ import ac.jester.anticheat.checks.Check;
 import ac.jester.anticheat.checks.CheckData;
 import ac.jester.anticheat.checks.type.PacketCheck;
 import ac.jester.anticheat.player.GrimPlayer;
+import ac.jester.anticheat.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntity;
+import ac.jester.anticheat.utils.math.Vector3dm;
+import ac.jester.anticheat.utils.nmsutil.ReachUtils;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
@@ -111,36 +114,37 @@ public final class TriggerBot extends Check implements PacketCheck {
         double lookY = -Math.sin(pitchRad);
         double lookZ = Math.cos(yawRad) * Math.cos(pitchRad);
 
-        double eyeX = player.x;
-        double eyeY = player.y + player.getEyeHeight();
-        double eyeZ = player.z;
+        Vector3dm eye = new Vector3dm(player.x, player.y + player.getEyeHeight(), player.z);
+        final double reach = 6.0; // melee-relevant ray length
+        Vector3dm end = new Vector3dm(eye.getX() + lookX * reach,
+                eye.getY() + lookY * reach, eye.getZ() + lookZ * reach);
 
         for (Map.Entry<Integer, PacketEntity> entry : player.compensatedEntities.entityMap.entrySet()) {
-            PacketEntity entity = entry.getValue();
-            var pos = entity.trackedServerPosition.getPos();
+            int id = entry.getKey().intValue();
+            // The entity's ACTUAL interpolated hitbox — correct for every entity
+            // size (cow, horse, player, ...), unlike the old fixed 0.9 centre /
+            // 0.7 sphere which mis-tracked non-player mobs.
+            SimpleCollisionBox box = entry.getValue().getPossibleCollisionBoxes();
+            if (box == null) { ticksOnTarget.remove(id); continue; }
 
-            double dx = pos.x - eyeX;
-            double dy = pos.y + 0.9 - eyeY; // approx vertical center
-            double dz = pos.z - eyeZ;
+            // Range gate on the box centre — melee-relevant and cheap.
+            double cx = (box.minX + box.maxX) / 2, cy = (box.minY + box.maxY) / 2, cz = (box.minZ + box.maxZ) / 2;
+            double dx = cx - eye.getX(), dy = cy - eye.getY(), dz = cz - eye.getZ();
             double dist2 = dx * dx + dy * dy + dz * dz;
-
-            // Outside melee-relevant range — drop stale tracking
-            if (dist2 < 0.5 || dist2 > 49) {
-                ticksOnTarget.remove(entry.getKey().intValue());
+            if (dist2 < 0.25 || dist2 > 49) {
+                ticksOnTarget.remove(id);
                 continue;
             }
 
-            double dist = Math.sqrt(dist2);
-            // Angle between look vector and direction to entity center
-            double dot = (dx * lookX + dy * lookY + dz * lookZ) / dist;
-            double angle = Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, dot))));
-            // Angular radius of the hitbox (~0.7 half-extent incl. lenience)
-            double targetRadius = Math.toDegrees(Math.atan2(0.7, dist));
-
-            if (angle <= targetRadius) {
-                ticksOnTarget.put(entry.getKey().intValue(), ticksOnTarget.get(entry.getKey().intValue()) + 1);
+            // Exact ray-box intersection against the real hitbox, padded slightly
+            // for aim lenience — far more accurate than an angular sphere test.
+            SimpleCollisionBox aimBox = box.copy().expand(0.1);
+            boolean onTarget = ReachUtils.isVecInside(aimBox, eye)
+                    || ReachUtils.calculateIntercept(aimBox, eye, end).first() != null;
+            if (onTarget) {
+                ticksOnTarget.put(id, ticksOnTarget.get(id) + 1);
             } else {
-                ticksOnTarget.remove(entry.getKey().intValue());
+                ticksOnTarget.remove(id);
             }
         }
     }

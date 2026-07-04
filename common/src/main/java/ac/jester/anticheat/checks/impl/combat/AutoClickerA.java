@@ -71,7 +71,9 @@ public final class AutoClickerA extends Check implements PacketCheck {
 
     @Override
     public void onReload(ConfigManager config) {
-        windowSize = config.getIntElse("AutoClickerA.window-size", 20);
+        // Need enough samples for the CV/mean to be statistically meaningful;
+        // a tiny window would flag noise. Floor at 8.
+        windowSize = Math.max(8, config.getIntElse("AutoClickerA.window-size", 20));
         maxCpsHuman = config.getDoubleElse("AutoClickerA.max-cps", 20.0);
         minCvHuman = config.getDoubleElse("AutoClickerA.min-cv", 0.10);
         cancelBeforeKick = config.getBooleanElse("AutoClickerA.cancel-before-kick", true);
