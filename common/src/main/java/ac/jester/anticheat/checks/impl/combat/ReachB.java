@@ -123,11 +123,14 @@ public final class ReachB extends Check implements PacketCheck {
         if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
 
         // Skip while the player is being knocked back — their position is desynced
-        // from the tracked entity, which inflates the measured distance.
-        if (System.currentTimeMillis() - lastSelfKnockbackMs < knockbackGraceMs) {
-            consecutiveBad = 0;
-            return;
-        }
+        // from the tracked entity, which inflates the measured distance. Don't
+        // reset the streak: a skipped hit is "no data", not evidence of fair play.
+        if (System.currentTimeMillis() - lastSelfKnockbackMs < knockbackGraceMs) return;
+
+        // A mounted attacker's own x/y/z isn't reliably updated (the vehicle
+        // moves, not the player), so the measured distance would be wrong in
+        // both directions. Grim's Reach skips riders for the same reason.
+        if (player.inVehicle()) return;
 
         Track t = tracked.get(interact.getEntityId());
         if (t == null || t.count == 0) return;
@@ -137,7 +140,10 @@ public final class ReachB extends Check implements PacketCheck {
         int i = t.closestTo(when);
 
         double eyeX = player.x;
-        double eyeY = player.y + (player.isSneaking ? 1.27 : 1.62);
+        // Pose-aware eye height (standing/sneaking/swimming/gliding) — a
+        // hardcoded 1.62 was up to ~1.2 blocks off for swimming/elytra poses,
+        // more than the entire lenience budget.
+        double eyeY = player.y + player.getEyeHeight();
         double eyeZ = player.z;
 
         // Distance from the eye to the (padded) target box.
@@ -152,11 +158,9 @@ public final class ReachB extends Check implements PacketCheck {
 
         // Absurd distances (tens of blocks) aren't real reach — no cheat hits from
         // that far. They come from a stale/desynced tracked position (high ping,
-        // target just teleported). Treat as tracking noise, not a violation.
-        if (distance > maxPlausibleDistance) {
-            consecutiveBad = 0;
-            return;
-        }
+        // target just teleported). Treat as tracking noise: skip the hit but keep
+        // the streak — noise shouldn't erase evidence from prior judged hits.
+        if (distance > maxPlausibleDistance) return;
 
         if (distance > allowed) {
             if (++consecutiveBad >= minConsecutive) {

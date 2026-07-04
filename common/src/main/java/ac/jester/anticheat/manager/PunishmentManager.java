@@ -216,13 +216,18 @@ public class PunishmentManager implements ConfigReloadable {
                 int punishPing = offensePeakPing.getOrDefault(punishKey, player.getTransactionPing());
                 // High-ping guard: laggy players desync and false-flag movement/
                 // combat checks, so above this ping we still alert but DON'T kick.
+                // Judged on the CURRENT transaction ping, not the streak's peak —
+                // otherwise one deliberate lag-switch spike would grant permanent
+                // kick immunity for the rest of the streak. The moment the ping is
+                // back under the limit, the very next flag can still kick.
                 // Packet-integrity checks (BadPackets/Crash/Exploit) are ping-
                 // independent and must still enforce, so they bypass the guard.
                 int noPunishAbove = GrimAPI.INSTANCE.getConfigManager().getConfig()
                         .getIntElse("high-ping.no-punish-above-ms", 400);
                 String cn = check.getCheckName();
                 boolean packetLevel = cn.startsWith("BadPackets") || cn.startsWith("Crash") || cn.startsWith("Exploit");
-                boolean pingBlocksKick = !packetLevel && noPunishAbove > 0 && punishPing > noPunishAbove;
+                boolean pingBlocksKick = !packetLevel && noPunishAbove > 0
+                        && player.getTransactionPing() > noPunishAbove;
                 // Fire ONCE per offense. add() returns true only the first time
                 // we cross the threshold, so it works even if the VL jumps past
                 // the exact max (e.g. 19 -> 22) or a flag() bypassed alert().
