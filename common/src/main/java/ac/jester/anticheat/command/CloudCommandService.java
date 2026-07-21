@@ -82,6 +82,12 @@ public class CloudCommandService implements CommandService {
         new JesterCheck().register(commandManager, commandAdapter);
         new JesterLogs().register(commandManager, commandAdapter);
 
+        // Private, own-server-only commands (e.g. /jester mods). Compiled in only
+        // with -Pprivate=true and registered reflectively so the public build
+        // compiles and runs without them.
+        registerOptionalCommand("ac.jester.anticheat.command.commands.JesterMods",
+                commandManager, commandAdapter);
+
         final RequirementPostprocessor<Sender, SenderRequirement>
                 senderRequirementPostprocessor = RequirementPostprocessor.of(
                 REQUIREMENT_KEY,
@@ -112,5 +118,25 @@ public class CloudCommandService implements CommandService {
         commandManager.exceptionController().registerHandler(ex,
                 (c) -> c.context().sender().sendMessage(toComponent.apply(c.exception()).asComponent().colorIfAbsent(NamedTextColor.RED))
         );
+    }
+
+    /**
+     * Registers a private-only {@link BuildableCommand} by fully-qualified name,
+     * if it is on the classpath. Private commands live in common/src/private and
+     * are only compiled into the jar with -Pprivate=true; the public build won't
+     * have the class, and this silently skips it.
+     */
+    private void registerOptionalCommand(String className,
+                                         CommandManager<Sender> commandManager,
+                                         CloudCommandAdapter adapter) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            BuildableCommand command = (BuildableCommand) clazz.getConstructor().newInstance();
+            command.register(commandManager, adapter);
+        } catch (ClassNotFoundException notPresent) {
+            // Public build — private command not bundled. Expected; skip.
+        } catch (Exception e) {
+            ac.jester.anticheat.utils.anticheat.LogUtil.warn("Failed to register optional command " + className, e);
+        }
     }
 }
