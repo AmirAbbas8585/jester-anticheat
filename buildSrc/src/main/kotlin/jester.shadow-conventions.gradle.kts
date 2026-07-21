@@ -6,8 +6,17 @@ plugins {
 }
 
 tasks.named<ShadowJar>("shadowJar") {
-    minimize()
-    archiveFileName = "${rootProject.name}-${rootProject.version}.jar"
+    // Keep ALL of :common's own classes. Private, own-server-only checks (built
+    // with -Pprivate) are registered by reflection, so a static-reachability
+    // minimizer would otherwise strip them out of the jar. Library deps are
+    // still minimized. (This also protects other reflectively/config-loaded code.)
+    minimize {
+        exclude(project(":common"))
+    }
+    // Private builds get a distinct name so the own-server jar can't be confused
+    // with the public one.
+    val isPrivateBuild = (project.findProperty("private") as String?)?.toBoolean() == true
+    archiveFileName = "${rootProject.name}-${rootProject.version}${if (isPrivateBuild) "-private" else ""}.jar"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     if (BuildConfig.relocate) {

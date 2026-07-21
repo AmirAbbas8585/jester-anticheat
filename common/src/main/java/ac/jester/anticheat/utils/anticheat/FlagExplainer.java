@@ -259,7 +259,6 @@ public final class FlagExplainer {
             case "PacketMine" -> "A block's start- and finish-dig packets arrived in the same tick (instant break).";
             case "AimA" -> "Combat rotations weren't quantized to any mouse sensitivity step — the signature of computed (aimbot) aim.";
             case "TriggerBot" -> "The player attacked the exact tick their crosshair first landed on a target.";
-            case "MeteorDetector" -> "The client's fingerprint matched a known hacked client (e.g. Meteor).";
             case "NoFall" -> "The player claimed to be on ground when they weren't, to avoid fall damage.";
             case "GhostBlock" -> "The player placed a block against a position that is air on the server — building on a 'ghost' block (e.g. a placement a protection region denied but the client still shows).";
             case "GhostItem" -> "The player used an item the server doesn't see in their hand — an inventory desync / fake ('ghost') item.";

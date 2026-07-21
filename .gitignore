@@ -1,4 +1,12 @@
 # https://gist.github.com/dedunumax/54e82214715e35439227
+
+##############################
+## Private, own-server-only sources (NEVER pushed to GitHub/Modrinth)
+## Built into the jar only with -Pprivate=true; loaded reflectively otherwise.
+##############################
+common/src/private/
+*/src/private/
+
 ##############################
 ## Java
 ##############################

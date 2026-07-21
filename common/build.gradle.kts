@@ -5,6 +5,15 @@ plugins {
     jester.`base-conventions`
 }
 
+// Private, own-server-only sources (e.g. the mod detector). Compiled into the
+// jar ONLY when built with -Pprivate=true. This directory is git-ignored and is
+// never part of the public GitHub/Modrinth build; CheckManager loads anything
+// here reflectively so the public build compiles and runs without it.
+if ((project.findProperty("private") as String?)?.toBoolean() == true) {
+    sourceSets["main"].java.srcDir("src/private/java")
+    logger.lifecycle("    private sources    = ENABLED (common/src/private/java)")
+}
+
 repositories {
     // We still call mavenLocal() conditionally at the top for non-exclusive deps (general fallback)
     if (BuildConfig.mavenLocalOverride) mavenLocal()

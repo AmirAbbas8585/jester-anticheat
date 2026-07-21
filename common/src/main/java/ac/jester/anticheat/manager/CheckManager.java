@@ -58,7 +58,6 @@ import ac.jester.anticheat.checks.impl.movement.NoSlow;
 import ac.jester.anticheat.checks.impl.movement.NoJumpDelay;
 import ac.jester.anticheat.checks.impl.movement.AutoParkour;
 import ac.jester.anticheat.checks.impl.movement.PredictionRunner;
-import ac.jester.anticheat.checks.impl.misc.MeteorDetector;
 import ac.jester.anticheat.checks.impl.movement.SetbackBlocker;
 import ac.jester.anticheat.checks.impl.movement.VehiclePredictionRunner;
 import ac.jester.anticheat.checks.impl.multiactions.*;
@@ -91,6 +90,7 @@ import ac.jester.anticheat.utils.team.TeamHandler;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.google.common.collect.ClassToInstanceMap;
+import ac.jester.anticheat.utils.anticheat.LogUtil;
 import com.google.common.collect.ImmutableClassToInstanceMap;
 
 import java.util.ArrayList;
@@ -127,7 +127,7 @@ public class CheckManager {
         // one instance must live in both maps
         ac.jester.anticheat.checks.impl.aim.AimA aimA = new ac.jester.anticheat.checks.impl.aim.AimA(player);
 
-        packetChecks = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
+        ImmutableClassToInstanceMap.Builder<PacketCheck> packetChecksBuilder = new ImmutableClassToInstanceMap.Builder<PacketCheck>()
                 .put(CompensatedCameraEntity.class, player.cameraEntity)
                 .put(ac.jester.anticheat.checks.impl.aim.AimA.class, aimA)
                 .put(ac.jester.anticheat.checks.impl.combat.TriggerBot.class,
@@ -165,7 +165,6 @@ public class CheckManager {
                 .put(AnchorAura.class, new AnchorAura(player))
                 .put(AutoPot.class, new AutoPot(player))
                 .put(AutoWeapon.class, new AutoWeapon(player))
-                .put(MeteorDetector.class, new MeteorDetector(player))
                 .put(SelfInteract.class, new SelfInteract(player))
                 .put(AutoBlock.class, new AutoBlock(player))
                 .put(Criticals.class, new Criticals(player))
@@ -224,9 +223,15 @@ public class CheckManager {
                 .put(CrashE.class, new CrashE(player))
                 .put(CrashF.class, new CrashF(player))
                 .put(CrashH.class, new CrashH(player))
-                .put(CrashI.class, new CrashI(player))
-                .put(SetbackBlocker.class, new SetbackBlocker(player)) // Must be last class otherwise we can't check while blocking packets
-                .build();
+                .put(CrashI.class, new CrashI(player));
+        // Optional private-only packet checks. Absent from the public build; only
+        // compiled in when built with -Pprivate=true. Registered reflectively so
+        // this class compiles and runs whether or not the private source exists.
+        // Inserted before SetbackBlocker, which must stay last (it blocks packets).
+        registerOptionalPacketCheck(packetChecksBuilder, player,
+                "ac.jester.anticheat.checks.impl.misc.ModDetector");
+        packetChecksBuilder.put(SetbackBlocker.class, new SetbackBlocker(player)); // Must be last class otherwise we can't check while blocking packets
+        packetChecks = packetChecksBuilder.build();
 
         positionChecks = new ImmutableClassToInstanceMap.Builder<PositionCheck>()
                 .put(PredictionRunner.class, new PredictionRunner(player))
@@ -373,6 +378,29 @@ public class CheckManager {
         postPredictionChecksValues = new ArrayList<>(postPredictionChecks.values());
 
         init();
+    }
+
+    /**
+     * Registers a private-only PacketCheck by fully-qualified name, if it is on
+     * the classpath. Private checks live in common/src/private and are only
+     * compiled into the jar when built with -Pprivate=true; the public build
+     * simply won't have the class, and this silently skips it. Registering by
+     * reflection (rather than a hard reference) is what lets this file compile
+     * in both configurations.
+     */
+    @SuppressWarnings("unchecked")
+    private static void registerOptionalPacketCheck(
+            ImmutableClassToInstanceMap.Builder<PacketCheck> builder,
+            GrimPlayer player, String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            PacketCheck instance = (PacketCheck) clazz.getConstructor(GrimPlayer.class).newInstance(player);
+            builder.put((Class<PacketCheck>) clazz, instance);
+        } catch (ClassNotFoundException notPresent) {
+            // Public build — private check not bundled. Expected; skip.
+        } catch (Exception e) {
+            LogUtil.warn("Failed to register optional check " + className, e);
+        }
     }
 
     @SuppressWarnings("unchecked")

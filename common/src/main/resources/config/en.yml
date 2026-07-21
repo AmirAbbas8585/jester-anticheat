@@ -844,17 +844,6 @@ checks:
             # (proxy hop, bad mobile connection) rather than an actual timer hack.
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
 
-    # MeteorDetector — fingerprint detection for Meteor Client
-    MeteorDetector:
-        enabled: true
-        punishable: false
-        max-violations: 1
-        alert-interval: 1
-        dont-alert-until: 1
-        alert-cooldown-ms: 60000
-        minimum-tps: 10.0
-        punishment-commands: []
-
     # ── Player / Inventory ─────────────────────────────────────────────────────
 
     # AutoTotem — re-equipping totem faster than humanly possible after pop
@@ -2038,14 +2027,6 @@ Explosion:
 
 
 
-
-
-# MeteorDetector — detection method toggles
-MeteorDetector:
-    # Method B (translation fingerprint): force-opens a sign editor once after
-    # join — VISIBLE to the player as a brief popup. Enable only if that's
-    # acceptable. The passive channel fingerprint (method A) is always active.
-    sign-check: false
 
 # AutoClickerA — click consistency analysis thresholds
 AutoClickerA:
