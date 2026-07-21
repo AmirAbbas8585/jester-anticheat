@@ -4,11 +4,13 @@ import ac.grim.grimac.api.config.ConfigManager;
 import ac.jester.anticheat.GrimAPI;
 import ac.jester.anticheat.checks.CheckData;
 import ac.jester.anticheat.checks.type.BlockPlaceCheck;
+import ac.jester.anticheat.platform.api.world.PlatformWorld;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.anticheat.update.BlockPlace;
 import ac.jester.anticheat.utils.change.BlockModification;
 import ac.jester.anticheat.utils.nmsutil.Materials;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
+import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 import com.github.retrooper.packetevents.util.Vector3i;
 
@@ -19,6 +21,14 @@ import com.github.retrooper.packetevents.util.Vector3i;
  * (so the block stays air server-side) but the client keeps rendering it, then
  * the player places ANOTHER block against that "ghost" to keep bridging/building
  * where they shouldn't. Against a ghost the server sees the support as air.
+ *
+ * We deliberately read the LIVE platform world here, not player.compensatedWorld.
+ * A WorldGuard-style deny is only reflected in compensatedWorld once the
+ * corrective block-change packet round-trips back out to the client; a player
+ * spamming placements against the same denied spot can place the "supported"
+ * block before that correction lands, so compensatedWorld still reads solid and
+ * the check never fires. The real world updates the instant the placement is
+ * denied (same tick, main thread), so it can't be raced.
  *
  * A same-tick instant break / netty resync can legitimately leave the support
  * momentarily air, so those are excused and a short streak is required. This is
@@ -45,9 +55,14 @@ public class GhostBlock extends BlockPlaceCheck {
     @Override
     public void onBlockPlace(final BlockPlace place) {
         if (player.gamemode == GameMode.CREATIVE) return;
+        if (player.platformPlayer == null) return;
 
         Vector3i pos = place.position;
-        StateType against = player.compensatedWorld.getBlockType(pos.getX(), pos.getY(), pos.getZ());
+        PlatformWorld world = player.platformPlayer.getWorld();
+        if (!world.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) return;
+
+        WrappedBlockState state = world.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+        StateType against = state.getType();
 
         // Excuse a same-tick instant-break / netty resync that left the support
         // block momentarily air — that's a legit desync, not a ghost block.
