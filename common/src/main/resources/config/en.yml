@@ -111,12 +111,19 @@ alert-defaults:
 #  ◆────────────────────────────────────────────────────────────────────────◆
 #    STORAGE  ·  where violations / punishments / profiles are logged
 #  ◆────────────────────────────────────────────────────────────────────────◆
-# SQLite by default, or switch type to mysql for remote/website access.
-# All violations, punishments, and player profiles are logged here — usable
-# later from a website (tables: jester_violations, jester_punishments,
-# jester_profiles; each row has ping/tps/timestamp).
-# SQLite file: plugins/JesterAntiCheat/jester.db — for website access from
-# another host, switch type to mysql.
+# ONE connection, used by everything. Set it here once — the /jester history
+# subsystem below reuses these exact settings, so there is nothing to configure
+# twice and no way for the two to drift apart.
+#
+# SQLite by default (file: plugins/JesterAntiCheat/jester.db, zero setup).
+# Switch type to mysql for remote/website access from another host.
+#
+# Tables created here (unchanged, safe for an existing database):
+#   jester_violations   — every flag, with ping/tps/timestamp (website-friendly,
+#                         flat schema; auto-purged, see violation-retention-hours)
+#   jester_punishments  — punishment log, NEVER auto-purged
+#   jester_profiles     — player profiles (uuid, name, client version, brand)
+#   jester_history_*    — the /jester history tables (normalised, never purged)
 database:
     enabled: true
     type: sqlite          # sqlite or mysql
@@ -131,27 +138,21 @@ database:
     # flooding the table with thousands of rows in minutes. The vl column is
     # cumulative, so raising this loses no real signal — only redundant rows.
     log-throttle-ms: 2000
-    # Violation log rows older than this are automatically deleted (checked
-    # hourly, plus once immediately on startup). Keeps the table from growing
-    # forever from routine flags. Punishments are NOT auto-purged (kept as a
-    # permanent record) — only the high-volume raw violation log is.
+    # ONLY jester_violations is auto-purged (checked hourly, plus once on
+    # startup) — it is the high-volume raw flag log. jester_punishments,
+    # jester_profiles and the jester_history_* tables are permanent records and
+    # are never touched by this. Raise it if a website needs a longer window.
     violation-retention-hours: 6
 
-# Violation HISTORY for /jester history (separate from the logging database
-# above): stores per-player flag history so staff can review offenses later.
+# Violation HISTORY for /jester history — the staff-facing, permanent record.
+# It uses the connection configured in `database:` above (same host, credentials
+# and type); only its tables differ (jester_history_*). `database.enabled` above
+# toggles only the flat website log — this section is toggled by `enabled` here.
 history:
     enabled: true
     entries-per-page: 15
     # Shown in each entry when multiple servers share one MySQL database.
     server-name: 'server'
-    database:
-        # SQLITE (file, zero setup — recommended) or MYSQL
-        type: 'SQLITE'
-        host: 'localhost'
-        port: 3306
-        database: 'jester'
-        username: 'root'
-        password: 'password'
 
 
 #  ◆────────────────────────────────────────────────────────────────────────◆

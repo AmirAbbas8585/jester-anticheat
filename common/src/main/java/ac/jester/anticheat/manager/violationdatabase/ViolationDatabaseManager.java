@@ -43,7 +43,13 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
     public void load() {
         ConfigManager cfg = GrimAPI.INSTANCE.getConfigManager().getConfig();
         this.enabled = cfg.getBooleanElse("history.enabled", false);
-        String rawType = this.enabled ? cfg.getStringElse("history.database.type", "SQLITE").toUpperCase() : "NOOP";
+        // Connection settings come from the single shared `database:` block —
+        // there is no separate history.database section. Both subsystems talk to
+        // the same server with the same credentials; they stay separate only in
+        // which TABLES they own (jester_* here vs jester_history_* below), so no
+        // table name changes and no data migration. `database.enabled` toggles
+        // only the flat website logger; history is toggled by `history.enabled`.
+        String rawType = this.enabled ? cfg.getStringElse("database.type", "SQLITE").toUpperCase() : "NOOP";
 
         switch (rawType) {
             case "SQLITE" -> {
@@ -59,7 +65,7 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
                         LogUtil.error(
                                 """
                                         IMPORTANT: Could not load SQLite driver for the /jester history database.
-                                        Download the minecraft-sqlite-jdbc mod/plugin for SQLite support, or change history.database.type
+                                        Download the minecraft-sqlite-jdbc mod/plugin for SQLite support, or change database.type
                                         Alternatively set history.enabled=false to remove this message if /jester history support is not desired"""
                         );
                         this.database = NoOpViolationDatabase.INSTANCE;
@@ -73,11 +79,11 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
             }
 
             case "MYSQL" -> {
-                int port = cfg.getIntElse("history.database.port", 3306);
-                String host = cfg.getStringElse("history.database.host", "localhost") + ":" + port;
-                String db = cfg.getStringElse("history.database.database", "jester");
-                String user = cfg.getStringElse("history.database.username", "root");
-                String pwd = cfg.getStringElse("history.database.password", "password");
+                int port = cfg.getIntElse("database.port", 3306);
+                String host = cfg.getStringElse("database.host", "localhost") + ":" + port;
+                String db = cfg.getStringElse("database.database", "jester");
+                String user = cfg.getStringElse("database.username", "root");
+                String pwd = cfg.getStringElse("database.password", "");
 
                 if (database instanceof MySQLViolationDatabase mysql
                         && mysql.sameConfig(host, db, user, pwd)) {
@@ -96,11 +102,11 @@ public class ViolationDatabaseManager implements StartableInitable, ReloadableIn
             }
 
             case "POSTGRESQL" -> {
-                int port = cfg.getIntElse("history.database.port", 3306);
-                String host = cfg.getStringElse("history.database.host", "localhost") + ":" + port;
-                String db   = cfg.getStringElse("history.database.database", "jester");
-                String user = cfg.getStringElse("history.database.username", "root");
-                String pwd  = cfg.getStringElse("history.database.password", "password");
+                int port = cfg.getIntElse("database.port", 5432);
+                String host = cfg.getStringElse("database.host", "localhost") + ":" + port;
+                String db   = cfg.getStringElse("database.database", "jester");
+                String user = cfg.getStringElse("database.username", "root");
+                String pwd  = cfg.getStringElse("database.password", "");
 
                 if (database instanceof PostgresqlViolationDatabase postgresql
                         && postgresql.sameConfig(host, db, user, pwd)) {
