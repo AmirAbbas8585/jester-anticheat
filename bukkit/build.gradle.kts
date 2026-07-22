@@ -9,6 +9,22 @@ plugins {
     id("xyz.jpenilla.run-paper") version "3.0.0-beta.1"
 }
 
+// Private, own-server-only sources (e.g. the mod detector). Compiled in ONLY
+// with -Pprivate=true; the directory is git-ignored and never reaches the public
+// GitHub/Modrinth build. CheckManager/CloudCommandService load these classes
+// reflectively, so the public build compiles and runs without them.
+//
+// They live in THIS module, not :common, on purpose: shadowJar's minimize()
+// prunes unreachable classes out of dependency artifacts, and a reflectively
+// loaded class looks unreachable — putting them in :common got them stripped.
+// Classes of the module that owns the shadowJar are kept, so they survive here
+// while minimize() still shrinks the real dependencies (it takes the jar from
+// ~33 MB down to ~6 MB, almost all of it fastutil).
+if ((project.findProperty("private") as String?)?.toBoolean() == true) {
+    sourceSets["main"].java.srcDir("src/private/java")
+    logger.lifecycle("    private sources    = ENABLED (bukkit/src/private/java)")
+}
+
 repositories {
     // 1. Fallback for non-exclusive deps (e.g. Maven Central deps)
     if (BuildConfig.mavenLocalOverride) mavenLocal()

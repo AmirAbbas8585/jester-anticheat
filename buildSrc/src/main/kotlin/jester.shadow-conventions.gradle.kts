@@ -6,13 +6,13 @@ plugins {
 }
 
 tasks.named<ShadowJar>("shadowJar") {
-    // Keep ALL of :common's own classes. Private, own-server-only checks (built
-    // with -Pprivate) are registered by reflection, so a static-reachability
-    // minimizer would otherwise strip them out of the jar. Library deps are
-    // still minimized. (This also protects other reflectively/config-loaded code.)
-    minimize {
-        exclude(project(":common"))
-    }
+    // Prunes unreachable classes from bundled dependencies — worth ~27 MB here
+    // (fastutil alone is 57 MB unminimized vs 6 MB minimized). Do NOT relax this
+    // to keep reflectively-loaded classes: excluding :common from minimization
+    // drags the whole of fastutil back in and bloats the jar to ~33 MB. Private,
+    // reflectively-registered classes live in the bukkit module instead, whose
+    // own classes minimize() does not touch.
+    minimize()
     // Private builds get a distinct name so the own-server jar can't be confused
     // with the public one.
     val isPrivateBuild = (project.findProperty("private") as String?)?.toBoolean() == true
