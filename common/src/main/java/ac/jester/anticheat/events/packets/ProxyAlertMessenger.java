@@ -1,6 +1,7 @@
 package ac.jester.anticheat.events.packets;
 
 import ac.jester.anticheat.GrimAPI;
+import ac.jester.anticheat.platform.api.player.PlatformPlayer;
 import ac.jester.anticheat.utils.anticheat.LogUtil;
 import ac.jester.anticheat.utils.anticheat.MessageUtil;
 import com.github.retrooper.packetevents.PacketEvents;
@@ -54,6 +55,41 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
         out.write(messageBytes.toByteArray());
 
         Iterables.getFirst(GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers(), null).sendPluginMessage("BungeeCord", out.toByteArray());
+    }
+
+    /** True if this backend sits behind a BungeeCord/Velocity proxy. */
+    public static boolean isUsingProxy() {
+        return usingProxy;
+    }
+
+    /**
+     * Kicks a player off the PROXY — i.e. the whole network — instead of just
+     * this backend server.
+     *
+     * A plain backend disconnect is intercepted by the proxy, which on most
+     * setups moves the player to a fallback server (auth/lobby) rather than
+     * removing them from the network, so the "kick" barely inconveniences them.
+     * The BungeeCord "KickPlayer" plugin message asks the proxy itself to do the
+     * disconnect. Velocity implements this channel too (its BungeeCord plugin
+     * message support is on by default).
+     *
+     * @param reason legacy-formatted (§) text — this channel predates components
+     * @return false if there is no proxy or the message could not be sent, so
+     *         the caller can fall back to a normal disconnect
+     */
+    public static boolean kickViaProxy(PlatformPlayer player, String reason) {
+        if (!usingProxy || player == null) return false;
+        try {
+            ByteArrayDataOutput out = ByteStreams.newDataOutput();
+            out.writeUTF("KickPlayer");
+            out.writeUTF(player.getName());
+            out.writeUTF(reason == null ? "" : reason);
+            player.sendPluginMessage("BungeeCord", out.toByteArray());
+            return true;
+        } catch (Exception e) {
+            LogUtil.warn("Failed to send a proxy kick for " + player.getName(), e);
+            return false;
+        }
     }
 
     public static boolean canSendAlerts() {
