@@ -172,6 +172,31 @@ public class PunishmentManager implements ConfigReloadable {
         );
     }
 
+    /** Runs a check's configured punishment commands from the console. */
+    private static void executePunishment(GrimPlayer player, Check check,
+                                          JesterCheckConfig.CheckSettings checkCfg,
+                                          int currentVL, int punishPing, String verbose) {
+        for (String cmd : checkCfg.punishmentCommands) {
+            // MiniMessage tags -> legacy § codes; /kick takes plain text
+            // %ping%/%verbose% let a kick command spell out WHY (e.g. a Timer kick
+            // caused by a real ping spike) instead of just a generic check name —
+            // staff and the player both see it.
+            final String resolved = MessageUtil.toNativeText(
+                    cmd.replace("%player%", player.user.getName())
+                       .replace("%check%", check.getCheckName())
+                       .replace("%vl%", String.valueOf(currentVL))
+                       .replace("%ping%", String.valueOf(punishPing))
+                       .replace("%verbose%", verbose == null ? "" : verbose));
+            GrimAPI.INSTANCE.getScheduler().getGlobalRegionScheduler().run(
+                    GrimAPI.INSTANCE.getGrimPlugin(),
+                    () -> GrimAPI.INSTANCE.getPlatformServer().dispatchCommand(
+                            GrimAPI.INSTANCE.getPlatformServer().getConsoleSender(), resolved)
+            );
+            ac.jester.anticheat.database.DatabaseManager.logPunishment(
+                    player.uuid, player.user.getName(), check.getCheckName(), resolved);
+        }
+    }
+
     public boolean handleAlert(GrimPlayer player, String verbose, Check check) {
         boolean sentDebug = false;
 
@@ -231,25 +256,42 @@ public class PunishmentManager implements ConfigReloadable {
                 // Fire ONCE per offense. add() returns true only the first time
                 // we cross the threshold, so it works even if the VL jumps past
                 // the exact max (e.g. 19 -> 22) or a flag() bypassed alert().
-                if (!pingBlocksKick && graceElapsed && punishedChecks.add(punishKey)) {
-                    for (String cmd : checkCfg.punishmentCommands) {
-                        // MiniMessage tags -> legacy § codes; /kick takes plain text
-                        // %ping%/%verbose% let a kick command spell out WHY (e.g.
-                        // a Timer kick caused by a real ping spike) instead of just
-                        // a generic check name — staff and the player both see it.
-                        final String resolved = MessageUtil.toNativeText(
-                                cmd.replace("%player%", player.user.getName())
-                                   .replace("%check%", check.getCheckName())
-                                   .replace("%vl%", String.valueOf(currentVL))
-                                   .replace("%ping%", String.valueOf(punishPing))
-                                   .replace("%verbose%", verbose == null ? "" : verbose));
-                        GrimAPI.INSTANCE.getScheduler().getGlobalRegionScheduler().run(
+                if (!pingBlocksKick && punishedChecks.add(punishKey)) {
+                    if (graceElapsed) {
+                        executePunishment(player, check, checkCfg, currentVL, punishPing, verbose);
+                    } else {
+                        // The grace window has NOT elapsed yet. Previously the
+                        // punishment was simply dropped here and only retried on a
+                        // LATER flag — so a streak that crossed max-violations and
+                        // then stopped was never punished at all. With
+                        // max-violations: 1 that meant the first flag could never
+                        // kick (grace starts on that very flag), and even 1-of-2 or
+                        // 1-of-3 silently did nothing if the flags landed inside
+                        // the window. Defer instead of dropping: re-check when the
+                        // window closes and punish then if the streak still stands.
+                        long remainingMs = checkCfg.punishGraceMs - (now - streakStart);
+                        long delayTicks = Math.max(1L, (remainingMs + 49) / 50);
+                        GrimAPI.INSTANCE.getScheduler().getGlobalRegionScheduler().runDelayed(
                                 GrimAPI.INSTANCE.getGrimPlugin(),
-                                () -> GrimAPI.INSTANCE.getPlatformServer().dispatchCommand(
-                                        GrimAPI.INSTANCE.getPlatformServer().getConsoleSender(), resolved)
-                        );
-                        ac.jester.anticheat.database.DatabaseManager.logPunishment(
-                                player.uuid, player.user.getName(), check.getCheckName(), resolved);
+                                () -> {
+                                    // Re-validate: the streak may have decayed, the
+                                    // check may have been disabled, or the ping may
+                                    // have spiked while we waited.
+                                    if (player.disableGrim) return;
+                                    JesterCheckConfig.CheckSettings live =
+                                            JesterCheckConfig.get(check.getConfigName());
+                                    if (!live.enabled || !live.punishable) return;
+                                    int vlNow = (int) check.violations;
+                                    if (vlNow < live.maxViolations) return; // decayed away
+                                    int liveNoPunishAbove = GrimAPI.INSTANCE.getConfigManager().getConfig()
+                                            .getIntElse("high-ping.no-punish-above-ms", 400);
+                                    if (!packetLevel && liveNoPunishAbove > 0
+                                            && player.getTransactionPing() > liveNoPunishAbove) return;
+                                    executePunishment(player, check, live, vlNow,
+                                            offensePeakPing.getOrDefault(punishKey, player.getTransactionPing()),
+                                            verbose);
+                                },
+                                delayTicks);
                     }
                 }
             } else if (currentVL <= 0) {

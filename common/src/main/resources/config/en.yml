@@ -666,6 +666,21 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
 
+    # AttributeSwap — hotbar swap around an attack to stack a heavy weapon's
+    # damage onto a lighter weapon's cooldown (the MC-28289 exploit).
+    # Only the full round trip counts (slot A -> B -> attack -> back to A), and
+    # only when it repeats — see AttributeSwap.min-consecutive further down.
+    AttributeSwap:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
     # CrystalAura — interacting with end crystals at superhuman speed
     CrystalAura:
         enabled: true
@@ -1936,6 +1951,18 @@ AutoPot:
 # A human can scroll+click in one tick occasionally; the cheat does it every attack.
 AutoWeapon:
     min-consecutive: 6
+
+# AttributeSwap — the MC-28289 swap exploit (slot A -> B -> attack -> back to A)
+AttributeSwap:
+    # Complete round trips IN A ROW before flagging. Any attack that isn't part
+    # of a round trip resets the count, so normal combat never accumulates.
+    # Lower = catches it sooner, but leaves less room for a lucky manual
+    # scroll-click-scroll. 4 is already very hard to hit by hand.
+    min-consecutive: 4
+    # How long the swap BACK may take. The exploit only pays off inside the same
+    # tick; 1 allows for a tick boundary landing mid-sequence. Raising this makes
+    # ordinary weapon changes start to look like the exploit — don't.
+    max-return-ticks: 1
 
 # AutoTotem — offhand totem restock reaction after a pop (ping-compensated)
 AutoTotem:

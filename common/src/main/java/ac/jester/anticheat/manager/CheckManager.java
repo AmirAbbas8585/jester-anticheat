@@ -165,6 +165,8 @@ public class CheckManager {
                 .put(AnchorAura.class, new AnchorAura(player))
                 .put(AutoPot.class, new AutoPot(player))
                 .put(AutoWeapon.class, new AutoWeapon(player))
+                .put(ac.jester.anticheat.checks.impl.combat.AttributeSwap.class,
+                        new ac.jester.anticheat.checks.impl.combat.AttributeSwap(player))
                 .put(SelfInteract.class, new SelfInteract(player))
                 .put(AutoBlock.class, new AutoBlock(player))
                 .put(Criticals.class, new Criticals(player))
