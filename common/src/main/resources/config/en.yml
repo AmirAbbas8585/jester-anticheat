@@ -915,6 +915,33 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
 
+    # EntityFly — riding a MOB (horse/pig/strider/...) up through the air.
+    # BoatFly only covers boats; this covers every other mount. Happy ghasts are
+    # exempt (they fly by design) and a normal jump arc can't trigger it.
+    EntityFly:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # EntitySpeed — boat/mount travelling faster than vanilla allows.
+    # The limit is picked from the surface, so ice-boat highways stay legal.
+    EntitySpeed:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
     # BoatClip — vehicle moving teleport-sized distances per packet
     BoatClip:
         enabled: true
@@ -1995,6 +2022,31 @@ TriggerBot:
 BoatFly:
     min-rise-ticks: 15
     min-rise: 3.0
+
+# EntityFly — ridden MOB climbing through air (horses/pigs/striders/...)
+EntityFly:
+    # Consecutive ascending ticks that are NOT decelerating. A jump is a parabola
+    # and always decelerates, so it can never build a streak here. The strongest
+    # vanilla horse jump is ~5.5 blocks over ~15 decelerating ticks.
+    min-rise-ticks: 25
+    # Total blocks gained during that streak before flagging.
+    min-rise: 4.0
+
+# EntitySpeed — max horizontal speed of a ridden vehicle, in blocks per tick.
+# (multiply by 20 for blocks/second: 0.85 -> 17 b/s, 4.0 -> 80 b/s)
+EntitySpeed:
+    # Normal surfaces. A vanilla boat on water peaks near 0.4 and a fast horse
+    # near 0.67, so 0.85 leaves plenty of headroom for jitter.
+    max-speed: 0.85
+    # Used instead when ice/packed ice/blue ice is under the vehicle. Ice-boat
+    # travel is legitimately extremely fast — keep this generous.
+    ice-max-speed: 4.0
+    # Consecutive over-limit ticks required. Lag bunches packets into ONE big
+    # delta, not a run of them, so this is the main false-positive guard.
+    min-consecutive: 6
+    # Deltas above this are teleports/chunk-load jumps, not travel — ignored
+    # here (BoatClip is the check that bounds those).
+    ignore-above: 8.0
 
 # BoatClip — max legitimate vehicle movement per packet (blue-ice racing ~3.5)
 BoatClip:

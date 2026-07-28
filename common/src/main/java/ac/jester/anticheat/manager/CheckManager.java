@@ -136,6 +136,10 @@ public class CheckManager {
                         new ac.jester.anticheat.checks.impl.vehicle.BoatFly(player))
                 .put(ac.jester.anticheat.checks.impl.vehicle.BoatClip.class,
                         new ac.jester.anticheat.checks.impl.vehicle.BoatClip(player))
+                .put(ac.jester.anticheat.checks.impl.vehicle.EntityFly.class,
+                        new ac.jester.anticheat.checks.impl.vehicle.EntityFly(player))
+                .put(ac.jester.anticheat.checks.impl.vehicle.EntitySpeed.class,
+                        new ac.jester.anticheat.checks.impl.vehicle.EntitySpeed(player))
                 .put(ac.jester.anticheat.checks.impl.elytra.FireworkBoost.class,
                         new ac.jester.anticheat.checks.impl.elytra.FireworkBoost(player))
                 .put(ac.jester.anticheat.checks.impl.misc.ResourcePackState.class,

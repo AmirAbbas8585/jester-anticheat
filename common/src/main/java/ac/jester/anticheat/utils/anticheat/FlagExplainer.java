@@ -255,6 +255,8 @@ public final class FlagExplainer {
             case "AutoArmor" -> "Multiple armor pieces were equipped within a few milliseconds.";
             case "AutoRespawn" -> "The respawn packet was sent immediately after death, faster than a human.";
             case "AutoTotem" -> "A totem was moved back to the offhand faster than humanly possible after it popped.";
+            case "EntityFly" -> "The mount the player was riding kept climbing through open air without decelerating — a jump is a parabola and always slows down, so this is powered flight.";
+            case "EntitySpeed" -> "The ridden vehicle travelled faster than its surface allows for several ticks in a row (ice is allowed a much higher limit than water/land).";
             case "AttributeSwap" -> "The player swapped hotbar slots around an attack (A->B->hit->A) to land a heavy weapon's damage on a lighter weapon's cooldown — the MC-28289 exploit, repeated.";
             case "AutoTool" -> "The player switched to the optimal tool the same tick they started mining, every time.";
             case "PacketMine" -> "A block's start- and finish-dig packets arrived in the same tick (instant break).";
