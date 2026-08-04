@@ -863,6 +863,21 @@ checks:
     # re-jumps instantly on every landing — the 10-tick jump cooldown expires
     # mid-air, and tapping the key resets it entirely. There is no reliable
     # packet signature that separates this hack from normal jumping.
+
+    # Fly — airborne with no descent and no legitimate lift source.
+    # Independent of MovementA's prediction offset, so a fly that stays inside
+    # MovementA's tolerance is still caught. Punishable by design: this is the
+    # check that is meant to actually stop a flyer.
+    Fly:
+        enabled: true
+        punishable: true
+        max-violations: 2
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 2000
+        minimum-tps: 19.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
     NoJumpDelay:
         enabled: false
         punishable: false
@@ -2130,6 +2145,23 @@ FireworkBoost:
 # NoJumpDelay — consecutive instant re-jump detection.
 # A single fast re-jump is vanilla-possible (tapping jump on landing);
 # the cheat re-jumps instantly on EVERY landing.
+
+# Fly — airborne without falling, judged independently of the prediction engine.
+# MovementA can only catch flight through prediction error, and its offset bar
+# has to stay loose enough not to flag real players. This check instead uses a
+# rule no fly implementation can avoid: an unsupported airborne player must fall.
+Fly:
+    # Consecutive ticks of "not descending" while unsupported before flagging.
+    # 40 = 2 seconds. A ballistic arc (explosion, slime block, fishing rod) turns
+    # into a fall within ~12 ticks, so it can never reach this.
+    min-air-ticks: 40
+    # Per-tick change in Y that counts as genuinely falling and clears the streak.
+    # Vanilla free-fall passes this within a tick or two of leaving the ground.
+    falling-threshold: -0.05
+    # How far below the player to look for something holding them up. Generous on
+    # purpose — the goal is to never flag someone the server merely THINKS is
+    # airborne (desynced block, ghost block, collision edge case).
+    support-search-depth: 3.0
 NoJumpDelay:
     # Land->jump gap below this counts toward the streak
     max-gap-ms: 150

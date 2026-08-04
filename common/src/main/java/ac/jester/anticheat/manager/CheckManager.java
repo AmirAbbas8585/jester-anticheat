@@ -272,6 +272,8 @@ public class CheckManager {
                 .put(MultiInteractA.class, new MultiInteractA(player))
                 .put(MultiInteractB.class, new MultiInteractB(player))
                 .put(NoJumpDelay.class, new NoJumpDelay(player))
+                .put(ac.jester.anticheat.checks.impl.movement.Fly.class,
+                        new ac.jester.anticheat.checks.impl.movement.Fly(player))
                 .put(AutoParkour.class, new AutoParkour(player))
                 .put(ElytraA.class, new ElytraA(player))
                 .put(ElytraB.class, new ElytraB(player))

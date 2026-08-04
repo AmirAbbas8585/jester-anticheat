@@ -257,6 +257,7 @@ public final class FlagExplainer {
             case "AutoTotem" -> "A totem was moved back to the offhand faster than humanly possible after it popped.";
             case "EntityFly" -> "The mount the player was riding kept climbing through open air without decelerating — a jump is a parabola and always slows down, so this is powered flight.";
             case "EntitySpeed" -> "The ridden vehicle travelled faster than its surface allows for several ticks in a row (ice is allowed a much higher limit than water/land).";
+            case "Fly" -> "The player stayed airborne for seconds without ever falling, with nothing under them and no flight permission, elytra, levitation or knockback to explain it — gravity is not optional.";
             case "AutoClickerC" -> "The player attacked repeatedly while their position AND view angles stayed bit-identical for minutes — a hand on a mouse always drifts, so the input was mechanical (typical of an AFK mob farm).";
             case "AutoClickerD" -> "Attack intervals over several minutes were too regular and too tightly bounded to be human — humans produce a long tail (one distracted gap), randomised macros cannot.";
             case "AttributeSwap" -> "The player swapped hotbar slots around an attack (A->B->hit->A) to land a heavy weapon's damage on a lighter weapon's cooldown — the MC-28289 exploit, repeated.";
