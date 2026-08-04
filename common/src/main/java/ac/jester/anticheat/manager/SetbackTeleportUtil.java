@@ -127,6 +127,13 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
         if (lastKnownGoodPosition == null) return true;
         // Setbacks aren't allowed
         if (player.disableGrim) return true;
+        // Never rubber-band a Bedrock player on a movement misprediction. Their
+        // physics genuinely differ through Geyser, so the prediction is wrong,
+        // not the player — and setting them back on a wrong prediction is what
+        // makes anticheats infamous for leaving Geyser users stuck in blocks.
+        // Their movement checks are already skipped; this stops the setback path
+        // reaching them by another route.
+        if (ac.jester.anticheat.manager.BedrockPolicy.isEnabled() && player.isBedrock()) return true;
         // Player has permission to cheat, permission not given to OP by default.
         return player.platformPlayer != null && player.noSetbackPermission;
     }

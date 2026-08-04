@@ -148,6 +148,46 @@ database:
 # It uses the connection configured in `database:` above (same host, credentials
 # and type); only its tables differ (jester_history_*). `database.enabled` above
 # toggles only the flat website log — this section is toggled by `enabled` here.
+
+#  ◆────────────────────────────────────────────────────────────────────────◆
+#    BEDROCK  ·  players joining through Geyser / Floodgate
+#  ◆────────────────────────────────────────────────────────────────────────◆
+# Bedrock Edition players are still checked — they are NOT exempt — but the
+# checks that assume Java Edition behaviour are skipped for them, because those
+# would flag them for playing normally.
+#
+# Why each family is skipped:
+#   • movement / prediction — Bedrock's physics model genuinely differs, and
+#     Geyser re-emits movement on its own cadence rather than the client's tick.
+#     A wider tolerance cannot substitute for a different physics engine.
+#   • knockback / explosion — a confirmed Geyser difference: Bedrock players are
+#     visibly thrown less far than the server predicts. AntiKB flags exactly on
+#     "took less knockback than predicted", so it would fire non-stop.
+#   • reach / aim / rotation — with touch controls Geyser SYNTHESISES a look
+#     angle for interactions instead of sending the real view, so these measure
+#     Geyser rather than the player.
+#   • click timing — touch and controller input do not produce a mouse-like
+#     distribution, and Geyser does not always propagate the left click.
+#
+# What still runs, deliberately: every packet-integrity and protocol-validity
+# check (Crash*, Exploit*, malformed slot ids, out-of-range block faces,
+# interacting with yourself, spectating while not a spectator). A normal Bedrock
+# client cannot produce those, so that is where real Bedrock cheating shows up.
+#
+# Detection: Floodgate builds the Java-side UUID as new UUID(0, xuid), so the
+# high bits are zero. Accounts LINKED to a Java account keep their Java UUID, so
+# the client brand (which contains "Geyser") is used as a second source.
+bedrock:
+    # Turn the whole Bedrock-aware behaviour off to check them exactly like Java
+    # players. Only do this if you do not actually have Bedrock players.
+    enabled: true
+
+    # Checks skipped for Bedrock players. Leave EMPTY to use the built-in list
+    # (recommended — it is documented in BedrockPolicy.java). Setting anything
+    # here REPLACES the built-in list entirely rather than adding to it, so copy
+    # the defaults first if you only want to change one entry.
+    disabled-checks: []
+
 history:
     enabled: true
     entries-per-page: 15

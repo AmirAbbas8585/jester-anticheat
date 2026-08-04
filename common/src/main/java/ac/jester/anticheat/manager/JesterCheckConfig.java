@@ -54,6 +54,7 @@ public final class JesterCheckConfig {
         // checks don't flag (mid-air spawn, chunk loading, ...).
         ac.jester.anticheat.player.GrimPlayer.joinGraceMs =
                 config.getIntElse("movement-grace.join-ms", 3000);
+        ac.jester.anticheat.manager.BedrockPolicy.reload(config);
         cache.clear();
     }
 

@@ -279,6 +279,18 @@ public class GrimPlayer implements GrimUser {
     // This variable is for support with test servers that want to be able to disable grim
     // Grim disabler 2022 still working!
     public boolean disableGrim = false;
+    /**
+     * Bedrock Edition player joining through Geyser/Floodgate.
+     *
+     * Resolved once and cached because checks read it on hot, often async paths.
+     * Floodgate builds a Java-side UUID as {@code new UUID(0, xuid)}, so the high
+     * 64 bits are zero — that is the detection. It does NOT catch accounts that
+     * have been LINKED to a real Java account (those keep the Java UUID), which
+     * is why the brand is used as a second source: Geyser reports a brand
+     * containing "Geyser". Floodgate's own API would be exact, but it is often
+     * installed only on the proxy where this plugin cannot reach it.
+     */
+    private volatile boolean bedrock;
     public final ArrayDeque<Movement> movementThisTick = new ArrayDeque<>(8);
     public final List<Movement> finalMovementsThisTick = new ObjectArrayList<>();
     public final LongSet visitedBlocks = new LongOpenHashSet();
@@ -290,6 +302,8 @@ public class GrimPlayer implements GrimUser {
     public GrimPlayer(@NotNull User user) {
         this.user = user;
         this.uuid = user.getUUID();
+        // Floodgate encodes the Bedrock xuid as new UUID(0, xuid).
+        this.bedrock = uuid != null && uuid.getMostSignificantBits() == 0L;
         fireworks = new CompensatedFireworks(this); // Must be before checkmanager
         inventory = new CompensatedInventory(this);
 
@@ -878,6 +892,25 @@ public class GrimPlayer implements GrimUser {
     @Override
     public String getName() {
         return user.getName();
+    }
+
+    /** True for a Bedrock Edition player connected through Geyser/Floodgate. */
+    public boolean isBedrock() {
+        return bedrock;
+    }
+
+    /**
+     * Second detection source, called once the client brand arrives.
+     *
+     * Needed because a Bedrock account LINKED to a Java account keeps its Java
+     * UUID, so the UUID test above misses it. Only ever turns the flag on: a
+     * spoofed brand must not be able to switch Bedrock handling off for someone
+     * the UUID already identified.
+     */
+    public void markBedrockFromBrand(String brand) {
+        if (!bedrock && brand != null && brand.toLowerCase().contains("geyser")) {
+            bedrock = true;
+        }
     }
 
     @Override

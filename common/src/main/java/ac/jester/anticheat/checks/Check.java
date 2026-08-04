@@ -64,7 +64,11 @@ public class Check extends GrimProcessor implements AbstractCheck {
                 && !player.disableGrim
                 && !player.noModifyPacketPermission
                 && !noModifyPacketPermission
-                && !exemptPermission;
+                && !exemptPermission
+                // A check that isn't allowed to judge a Bedrock player must not
+                // cancel or rewrite their packets either — that is what produces
+                // the constant rubber-banding Geyser users see from anticheats.
+                && !ac.jester.anticheat.manager.BedrockPolicy.shouldSkip(player, configName);
     }
 
     public final void updatePermissions() {
@@ -123,6 +127,15 @@ public class Check extends GrimProcessor implements AbstractCheck {
         // ground state, and hitboxes — suppress all flags while seated and
         // shortly after standing up (the dismount teleport)
         if (ac.jester.anticheat.hooks.ExemptionProvider.safe().isSitting(player))
+            return false;
+
+        // Bedrock players reach us through Geyser, which translates a different
+        // movement model, synthesises interaction rotation for touch controls,
+        // and produces click patterns no mouse makes. Checks built on those
+        // assumptions would flag them constantly for playing normally, so the
+        // affected ones are skipped — see BedrockPolicy for what still runs and
+        // why. Packet-integrity checks deliberately stay on.
+        if (ac.jester.anticheat.manager.BedrockPolicy.shouldSkip(player, configName))
             return false;
 
         FlagEvent event = new FlagEvent(player, this, verbose);
