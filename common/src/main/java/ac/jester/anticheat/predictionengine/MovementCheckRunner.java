@@ -384,7 +384,20 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         SimpleCollisionBox steppingOnBB = GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z).expand(player.getMovementThreshold()).offset(0, -1, 0);
         Collisions.hasMaterial(player, steppingOnBB, (pair) -> {
             WrappedBlockState data = pair.first();
-            if (data.getType() == StateTypes.SLIME_BLOCK && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)) {
+            // Backported from upstream Grim (2.0 branch, "fix bouncy blocks" #2473).
+            // The bed case below was already gated on real contact; slime was not,
+            // and that was exploitable. The search box is the player's box expanded
+            // by the movement threshold and offset a FULL BLOCK downward, so an
+            // ungated test marks slime uncertainty whenever a slime block is
+            // anywhere in that volume — including beside or below the player. That
+            // matters because isSteppingOnSlime feeds thisTickSlimeBlockUncertainty
+            // straight into maxVector.setY() in PredictionEngine, i.e. it hands out
+            // extra VERTICAL prediction freedom. Standing near a slime block was
+            // therefore enough to widen the fly tolerance, which any player who can
+            // place one could do on purpose. Require the player to actually be
+            // resting on its top face (a slime block is full height, so +1.0).
+            if (data.getType() == StateTypes.SLIME_BLOCK && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
+                    && Math.abs((pair.second().getY() + 1.0D) - player.y) <= player.getMovementThreshold()) {
                 player.uncertaintyHandler.isSteppingOnSlime = true;
                 player.uncertaintyHandler.isSteppingOnBouncyBlock = true;
             }

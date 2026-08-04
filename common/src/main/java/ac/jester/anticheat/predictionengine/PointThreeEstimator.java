@@ -476,8 +476,13 @@ public class PointThreeEstimator {
     private double iterateGravity(GrimPlayer player, double y) {
         final OptionalInt levitation = player.compensatedEntities.getPotionLevelForPlayer(PotionTypes.LEVITATION);
         if (levitation.isPresent()) {
-            // This supports both positive and negative levitation
-            y += (0.05 * (levitation.getAsInt() + 1) - y * 0.2);
+            // This supports both positive and negative levitation.
+            // The closing paren belongs after the subtraction: vanilla applies
+            // 0.2 to the WHOLE (target - current) difference, not just to y.
+            // Misplaced it read as (0.05 * amp) - (y * 0.2), which predicts the
+            // wrong vertical movement under levitation. Same typo upstream, fixed
+            // there in "fix levitation" (86785db47).
+            y += (0.05 * (levitation.getAsInt() + 1) - y) * 0.2;
         } else if (player.hasGravity) {
             // Simulate gravity
             y -= player.gravity;
