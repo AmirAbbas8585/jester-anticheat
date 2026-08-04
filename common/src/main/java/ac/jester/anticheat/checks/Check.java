@@ -86,6 +86,24 @@ public class Check extends GrimProcessor implements AbstractCheck {
                 || player.platformPlayer.hasPermission("jester.nomodifypacket." + id, false);
     }
 
+    /** check name -> last time we warned that it was suppressed by low TPS. */
+    private static final java.util.Map<String, Long> TPS_SUPPRESSION_WARNED =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long TPS_WARN_INTERVAL_MS = 300_000L; // 5 minutes per check
+
+    private static void warnSuppressedByTps(String checkName, double tps, double required) {
+        if (checkName == null) return;
+        long now = System.currentTimeMillis();
+        Long last = TPS_SUPPRESSION_WARNED.get(checkName);
+        if (last != null && now - last < TPS_WARN_INTERVAL_MS) return;
+        TPS_SUPPRESSION_WARNED.put(checkName, now);
+        ac.jester.anticheat.utils.anticheat.LogUtil.warn(String.format(
+                "%s is NOT running: server TPS %.2f is below its minimum-tps of %.2f."
+                        + " While this holds, %s cannot flag anything and a cheater using it"
+                        + " will look clean. Lower checks.%s.minimum-tps or fix the lag.",
+                checkName, tps, required, checkName, checkName));
+    }
+
     public final boolean flagAndAlert(String verbose) {
         if (flag(verbose)) {
             alert(verbose);
@@ -119,9 +137,18 @@ public class Check extends GrimProcessor implements AbstractCheck {
         // TPS — a server lag spike (packets processed late/bunched) distorts
         // wall-clock-based timing checks like FastBreak with no way to suppress
         // it. Below this TPS, treat it as noise rather than a violation.
-        if (checkCfg != null
-                && GrimAPI.INSTANCE.getPlatformServer().getTPS() < checkCfg.minimumTps)
-            return false;
+        if (checkCfg != null) {
+            double tps = GrimAPI.INSTANCE.getPlatformServer().getTPS();
+            if (tps < checkCfg.minimumTps) {
+                // Say so. A check silenced this way produces no violation, no
+                // alert, no console line and no database row, which is
+                // indistinguishable from the player being clean — a cheater
+                // went unreported this way once already. Rate-limited hard so a
+                // laggy server cannot spam the log.
+                warnSuppressedByTps(configName, tps, checkCfg.minimumTps);
+                return false;
+            }
+        }
 
         // GSit seats, crawling, and player-sit stacks distort position, pose,
         // ground state, and hitboxes — suppress all flags while seated and
