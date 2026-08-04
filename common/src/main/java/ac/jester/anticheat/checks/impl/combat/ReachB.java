@@ -1,5 +1,8 @@
 package ac.jester.anticheat.checks.impl.combat;
 
+import ac.jester.anticheat.utils.data.packetentity.PacketEntity;
+import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityPositionSync;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.jester.anticheat.checks.Check;
 import ac.jester.anticheat.checks.CheckData;
@@ -51,7 +54,11 @@ public final class ReachB extends Check implements PacketCheck {
     private long knockbackGraceMs = 600; // ignore hits shortly after taking knockback
     private double maxPlausibleDistance = 10.0; // above this = tracking glitch, not reach
 
-    private int consecutiveBad = 0;
+    // Bad hits in a row PER ENTITY. A single shared counter let four bad hits
+    // spread across four different targets chain into one flag — exactly the
+    // "several mobs packed together" report. Evidence about one entity is not
+    // evidence about another.
+    private final Map<Integer, Integer> consecutiveBad = new HashMap<>();
     private long lastSelfKnockbackMs = 0; // when the player last took knockback/velocity
 
     public ReachB(GrimPlayer player) {
@@ -92,9 +99,22 @@ public final class ReachB extends Check implements PacketCheck {
             Vector3d p = w.getPosition();
             put(w.getEntityId(), p.getX(), p.getY(), p.getZ());
 
+        } else if (type == PacketType.Play.Server.ENTITY_POSITION_SYNC) {
+            // 1.21.2 split teleport_entity into teleport_entity + entity_position_sync,
+            // and the server now resyncs non-relative positions through the latter.
+            // Without this branch a synced entity's tracked position stops matching
+            // the server PERMANENTLY — every later relative move is applied on top
+            // of a wrong base — which is the main source of phantom reach distances.
+            WrapperPlayServerEntityPositionSync w = new WrapperPlayServerEntityPositionSync(event);
+            Vector3d p = w.getValues().getPosition();
+            put(w.getId(), p.getX(), p.getY(), p.getZ());
+
         } else if (type == PacketType.Play.Server.DESTROY_ENTITIES) {
             WrapperPlayServerDestroyEntities w = new WrapperPlayServerDestroyEntities(event);
-            for (int id : w.getEntityIds()) tracked.remove(id);
+            for (int id : w.getEntityIds()) {
+                tracked.remove(id);
+                consecutiveBad.remove(id);
+            }
 
         } else if (type == PacketType.Play.Server.ENTITY_VELOCITY) {
             // The player taking knockback/velocity (e.g. being hit while holding a
@@ -132,6 +152,26 @@ public final class ReachB extends Check implements PacketCheck {
         // both directions. Grim's Reach skips riders for the same reason.
         if (player.inVehicle()) return;
 
+        // Targets this simple tracker cannot model. Reach (the real, punishing
+        // check) already skips most of these for the same reasons and still
+        // covers them properly, so nothing is actually left unwatched here.
+        PacketEntity target = player.compensatedEntities.entityMap.get(interact.getEntityId());
+        if (target != null) {
+            // A ridden target's position comes from its vehicle and never appears
+            // in the packets this check tracks.
+            if (target.riding != null) return;
+            // Boats/minecarts interpolate over 5-10 client ticks (vs 3 for a mob);
+            // this check models no interpolation at all.
+            if (target.isBoat || target.isMinecart) return;
+            // The Creaking is the worst case for a tracker with no interpolation
+            // model: it is fast (0.3 speed), it hard-stops and hard-starts the
+            // instant a player's view comes within 60 degrees of it, and it is
+            // INVULNERABLE while its heart stands — so a player keeps hitting the
+            // same one indefinitely instead of killing it and ending the streak.
+            // Shulkers change box with peek state, which is equally unmodellable.
+            if (target.type == EntityTypes.CREAKING || target.type == EntityTypes.SHULKER) return;
+        }
+
         Track t = tracked.get(interact.getEntityId());
         if (t == null || t.count == 0) return;
 
@@ -162,14 +202,16 @@ public final class ReachB extends Check implements PacketCheck {
         // the streak — noise shouldn't erase evidence from prior judged hits.
         if (distance > maxPlausibleDistance) return;
 
+        int id = interact.getEntityId();
         if (distance > allowed) {
-            if (++consecutiveBad >= minConsecutive) {
+            int bad = consecutiveBad.merge(id, 1, Integer::sum);
+            if (bad >= minConsecutive) {
                 flagAndAlert(String.format("distance=%.2f max=%.2f ping=%dms",
                         distance, allowed, player.getTransactionPing()));
-                consecutiveBad = 0;
+                consecutiveBad.remove(id);
             }
         } else {
-            consecutiveBad = 0;
+            consecutiveBad.remove(id);
         }
     }
 

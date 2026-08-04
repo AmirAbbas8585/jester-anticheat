@@ -681,6 +681,33 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
 
+    # AutoClickerC — attacking on a fixed cadence while completely idle.
+    # Catches AFK mob-farm macros that the CPS checks cannot see by design.
+    # NOTE: this detects a machine holding the input. A weighted mouse button
+    # looks identical, so set punishable: false if you allow AFK farming.
+    AutoClickerC:
+        enabled: true
+        punishable: false
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 60000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # AutoClickerD — slow or randomised autoclicker, judged over minutes.
+    AutoClickerD:
+        enabled: true
+        punishable: false
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 60000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
     # CrystalAura — interacting with end crystals at superhuman speed
     CrystalAura:
         enabled: true
@@ -2139,6 +2166,42 @@ AutoClickerA:
     # go straight back to kicking on threshold.
     cancel-before-kick: true
     cancel-duration-ms: 3000
+
+
+# AutoClickerC — AFK farm autoclicker (idle + attacking)
+AutoClickerC:
+    # Ticks the player must be COMPLETELY frozen (position, yaw and pitch all
+    # bit-identical) before any attack counts. 6000 = 5 minutes. Any real input
+    # at all resets it — this is about proving the input is mechanical.
+    min-stationary-ticks: 6000
+    # Attacks landed while frozen before the first flag.
+    min-attacks: 40
+    # Flag again every N further attacks while it continues.
+    reflag-every-attacks: 20
+
+# AutoClickerD — slow / randomised autoclicker, judged over minutes
+AutoClickerD:
+    # Attack intervals per window. 60 at ~4s each is about 4 minutes of evidence.
+    # Below ~30 the tail test has no statistical power and will misjudge humans.
+    window-size: 60
+    # Only intervals inside this band are analysed. Faster is AutoClickerA's job;
+    # slower means the player stopped and came back, which would inject a fake
+    # "human" long tail into the window.
+    min-interval-ms: 200
+    max-interval-ms: 30000
+    # A machine reads BELOW this. Fixed macro ~0.00; +/-500ms jitter on 4s ~0.07;
+    # humans 0.25-0.50.
+    max-cv: 0.12
+    # max/median. Humans get distracted and produce one long gap; bounded jitter
+    # cannot. This is the statistic that actually defeats randomisation.
+    max-tail-ratio: 1.6
+    # (p90-p50)/(p50-p10). Symmetric ~1.0 means machine; humans are right-skewed.
+    symmetry-low: 0.7
+    symmetry-high: 1.3
+    # How many of the three must read as machine, and over how many consecutive
+    # windows. 2 and 2 means roughly eight minutes of agreeing evidence.
+    min-machine-stats: 2
+    min-consecutive-windows: 2
 
 AutoClickerB:
     # Violations removed per second while not flagging. Kept high so a jittery
