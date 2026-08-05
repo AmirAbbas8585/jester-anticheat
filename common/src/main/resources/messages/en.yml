@@ -1,17 +1,23 @@
-# Color codes: legacy '&' codes (&8, &f, &#c19a6b ...), '&#RRGGBB' and bare '#RRGGBB'
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                    J E S T E R   A N T I C H E A T                       ║
+# ║                          messages · all player-facing text                ║
+# ╠══════════════════════════════════════════════════════════════════════════╣
+# ║  Every message the plugin can send lives HERE. config.yml holds settings, ║
+# ║  this file holds wording. Both support MiniMessage (<red>, <color:#rrggbb>║
+# ║  <bold>) and legacy codes (&c, &#rrggbb).                                 ║
+# ║                                                                           ║
+# ║  %prefix% is defined in config.yml (it is used by config values too) and  ║
+# ║  can be used in any message here.                                         ║
+# ║                                                                           ║
+# ║  Edit, then run /jester reload.                                           ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
 # hex codes, and MiniMessage tags (<bold>, <click:...>) are all supported.
-prefix: '&#c19a6bᴊᴇꜱᴛᴇʀ &8»'
 
 # Shown to staff (with the update-checker.notify-permission node) on join when a
 # newer version is available. Placeholders: %latest% %current%
 update-available: '%prefix% <yellow>A new version is available: <green>%latest%</green> <gray>(running <red>%current%</red>)'
 
-alerts-enabled: '%prefix% &fAnticheat detections have been successfully &aenabled&f.'
-alerts-disabled: '%prefix% &fAnticheat detections have been &cdisabled&f.'
-verbose-enabled: '%prefix% &fVerbose alerts have been successfully &aenabled&f.'
-verbose-disabled: '%prefix% &fVerbose alerts have been &cdisabled&f.'
-brands-enabled: '%prefix% &fClient brand alerts have been successfully &aenabled&f.'
-brands-disabled: '%prefix% &fClient brand alerts have been &cdisabled&f.'
 client-brand-format: '%prefix% &f%player% &7joined using &f%brand%'
 console-specify-target: '%prefix% &cYou must specify a target as the console!'
 reloading: '%prefix% &7Reloading config...'
@@ -23,6 +29,7 @@ sender-not-found: '%prefix% &cYou cannot be exempt to use this command!'
 spectate-return: '<click:run_command:/jester stopspectating><hover:show_text:"/jester stopspectating">%prefix% &#c19a6bClick here to return to your previous location</hover></click>'
 cannot-spectate-return: '%prefix% &cYou can only do this after spectating a player'
 cannot-run-on-self: '%prefix% &cYou cannot use this command on yourself!'
+spectate-teleport-failed: '%prefix% &cCould not teleport to that player, try again.'
 upload-log: '%prefix% &fUploaded debug log to: &#c19a6b%url%'
 upload-log-start: '%prefix% &7Uploading log... please wait'
 upload-log-not-found: '%prefix% &cUnable to find that log'
@@ -54,24 +61,6 @@ profile:
     - '&7• &fV-Sensitivity: &#c19a6b%v_sensitivity%%'
     - '&7• &fFastMath: &#c19a6b%fast_math%'
     - '&8&m                                        '
-help:
-    - '&8&m                                        '
-    - '%prefix% &#c19a6bꜱᴋʏᴀɴᴛɪᴄʜᴇᴀᴛ &8— &fʜᴇʟᴘ'
-    - ''
-    - '&#c19a6b/jester alerts &8— &7Toggle alerts'
-    - '&#c19a6b/jester brands &8— &7Toggle brands'
-    - '&#c19a6b/jester info <player> &8— &7View player info'
-    - '&#c19a6b/jester profile <player> &8— &7View player profile'
-    - '&#c19a6b/jester help &8— &7View this help message'
-    - '&#c19a6b/jester debug <player> &8— &7Toggle prediction debug'
-    - '&#c19a6b/jester perf &8— &7Performance metrics'
-    - '&#c19a6b/jester reload &8— &7Reload configuration'
-    - '&#c19a6b/jester spectate <player> &8— &7Spectate a player'
-    - '&#c19a6b/jester verbose &8— &7Toggle verbose flags'
-    - '&#c19a6b/jester log [0-255] &8— &7Upload debug log'
-    - '&#c19a6b/jester history <player> [page] &8— &7Violation history'
-    - '&8&m                                        '
-
 jester-history-load-failure: '%prefix% &cHistory subsystem failed to load! Check console for errors.'
 jester-history-disabled: '%prefix% &cHistory subsystem is disabled!'
 # Valid placeholders: %prefix% %player% %page% %maxPages%
@@ -81,7 +70,6 @@ jester-history-entry: '%prefix% &8[&f%server%&8] &7failed &#c19a6b%check% &8(&#c
 
 # ── Command responses ────────────────────────────────────────────────────────
 tp-success: '%prefix% &bTeleported to &f%player%&b.'
-cannot-run-on-self: '%prefix% &cYou cannot run that on yourself.'
 setback-success: '%prefix% &bSetback executed for &f%player%&b.'
 rotate-sent: '%prefix% &bRotated &f%player% &bto a random direction &7(yaw=%yaw% pitch=%pitch%)&b.'
 kb-sent: '%prefix% &bKnockback &f(strength=&c%.1f&f) &bsent to &f%player%&b.'
@@ -92,3 +80,62 @@ freeze-frozen: '%prefix% &f%player% &bhas been &cfrozen&b.'
 freeze-unfrozen: '%prefix% &f%player% &bhas been &aunfrozen&b.'
 freeze-target-notify: '%prefix% &cYou have been &ffrozen &cby a staff member. Do not log out.'
 freeze-target-unfreeze: '%prefix% &aYou have been &funfrozen&a.'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Alert / verbose / brand toggle feedback
+# ─────────────────────────────────────────────────────────────────────────────
+alerts-enabled: '%prefix% <white>ᴀʟᴇʀᴛꜱ</white> <color:#a9c8ff>ᴇɴᴀʙʟᴇᴅ</color>'
+alerts-disabled: '%prefix% <white>ᴀʟᴇʀᴛꜱ</white> <color:#ff5348>ᴅɪꜱᴀʙʟᴇᴅ</color>'
+verbose-enabled: '%prefix% <white>ᴠᴇʀʙᴏꜱᴇ</white> <color:#a9c8ff>ᴇɴᴀʙʟᴇᴅ</color>'
+verbose-disabled: '%prefix% <white>ᴠᴇʀʙᴏꜱᴇ</white> <color:#ff5348>ᴅɪꜱᴀʙʟᴇᴅ</color>'
+brands-enabled: '%prefix% <white>ʙʀᴀɴᴅꜱ</white> <color:#a9c8ff>ᴇɴᴀʙʟᴇᴅ</color>'
+brands-disabled: '%prefix% <white>ʙʀᴀɴᴅꜱ</white> <color:#ff5348>ᴅɪꜱᴀʙʟᴇᴅ</color>'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /jester help output — one line per entry
+# ─────────────────────────────────────────────────────────────────────────────
+help:
+    - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
+    - '%prefix% <color:#c19a6b><bold>ᴊᴇꜱᴛᴇʀ ᴀɴᴛɪ ᴄʜᴇᴀᴛ</bold></color> <dark_gray>—</dark_gray> <white>ᴄᴏᴍᴍᴀɴᴅ ʀᴇꜰᴇʀᴇɴᴄᴇ</white>'
+    - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
+    - '%prefix% <color:#a9c8ff>/jester alerts</color> <white>—</white> <gray>Toggle violation alerts</gray>'
+    - '%prefix% <color:#a9c8ff>/jester verbose</color> <white>—</white> <gray>Toggle verbose alerts</gray>'
+    - '%prefix% <color:#a9c8ff>/jester violations <player></color> <white>—</white> <gray>Per-check VL breakdown</gray>'
+    - '%prefix% <color:#a9c8ff>/jester info <player></color> <white>—</white> <gray>Detailed player state</gray>'
+    - '%prefix% <color:#a9c8ff>/jester cps <player></color> <white>—</white> <gray>Show click-per-second info</gray>'
+    - '%prefix% <color:#a9c8ff>/jester history <player></color> <white>—</white> <gray>Violation history log</gray>'
+    - '%prefix% <color:#a9c8ff>/jester freeze <player></color> <white>—</white> <gray>Toggle freeze on a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester setback <player></color> <white>—</white> <gray>Manually setback a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester tp <player></color> <white>—</white> <gray>Teleport to a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester spectate <player></color> <white>—</white> <gray>Spectate a player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester clearviolations <player></color> <white>—</white> <gray>Clear all violations</gray>'
+    - '%prefix% <color:#a9c8ff>/jester stats</color> <white>—</white> <gray>Server-wide anticheat statistics</gray>'
+    - '%prefix% <color:#a9c8ff>/jester perf</color> <white>—</white> <gray>Performance metrics</gray>'
+    - '%prefix% <color:#a9c8ff>/jester reload</color> <white>—</white> <gray>Reload configuration</gray>'
+    - '%prefix% <color:#a9c8ff>/jester debug <player></color> <white>—</white> <gray>Toggle debug mode for player</gray>'
+    - '%prefix% <color:#a9c8ff>/jester list</color> <white>—</white> <gray>List tracked players</gray>'
+    - '%prefix% <color:#a9c8ff>/jester version</color> <white>—</white> <gray>Plugin version info</gray>'
+    - '%prefix% <color:#c19a6b>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Alert hover — the tooltip shown when staff hover over a flag message.
+# This is a LIST: delete a line to drop that row, reorder them, or add your own.
+# An empty string '' renders as a blank separator line.
+# Placeholders: %player% %brand% %client_version% %check_name% %vl% %max_vl%
+#               %ping% %tps% %x% %y% %z% %gamemode% %info% %verbose%
+# %info% is a generated, per-flag explanation of WHY this specific flag fired
+# (it reads the verbose data, ping and TPS) — the text itself is built in code,
+# but you control whether and where the line appears.
+# ─────────────────────────────────────────────────────────────────────────────
+alert-hover:
+    - '<color:#c19a6b>•</color> <white>Player:</white> <color:#a9c8ff>%player%</color>'
+    - '<color:#c19a6b>•</color> <white>Brand:</white> <color:#a9c8ff>%brand%</color> <color:#c19a6b>(%client_version%)</color>'
+    - '<color:#c19a6b>•</color> <white>Check:</white> <color:#ff5348>%check_name%</color>'
+    - '<color:#c19a6b>•</color> <white>Violations:</white> <color:#ff5348>x%vl%</color> <white>/</white> <color:#c19a6b>%max_vl%</color>'
+    - '<color:#c19a6b>•</color> <white>Ping:</white> <color:#c19a6b>%ping%ms</color>  <white>TPS:</white> <color:#c19a6b>%tps%</color>'
+    - '<color:#c19a6b>•</color> <white>Position:</white> <color:#a9c8ff>%x%, %y%, %z%</color> <dark_gray>(</dark_gray><color:#a9c8ff>%gamemode%</color><dark_gray>)</dark_gray>'
+    - ''
+    - '<white>Info:</white> <color:#a9c8ff>%info%</color>'
+    - '<white>Verbose:</white> <color:#a9c8ff>%verbose%</color>'
+    - ''
+    - '<color:#c19a6b>•</color> <white>Click to teleport</white>'

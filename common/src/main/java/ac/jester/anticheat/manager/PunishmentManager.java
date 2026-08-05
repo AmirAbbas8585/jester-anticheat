@@ -1,5 +1,6 @@
 package ac.jester.anticheat.manager;
 
+import java.util.List;
 import ac.jester.anticheat.GrimAPI;
 import ac.grim.grimac.api.AbstractCheck;
 import ac.grim.grimac.api.config.ConfigManager;
@@ -148,29 +149,46 @@ public class PunishmentManager implements ConfigReloadable {
                 .replace("'", ""));
         var clientVersion = player.getClientVersion();
         String version = clientVersion != null ? clientVersion.getReleaseName() : "?";
-        return String.format(
-                "<color:#c19a6b>•</color> <white>Player:</white> <color:#a9c8ff>%s</color><newline>" +
-                "<color:#c19a6b>•</color> <white>Brand:</white> <color:#a9c8ff>%s</color> <color:#c19a6b>(%s)</color><newline>" +
-                "<color:#c19a6b>•</color> <white>Check:</white> <color:#ff5348>%s</color><newline>" +
-                "<color:#c19a6b>•</color> <white>Violations:</white> <color:#ff5348>x%d</color> <white>/</white> <color:#c19a6b>%d</color><newline>" +
-                "<color:#c19a6b>•</color> <white>Ping:</white> <color:#c19a6b>%dms</color>  <white>TPS:</white> <color:#c19a6b>%.1f</color><newline>" +
-                "<color:#c19a6b>•</color> <white>Position:</white> <color:#a9c8ff>%.0f, %.0f, %.0f</color> <dark_gray>(</dark_gray><color:#a9c8ff>%s</color><dark_gray>)</dark_gray><newline>" +
-                "<newline><white>Info:</white> <color:#a9c8ff>%s</color><newline>" +
-                "<white>Verbose:</white> <color:#a9c8ff>%s</color><newline>" +
-                "<newline><color:#c19a6b>•</color> <white>Click to teleport</white>",
-                player.user.getName(),
-                brand,
-                version,
-                check.getDisplayName(),
-                vl, maxVl,
-                player.getTransactionPing(),
-                GrimAPI.INSTANCE.getPlatformServer().getTPS(),
-                player.x, player.y, player.z,
-                player.gamemode != null ? player.gamemode.name() : "UNKNOWN",
-                description,
-                safeVerbose
-        );
+
+        // The layout used to be a hardcoded format string, so there was no way to
+        // add, remove or reword a line without recompiling. It is a list of lines
+        // in messages.yml now — delete an entry to drop that row, reorder them
+        // freely, or add your own using any of the placeholders below.
+        List<String> lines = GrimAPI.INSTANCE.getConfigManager().getConfig()
+                .getStringListElse("alert-hover", DEFAULT_ALERT_HOVER);
+        if (lines.isEmpty()) lines = DEFAULT_ALERT_HOVER;
+
+        double tps = GrimAPI.INSTANCE.getPlatformServer().getTPS();
+        return String.join("<newline>", lines).stripTrailing()
+                .replace("%player%", player.user.getName())
+                .replace("%brand%", brand)
+                .replace("%client_version%", version)
+                .replace("%check_name%", check.getDisplayName())
+                .replace("%vl%", String.valueOf(vl))
+                .replace("%max_vl%", String.valueOf(maxVl))
+                .replace("%ping%", String.valueOf(player.getTransactionPing()))
+                .replace("%tps%", String.format("%.1f", tps))
+                .replace("%x%", String.format("%.0f", player.x))
+                .replace("%y%", String.format("%.0f", player.y))
+                .replace("%z%", String.format("%.0f", player.z))
+                .replace("%gamemode%", player.gamemode != null ? player.gamemode.name() : "UNKNOWN")
+                .replace("%info%", description)
+                .replace("%verbose%", safeVerbose);
     }
+
+    /** Fallback layout, used when alert-hover is missing or empty. */
+    private static final List<String> DEFAULT_ALERT_HOVER = List.of(
+            "<color:#c19a6b>•</color> <white>Player:</white> <color:#a9c8ff>%player%</color>",
+            "<color:#c19a6b>•</color> <white>Brand:</white> <color:#a9c8ff>%brand%</color> <color:#c19a6b>(%client_version%)</color>",
+            "<color:#c19a6b>•</color> <white>Check:</white> <color:#ff5348>%check_name%</color>",
+            "<color:#c19a6b>•</color> <white>Violations:</white> <color:#ff5348>x%vl%</color> <white>/</white> <color:#c19a6b>%max_vl%</color>",
+            "<color:#c19a6b>•</color> <white>Ping:</white> <color:#c19a6b>%ping%ms</color>  <white>TPS:</white> <color:#c19a6b>%tps%</color>",
+            "<color:#c19a6b>•</color> <white>Position:</white> <color:#a9c8ff>%x%, %y%, %z%</color> <dark_gray>(</dark_gray><color:#a9c8ff>%gamemode%</color><dark_gray>)</dark_gray>",
+            "",
+            "<white>Info:</white> <color:#a9c8ff>%info%</color>",
+            "<white>Verbose:</white> <color:#a9c8ff>%verbose%</color>",
+            "",
+            "<color:#c19a6b>•</color> <white>Click to teleport</white>");
 
     /** Runs a check's configured punishment commands from the console. */
     private static void executePunishment(GrimPlayer player, Check check,

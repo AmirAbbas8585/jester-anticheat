@@ -53,7 +53,29 @@ public class JesterSpectate implements BuildableCommand {
             sender.sendMessage(MessageUtil.getParsedComponent(sender, "spectate-return", "<click:run_command:/jester stopspectating><hover:show_text:\"/jester stopspectating\">\n%prefix% &fClick here to return to previous location\n</hover></click>"));
         }
 
+        // Spectator BEFORE the teleport so the staff member is never briefly
+        // solid and vulnerable at the destination...
         platformPlayer.setGameMode(GameMode.SPECTATOR);
-        platformPlayer.teleportAsync(Objects.requireNonNull(targetPlatformPlayer).getLocation());
+        platformPlayer.teleportAsync(Objects.requireNonNull(targetPlatformPlayer).getLocation())
+                .thenAccept(success -> {
+                    if (!success) {
+                        // Don't strand them mid-spectate with a failed teleport.
+                        GrimAPI.INSTANCE.getSpectateManager().disable(platformPlayer, false);
+                        sender.sendMessage(MessageUtil.getParsedComponent(sender, "spectate-teleport-failed",
+                                "%prefix% &cCouldn't teleport to that player, try again."));
+                        return;
+                    }
+                    // ...and re-assert it AFTER, because a cross-world teleport
+                    // makes the server re-apply the destination world's gamemode.
+                    // Anything doing per-world gamemodes (Multiverse's
+                    // enforce-gamemode, lobby/world-manager plugins) then drops
+                    // the staff member back into survival the moment they land —
+                    // which is exactly what happened spectating from the overworld
+                    // into the Nether. Setting it once before the teleport cannot
+                    // survive that; setting it again after the world change does.
+                    if (platformPlayer.getGameMode() != GameMode.SPECTATOR) {
+                        platformPlayer.setGameMode(GameMode.SPECTATOR);
+                    }
+                });
     }
 }
