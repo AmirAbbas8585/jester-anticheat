@@ -120,6 +120,8 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
         HookManager.init();
         Bukkit.getPluginManager().registerEvents(
                 new ac.jester.anticheat.platform.bukkit.listeners.FreezeListener(), this);
+        Bukkit.getPluginManager().registerEvents(
+                new ac.jester.anticheat.platform.bukkit.listeners.SpectateListener(), this);
 
         // Region-scoped AFK enforcement (own-server build only). This feature is
         // stripped from the obfuscated public jar, so its class may be absent —

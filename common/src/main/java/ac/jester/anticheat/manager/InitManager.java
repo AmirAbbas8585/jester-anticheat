@@ -50,6 +50,7 @@ public class InitManager {
                 .add(new TickRunner())
                 .add(new CommandRegister(GrimAPI.INSTANCE.getCommandService()))
                 .add(new PacketLimiter())
+                .add(new ac.jester.anticheat.manager.init.start.ViolationDecayer())
                 .add(GrimAPI.INSTANCE.getAlertManager())
                 .add(GrimAPI.INSTANCE.getSpectateManager())
                 .add(GrimAPI.INSTANCE.getViolationDatabaseManager())

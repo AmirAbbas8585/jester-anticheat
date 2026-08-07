@@ -1657,42 +1657,84 @@ checks:
     MultiActionsA:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsB:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsC:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsD:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsE:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsF:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     MultiActionsG:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
@@ -1753,42 +1795,84 @@ checks:
     SprintA:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintB:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintC:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintD:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintE:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintF:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
     SprintG:
         enabled: true
         punishable: false
+        # These fire on a SINGLE odd tick with no streak or lag guard of their own,
+        # so one packet-ordering artefact used to reach chat. Alert only once the
+        # violations show a pattern, and let isolated ones decay away.
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
         max-violations: 20
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
@@ -2399,3 +2483,26 @@ reset-item-usage-on-attack: true
 reset-item-usage-on-item-update: true
 reset-item-usage-on-item-use: true
 reset-item-usage-on-slot-change: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sprint* / MultiActions* — violation decay.
+# These upstream checks flag on a single tick and carry no streak, ping or lag
+# guard of their own, so packet-ordering artefacts do produce occasional
+# violations. clear-per-second is now applied on a timer (see ViolationDecayer),
+# so a generous rate here means isolated noise disappears within a few seconds
+# while a real cheat, which flags continuously, still climbs to its threshold.
+# ─────────────────────────────────────────────────────────────────────────────
+SprintA:  { clear-per-second: 0.5 }
+SprintB:  { clear-per-second: 0.5 }
+SprintC:  { clear-per-second: 0.5 }
+SprintD:  { clear-per-second: 0.5 }
+SprintE:  { clear-per-second: 0.5 }
+SprintF:  { clear-per-second: 0.5 }
+SprintG:  { clear-per-second: 0.5 }
+MultiActionsA: { clear-per-second: 0.5 }
+MultiActionsB: { clear-per-second: 0.5 }
+MultiActionsC: { clear-per-second: 0.5 }
+MultiActionsD: { clear-per-second: 0.5 }
+MultiActionsE: { clear-per-second: 0.5 }
+MultiActionsF: { clear-per-second: 0.5 }
+MultiActionsG: { clear-per-second: 0.5 }

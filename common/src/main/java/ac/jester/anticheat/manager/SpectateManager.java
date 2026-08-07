@@ -90,8 +90,13 @@ public class SpectateManager implements StartableInitable, ReloadableInitable {
     }
 
     private void onDisable(PreviousState previousState, PlatformPlayer platformPlayer) {
-        platformPlayer.setGameMode(previousState.gameMode);
+        // Order matters: clear the spectating flag BEFORE restoring the gamemode.
+        // SpectateListener refuses any move out of spectator while that flag is
+        // set (that is how it defeats per-world gamemode plugins), so restoring
+        // first would have its own restore cancelled and strand the player in
+        // spectator permanently.
         handlePlayerStopSpectating(platformPlayer.getUniqueId());
+        platformPlayer.setGameMode(previousState.gameMode);
     }
 
     public void handlePlayerStopSpectating(UUID uuid) {

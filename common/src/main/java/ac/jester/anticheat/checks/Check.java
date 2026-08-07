@@ -203,6 +203,19 @@ public class Check extends GrimProcessor implements AbstractCheck {
         violations = Math.max(0, violations - decay);
     }
 
+    /**
+     * Time-based half of the same decay, applied once a second by
+     * {@link ac.jester.anticheat.manager.init.start.ViolationDecayer}.
+     *
+     * reward() only runs when a check chooses to call it, and several never do,
+     * so their violations could only ever go up. This makes clear-per-second
+     * behave as its name and documentation promise for every check.
+     */
+    public final void decayViolations() {
+        if (violations <= 0) return;
+        violations = Math.max(0, violations - decay);
+    }
+
     @Override
     public final void reload(ConfigManager configuration) {
         decay = configuration.getDoubleElse(configName + ".clear-per-second", decay);
