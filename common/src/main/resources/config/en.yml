@@ -1,0 +1,2635 @@
+# Jester AntiCheat
+#
+# Every check has a block under "checks:" where you switch it on or off, decide
+# whether it may punish, and set the command it runs. Anything a check leaves
+# out comes from "alert-defaults". Colours take &a codes and &#rrggbb hex.
+# Run /jester reload after editing.
+
+# Used by the plugin to update this file after an upgrade. Don't change it.
+config-version: 4
+
+# ----------------------------------------------------------------------------
+#  Alerts
+# ----------------------------------------------------------------------------
+
+# Put in front of every message from the plugin.
+prefix: '&#c19a6bᴊᴇꜱᴛᴇʀ &8»'
+
+alerts:
+    # Print alerts in the console as well.
+    print-to-console: true
+    # Click an alert in chat to teleport to the player.
+    clickable: true
+    # Placeholders: %player% %check_name% %vl% %verbose% %ping% %tps% %version%
+    format: '%prefix% &#c19a6b%player% &fhas failed &#c19a6b%check_name% &8[&#c19a6bx%vl% &8| &#c19a6b%ping%ms&8]'
+    # The console version of the alert.
+    console-format: '&8[&#c19a6bᴊ&8] %player% failed %check_name% (x%vl%) | %verbose%'
+    # On a BungeeCord/Velocity network: send this server's alerts to the other
+    # servers running Jester, and show theirs here. Detected from spigot.yml or
+    # paper-global.yml.
+    network:
+        send: true
+        receive: true
+    # Print every single flag in the console too. Very noisy.
+    verbose-to-console: false
+
+# Staff with jester.alerts get alerts switched on when they join. Set to
+# false if they should switch them on with /jester alerts.
+toggle-alerts-on-join: true
+
+# ----------------------------------------------------------------------------
+#  When checks run and punish
+# ----------------------------------------------------------------------------
+
+# Movement checks wait this long (ms) after a player joins: they may spawn in
+# mid-air or with chunks still loading. Waiting for a resource pack is
+# covered on its own, up to 30 seconds.
+movement-grace:
+    join-ms: 3000
+
+# Beta checks are newer or less proven: most of the BadPackets, Sprint,
+# Elytra, Vehicle, MultiActions and PacketOrder checks. With this on they run
+# and alert. Whether they can punish is the next option.
+beta-checks: true
+
+# Let beta checks kick or ban. Leave this off until you have watched a check
+# on your own server and trust it.
+beta-checks-punishable: false
+
+# Above this ping (ms) checks still alert but won't punish, so nobody gets
+# kicked for lag. BadPackets, Crash and Exploit ignore it. 0 turns it off.
+high-ping:
+    no-punish-above-ms: 400
+
+# Used by every check for anything it doesn't set in its own block.
+alert-defaults:
+    # Alert on every Nth violation. 1 = every one.
+    alert-interval: 1
+    # Stay quiet until the player has this many violations.
+    dont-alert-until: 3
+    # Shortest gap between two alerts for the same player and check.
+    alert-cooldown-ms: 1000
+    # Below this TPS a check stops completely: no violations, no alerts, no
+    # logs. Someone cheating in that time looks clean, so keep it low. The
+    # console warns you when it happens. BadPackets, Crash and Exploit use 0
+    # and never stop.
+    minimum-tps: 15.0
+    # Violations before the punishment runs.
+    max-violations: 20
+    # Whether checks may punish at all, unless their own block says otherwise.
+    punishable: true
+    # The violations have to keep coming for at least this long before a
+    # punishment runs, so a short lag burst can't kick someone in a split
+    # second. 0 = punish as soon as max-violations is reached.
+    punish-grace-ms: 2000
+
+# ----------------------------------------------------------------------------
+#  Storage
+# ----------------------------------------------------------------------------
+
+# One database for everything, including /jester history. SQLite needs no
+# setup (plugins/JesterAntiCheat/jester.db). Use mysql if a website or another
+# server needs to read it.
+#
+# Tables:
+#   jester_violations   every flag with ping and TPS, cleared after
+#                       violation-retention-hours
+#   jester_punishments  every punishment, kept
+#   jester_profiles     name, client version and brand per player
+#   jester_history_*    /jester history, kept
+database:
+    enabled: true
+    type: sqlite          # sqlite or mysql
+    host: localhost
+    port: 3306
+    database: jester
+    username: root
+    password: ''
+    pool-size: 5
+    # At most one row per player and check in this time (ms). The vl column
+    # keeps counting, so nothing is lost.
+    log-throttle-ms: 2000
+    # How long jester_violations keeps rows. Nothing else is ever cleared.
+    violation-retention-hours: 6
+
+# /jester history. It uses the database above; this switch is separate from
+# database.enabled, which only covers jester_violations.
+history:
+    enabled: true
+    entries-per-page: 15
+    # Shown on each entry. Handy when several servers share one MySQL.
+    server-name: 'server'
+
+# ----------------------------------------------------------------------------
+#  Bedrock players
+# ----------------------------------------------------------------------------
+
+# Bedrock players (Geyser/Floodgate) are still checked, but checks that assume
+# Java behaviour are skipped for them: movement prediction, knockback, reach
+# and aim (Geyser makes up the look direction on touch screens), click timing
+# and packet order. Packet validity checks such as Crash and Exploit still
+# run, since a normal Bedrock client can't trip them.
+#
+# Bedrock players are recognised by their Floodgate UUID, or by a client brand
+# containing "Geyser" for accounts linked to Java.
+bedrock:
+    # false = check Bedrock players exactly like Java players.
+    enabled: true
+    # Leave empty for the built-in list. A list here replaces it completely,
+    # it doesn't add to it.
+    disabled-checks: []
+
+# ----------------------------------------------------------------------------
+#  Other plugins and updates
+# ----------------------------------------------------------------------------
+
+# Each option only does something when that plugin is installed, so leaving
+# them on is safe. Set one to false to turn that support off.
+integrations:
+    # GSit: skip movement checks for players sitting, crawling or lying down.
+    gsit-exempt-movement: true
+    # DeluxeCombat / CrazyEnchantments: allow for their custom knockback.
+    deluxecombat-kb-tolerance: true
+    # AuraSkills: allow for its speed and jump bonuses.
+    auraskills-movement-boost: true
+    # WorldGuard: skip flight checks in regions where flying is allowed.
+    worldguard-fly-regions: true
+    # ItemsAdder: use custom block hardness in FastBreak and Nuker.
+    itemsadder-custom-blocks: true
+
+# Looks for a newer version on Modrinth and tells the console and staff.
+update-checker:
+    enabled: true
+    # Check again every this many minutes. 0 = only on startup.
+    interval-minutes: 180
+    # Players with this permission are told when they join.
+    notify-permission: 'jester.update'
+
+# ----------------------------------------------------------------------------
+#  AFK
+# ----------------------------------------------------------------------------
+
+# Kicks AFK players, but only inside WorldGuard regions you mark:
+#   /rg flag <region> jester-afk-blocked allow
+# Remove the mark with /rg flag <region> jester-afk-blocked
+afk:
+    enabled: true
+    # Seconds a player may stay AFK in a marked region.
+    max-afk-seconds: 900
+    # Warn the player this many seconds before the kick.
+    warn-before-seconds: 60
+    # How far (blocks) a player has to walk from where they stopped to count as
+    # back. Jumping on the spot or walking in a tiny circle doesn't count.
+    min-move-distance: 2.5
+    # Never kicked for AFK.
+    bypass-permission: 'jester.afk.bypass'
+    messages:
+        warn: '&e[AFK] &fYou will be kicked in &c%seconds%s&f for being AFK here. Move to stay.'
+        kick: '&c[AFK]\n&fYou were kicked for being AFK too long in a no-AFK area.'
+
+# ----------------------------------------------------------------------------
+#  Checks
+# ----------------------------------------------------------------------------
+
+# One block per check. Keys every check understands:
+#   enabled              run the check at all
+#   punishable           false = alert only
+#   max-violations       violations before punishment-commands run
+#   alert-interval       alert on every Nth violation
+#   dont-alert-until     stay quiet below this many violations
+#   alert-cooldown-ms    shortest gap between two alerts
+#   minimum-tps          pause the check below this TPS
+#   punishment-commands  console commands (%player% %check% %ping%)
+# Anything left out comes from alert-defaults.
+checks:
+
+    # ── Movement prediction ───────────────────────────────────────────────────
+
+    # Claiming to stand on the ground when the prediction says otherwise.
+    GroundSpoof:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Movement prediction: fly, speed and most other movement hacks. Alert
+    # only by default; set punishable once you trust it on your server.
+    MovementA:
+        enabled: true
+        punishable: false
+        max-violations: 40
+        alert-interval: 1
+        dont-alert-until: 6           # Ignore the first 5 flags (lag spike tolerance)
+        alert-cooldown-ms: 2000       # Max 1 alert per 2s (prevents 1-100 spam)
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # Claiming to be on the ground mid-fall to avoid fall damage.
+    NoFall:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Moving through solid blocks.
+    Phase:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # ── Movement ──────────────────────────────────────────────────────────────
+
+    # Jumping at the very edge of a ledge every time.
+    AutoParkour:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 4
+        alert-cooldown-ms: 3000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # In the air, not falling, with nothing holding the player up. Works on
+    # its own, so a fly that stays under MovementA's limit is still caught.
+    Fly:
+        enabled: true
+        punishable: true
+        max-violations: 2
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 2000
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # Jumping again instantly on every landing. Off by default: holding space
+    # does the same in vanilla.
+    NoJumpDelay:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # Not slowing down while eating, blocking or drawing a bow.
+    NoSlow:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1500
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # ── Timer ─────────────────────────────────────────────────────────────────
+
+    # Sending movement slower than the client ticks.
+    NegativeTimer:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Too many packets in total. Alert only by default, same reason as TimerA.
+    PacketLimit:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        alert-interval: 1
+        dont-alert-until: 6
+        alert-cooldown-ms: 2000
+        minimum-tps: 19.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # Missing the end-of-tick packet.
+    TickTimer:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Game running faster than real time. Alert only by default; proxies and
+    # version translation make packet timing jumpy.
+    TimerA:
+        enabled: true
+        punishable: false
+        max-violations: 16           # More chances before kick (fewer false kicks)
+        alert-interval: 1
+        dont-alert-until: 6
+        alert-cooldown-ms: 1500
+        minimum-tps: 19.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # Vehicle movement sent faster than the client ticks.
+    VehicleTimer:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Knockback ─────────────────────────────────────────────────────────────
+
+    # Taking less explosion knockback than predicted.
+    Explosion:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Taking less knockback than predicted (anti-knockback).
+    Knockback:
+        enabled: true
+        punishable: true
+        max-violations: 15
+        alert-interval: 1
+        dont-alert-until: 5
+        alert-cooldown-ms: 2000
+        minimum-tps: 15.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # ── Combat ────────────────────────────────────────────────────────────────
+
+    # Using respawn anchors very fast.
+    AnchorAura:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Swapping to a heavy weapon for one hit and back (MC-28289). Only counts
+    # when it repeats.
+    AttributeSwap:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Attacking while blocking with a shield.
+    AutoBlock:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Clicking too fast or too regularly.
+    AutoClickerA:
+        enabled: true
+        punishable: true
+        max-violations: 12
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Several swings in one tick, over and over.
+    AutoClickerB:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 500
+        minimum-tps: 19.5
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Attacking for minutes without moving at all (AFK farm macro). If you
+    # allow AFK farming, set punishable to false.
+    AutoClickerC:
+        enabled: true
+        punishable: false
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 60000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Slow or randomised clicking, judged over several minutes.
+    AutoClickerD:
+        enabled: true
+        punishable: false
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 60000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Drinking or throwing a potion the moment damage is taken.
+    AutoPot:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Putting a new totem in the off hand faster than a person can.
+    AutoTotem:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Switching to the best weapon in the same tick as every hit.
+    AutoWeapon:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Placing beds very fast (bed bombing).
+    BedAura:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Fake critical hits.
+    Criticals:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # End crystals placed and hit faster than a person can.
+    CrystalAura:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Releasing a bow too early. Off by default: the server works out arrow
+    # power itself, and tapping a bow sends the same packets.
+    FastBow:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Eating or drinking too fast. Off by default: the server times this itself,
+    # so the hack gains nothing, and the packet it relies on is sent every time
+    # someone stops eating.
+    FastUse:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Hitting outside the target's hitbox.
+    Hitboxes:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Hitting without swinging.
+    KillAuraA:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Hitting two different entities in one tick.
+    KillAuraB:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Hitting while a container is open.
+    KillAuraC:
+        enabled: true
+        punishable: true
+        max-violations: 2
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Hitting something far to the side or behind.
+    KillAuraD:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 800
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Interacting with several entities in one tick.
+    MultiInteractA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Right-clicking several entities in one tick.
+    MultiInteractB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Attacking while eating, drinking or drawing a bow.
+    Multitask:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Several attacks in one tick.
+    NoHitDelay:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Hitting from too far away (simulated).
+    Reach:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        # Keep this below max-violations, or staff never see an alert before the kick.
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Second reach check with its own entity tracking. Alert only by default.
+    ReachB:
+        enabled: true
+        punishable: false            # alert only
+        max-violations: 15
+        alert-interval: 1
+        dont-alert-until: 4
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Hitting yourself.
+    SelfInteract:
+        enabled: true
+        punishable: true
+        max-violations: 1
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Hitting right after a move no client can make in one packet: one-shot
+    # mace hits (MaceKill, MaceDMG) and teleport aura. The hit is cancelled.
+    TeleportHit:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Hitting the instant the crosshair reaches a target, every time.
+    TriggerBot:
+        enabled: true
+        punishable: true
+        max-violations: 6
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # ── Aim ───────────────────────────────────────────────────────────────────
+
+    # Aim not matching the mouse sensitivity. Currently never flags.
+    AimA:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bCombat&8 &7ping: %ping%ms&8)'
+
+    # Sending the same look direction twice.
+    AimDuplicateLook:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Large instant yaw snaps.
+    AimModulo360:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Not active. Baritone got around it long ago and it flags cinematic
+    # camera, so it isn't registered; changing this block does nothing.
+    Baritone:
+        enabled: false
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Placing blocks ────────────────────────────────────────────────────────
+
+    # Placing against air or liquid.
+    AirLiquidPlace:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 4
+        alert-cooldown-ms: 1500
+        minimum-tps: 19.5
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # Repeating the exact same turn while placing.
+    DuplicateRotPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Impossible click position on a block.
+    FabricatedPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Placing too far away.
+    FarPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Placing blocks too fast.
+    FastPlace:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # Placing against a block the server doesn't have (ghost block abuse).
+    GhostBlock:
+        enabled: true
+        punishable: false
+        max-violations: 15
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Invalid click position.
+    InvalidPlaceA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Invalid block face.
+    InvalidPlaceB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Several blocks in one tick.
+    MultiPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Placing against a face the player can't see.
+    PositionPlace:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Placing a block without looking at it. Lenient: players on old
+    # versions turn very fast.
+    RotationPlace:
+        enabled: true
+        punishable: true
+        max-violations: 25
+        alert-interval: 1
+        dont-alert-until: 6
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # Building a staircase downwards automatically.
+    ScaffoldGoDown:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # Pillaring up faster than vanilla allows.
+    Tower:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bScaffold&8 &7ping: %ping%ms&8)'
+
+    # ── Breaking blocks ───────────────────────────────────────────────────────
+
+    # Breaking air or liquid.
+    AirLiquidBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Switching to the right tool the moment mining starts, every time.
+    AutoTool:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # Breaking too far away.
+    FarBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Breaking blocks faster than the tool allows.
+    FastBreak:
+        enabled: true
+        punishable: true
+        max-violations: 8
+        alert-interval: 1
+        dont-alert-until: 3
+        alert-cooldown-ms: 1500
+        # FastBreak times in real milliseconds, so even small TPS drops throw it off.
+        minimum-tps: 19.5
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # Invalid block face.
+    InvalidBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Breaking several different blocks in one tick.
+    MultiBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Breaking without swinging.
+    NoSwingBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Starting to break several blocks at once, or breaking too many.
+    NukerA:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # Breaking blocks all around the player at once.
+    NukerB:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # Breaking blocks instantly by sending start and finish together.
+    PacketMine:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # Breaking a face that can't be seen from the player's eyes.
+    PositionBreakA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Cancelling a break with an invalid face.
+    PositionBreakB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Breaking without looking at the block.
+    RotationBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Breaking many different blocks per second.
+    VeinMiner:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMining&8 &7ping: %ping%ms&8)'
+
+    # Break progress for a different block than the one being mined.
+    WrongBreak:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Player and inventory ──────────────────────────────────────────────────
+
+    # Putting on several armor pieces at once.
+    AutoArmor:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # Eating the moment the hunger bar drops, over and over.
+    AutoEat:
+        enabled: true
+        punishable: true
+        max-violations: 6
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # Reeling in the moment a fish bites.
+    AutoFish:
+        enabled: true
+        punishable: true
+        max-violations: 4
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # Respawning faster than vanilla allows.
+    AutoRespawn:
+        enabled: true
+        punishable: true
+        max-violations: 3
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # Emptying containers faster than a person can. Off by default: sorting
+    # mods and fast looting trip it.
+    ChestStealer:
+        enabled: false
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPlayer&8 &7ping: %ping%ms&8)'
+
+    # Using an item the server doesn't see in the player's hand.
+    GhostItem:
+        enabled: true
+        punishable: false
+        max-violations: 15
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Walking with a container open. Only sets the player back, no kick.
+    InventoryWalk:
+        enabled: true
+        punishable: false
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1000
+        minimum-tps: 14.0
+        punishment-commands: []
+
+    # ── Elytra ────────────────────────────────────────────────────────────────
+
+    # Started gliding while already gliding.
+    ElytraA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding without jumping.
+    ElytraB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding too frequently.
+    ElytraC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding without an elytra.
+    ElytraD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding while flying.
+    ElytraE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding while on ground.
+    ElytraF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding with levitation.
+    ElytraG:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding in vehicle.
+    ElytraH:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started gliding in water.
+    ElytraI:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Rocket boosts timed like a machine while gliding.
+    FireworkBoost:
+        enabled: true
+        punishable: true
+        max-violations: 6
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 2000
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # ── Vehicles ──────────────────────────────────────────────────────────────
+
+    # A vehicle jumping several blocks in one packet.
+    BoatClip:
+        enabled: true
+        punishable: true
+        max-violations: 4
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # A boat climbing through the air.
+    BoatFly:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # A ridden mob climbing through the air. Happy ghasts are left alone.
+    EntityFly:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # A boat or mount going faster than vanilla. The limit depends on the
+    # ground, so ice highways are fine.
+    EntitySpeed:
+        enabled: true
+        punishable: true
+        max-violations: 5
+        alert-interval: 1
+        dont-alert-until: 2
+        alert-cooldown-ms: 1500
+        minimum-tps: 14.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bMovement&8 &7ping: %ping%ms&8)'
+
+    # Impossible input values.
+    VehicleA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Claimed to be in a vehicle while not in a vehicle.
+    VehicleB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Vehicle movement not matching the predicted controls.
+    VehicleC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Jumped in a vehicle that cannot jump.
+    VehicleD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent boat paddle states while not in a boat.
+    VehicleE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent incorrect boat paddle states.
+    VehicleF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Sprint ────────────────────────────────────────────────────────────────
+    # Beta. They react to a single odd tick, so they stay quiet until a few
+    # violations build up, and the violations fade quickly.
+
+    # Sprinting with too low hunger.
+    SprintA:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sprinting while sneaking or crawling.
+    SprintB:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sprinting while using an item.
+    SprintC:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Started sprinting while having blindness.
+    SprintD:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sprinting while colliding with a wall.
+    SprintE:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sprinting while gliding.
+    SprintF:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sprinting while in water.
+    SprintG:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Doing two things at once ──────────────────────────────────────────────
+    # Beta, same as the Sprint checks.
+
+    # Attacked while using an item.
+    MultiActionsA:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Breaking blocks while using an item.
+    MultiActionsB:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Clicked in inventory while moving.
+    MultiActionsC:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Closed inventory while moving.
+    MultiActionsD:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Swinging while using an item.
+    MultiActionsE:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Interacting with a block and an entity in the same tick.
+    MultiActionsF:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Attacking or using items while rowing a boat.
+    MultiActionsG:
+        enabled: true
+        punishable: false
+        dont-alert-until: 8
+        alert-cooldown-ms: 15000
+        minimum-tps: 15.0
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Packet order ──────────────────────────────────────────────────────────
+    # Vanilla sends its packets in a fixed order each tick; clients that fake
+    # actions often get it wrong. B and C can kick, the rest are beta.
+
+    # Sent pickup and quick-move inventory clicks in an invalid order.
+    PacketOrderA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Did not swing for attack.
+    PacketOrderB:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        dont-alert-until: 2
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent INTERACT and INTERACT_AT entity packets in the wrong order.
+    PacketOrderC:
+        enabled: true
+        punishable: true
+        max-violations: 10
+        dont-alert-until: 2
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent offhand entity interaction before the matching mainhand interaction.
+    PacketOrderD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Changed held item slot during another conflicting action.
+    PacketOrderE:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent action packets after sneak or sprint input in an invalid order.
+    PacketOrderF:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Managed hotbar or inventory while performing another conflicting action.
+    PacketOrderG:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent sprinting and sneaking state changes in an invalid packet order.
+    PacketOrderH:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent combat, use, release, or digging packets in an invalid tick order.
+    PacketOrderI:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent use item after attacking without the expected interaction packet.
+    PacketOrderJ:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Opened, clicked, or closed inventory in the wrong packet order.
+    PacketOrderK:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent drop, inventory open, or offhand swap packets in an invalid order.
+    PacketOrderL:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent use item and entity interaction packets in an invalid order.
+    PacketOrderM:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent use item and block place packets in an invalid order.
+    PacketOrderN:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent packets after movement before the expected client tick end.
+    PacketOrderO:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Responded to chunk batch packets in an invalid transaction order.
+    PacketOrderP:
+        enabled: false
+        punishable: false
+        max-violations: 20
+        dont-alert-until: 3
+        alert-cooldown-ms: 2000
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Bad packets ───────────────────────────────────────────────────────────
+    # Packets a normal client never sends. They never pause for low TPS.
+
+    # Sent duplicate slot id.
+    BadPacketsA:
+        enabled: true
+        punishable: true
+        max-violations: 1
+        minimum-tps: 0.0
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPackets&8 &7ping: %ping%ms&8)'
+
+    # Ignored set rotation packet.
+    BadPacketsB:
+        enabled: true
+        punishable: true
+        max-violations: 1
+        minimum-tps: 0.0
+        alert-interval: 1
+        dont-alert-until: 1
+        alert-cooldown-ms: 0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6bPackets&8 &7ping: %ping%ms&8)'
+
+    # Interacted with self.
+    BadPacketsC:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Impossible pitch.
+    BadPacketsD:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Too many movement packets without moving.
+    BadPacketsE:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent duplicate sprinting status.
+    BadPacketsF:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent duplicate sneaking status.
+    BadPacketsG:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent unexpected sequence id.
+    BadPacketsH:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Claimed to be flying while unable to fly.
+    BadPacketsI:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Rotation in use item packet did not match tick rotation.
+    BadPacketsJ:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent spectate packets while not in spectator mode.
+    BadPacketsK:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent impossible dig packet.
+    BadPacketsL:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Tried to respawn while alive.
+    BadPacketsM:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Ignoring a server teleport.
+    BadPacketsN:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Keep-alive reply the server never asked for.
+    BadPacketsO:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Invalid click packets.
+    BadPacketsP:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Invalid horse jump.
+    BadPacketsQ:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Stopped sending positions while still answering transactions.
+    BadPacketsR:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Window confirmation marked as not accepted.
+    BadPacketsS:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Invalid entity interaction.
+    BadPacketsT:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent impossible use item packet.
+    BadPacketsU:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Did not move far enough.
+    BadPacketsV:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Interacted with non-existent entity.
+    BadPacketsW:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Duplicate sneak or sprint input before the next move.
+    BadPacketsX:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent out of bounds slot id.
+    BadPacketsY:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Duplicate input packets in one tick.
+    BadPacketsZ:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Crash and lag packets ─────────────────────────────────────────────────
+    # Packets used to crash or lag the server. They never pause for low TPS.
+
+    # Position outside the world.
+    CrashA:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent creative mode inventory click packets while not in creative mode.
+    CrashB:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent non-finite position or rotation.
+    CrashC:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Clicking slots in lectern window.
+    CrashD:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # View distance below the minimum.
+    CrashE:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Inventory click with an invalid button or slot.
+    CrashF:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Sent negative sequence id.
+    CrashG:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Tab-complete request that is too long.
+    CrashH:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Bundle selection with a negative slot.
+    CrashI:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Exploits ──────────────────────────────────────────────────────────────
+
+    # Anvil item name that is too long.
+    ExploitA:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Invalid book edit.
+    ExploitB:
+        enabled: true
+        punishable: true
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Chat ──────────────────────────────────────────────────────────────────
+
+    # Empty tab-complete request.
+    ChatA:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Invalid chat message.
+    ChatB:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        minimum-tps: 0.0
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Moving while chatting.
+    ChatC:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Chatting with chat hidden.
+    ChatD:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # ── Other ─────────────────────────────────────────────────────────────────
+
+    # Packets sent out of order within a tick.
+    Post:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Impossible resource pack status.
+    ResourcePackState:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        punishment-commands:
+            - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
+
+    # Skipped transaction replies. Usually packet loss, so alert only.
+    TransactionOrder:
+        enabled: true
+        punishable: false
+        max-violations: 20
+        alert-interval: 1
+        dont-alert-until: 5
+        alert-cooldown-ms: 2000
+        minimum-tps: 19.5
+        punishment-commands: []
+
+# ----------------------------------------------------------------------------
+#  Check settings
+# ----------------------------------------------------------------------------
+# Finer settings for single checks. The on/off, punish and alert settings
+# for each check are in its block under checks: above.
+
+# ── Movement prediction ───────────────────────────────────────────────────────
+
+MovementA:
+    buildup-keep-ratio: 0.999
+    # How far (blocks) a move may differ from the prediction before it counts.
+    # Slabs, chests and version translation cause small, harmless differences;
+    # real fly and speed hacks sit far above this, usually 0.1 or more.
+    min-offset: 0.04
+    # Used instead while sneaking. Sneaking along block edges is noisy, and
+    # nobody gains anything from a hack while sneaking.
+    min-offset-sneak: 0.04
+    # Used instead on carpet, whose very thin hitbox causes small differences.
+    min-offset-carpet: 0.03
+    # Used instead on beds (odd hitbox, same kind of noise).
+    min-offset-bed: 0.035
+    # Used instead in water, the hardest movement to predict exactly.
+    min-offset-water: 0.04
+    # A single move this far off is set back straight away.
+    instant-rubberband-offset: 0.1
+    # Above this ping, allow lag-grace-per-ms extra blocks of difference per ms.
+    lag-grace-start-ms: 60
+    lag-grace-per-ms: 0.00005
+    # How much difference may build up before a setback, so one odd tick on a
+    # slab doesn't rubber-band anyone.
+    rubberband-after-buildup: 3
+    buildup-limit: 4
+    rubberband-after-vl: 1
+    # Ignore differences this long (ms) after /fly is toggled. Raise it if your
+    # fly plugin is slow to sync.
+    fly-toggle-grace-ms: 1000
+    # Violations removed per second. Harmless one-off differences fade quickly;
+    # a hack flags every tick and still climbs.
+    clear-per-second: 1.0
+
+Phase:
+    rubberband-at: 1
+    clear-per-second: 0.005
+
+# ── Movement ──────────────────────────────────────────────────────────────────
+
+# Only jumps off a real ledge count, not jumps up a slope or steps.
+AutoParkour:
+    # How close to the edge (0-1 of the block) a jump has to be.
+    edge-threshold: 0.75
+    # Jumps looked at together.
+    window-size: 14
+    # Share of them that have to be edge jumps.
+    min-edge-ratio: 0.93
+    # Slower than this (blocks per tick) isn't parkour.
+    min-speed-bps: 0.15
+
+# Fly: in the air, not falling, nothing holding the player up.
+Fly:
+    # Ticks of not falling before a flag. 40 = 2 seconds.
+    min-air-ticks: 40
+    # Dropping at least this much per tick counts as falling.
+    falling-threshold: -0.05
+    # How far below the player to look for something they could stand on.
+    support-search-depth: 3.0
+
+NoJumpDelay:
+    # Jumping again sooner than this (ms) after landing counts.
+    max-gap-ms: 150
+    # That many jumps in a row before a flag.
+    min-consecutive: 6
+
+NoSlow:
+    # A real no-slow keeps near full speed while eating or blocking (0.15 blocks
+    # a tick or more). Lag gives small, scattered differences below this.
+    min-offset: 0.05
+    rubberband-at: 5
+    # Violations removed per second, so stray lag doesn't add up.
+    clear-per-second: 0.3
+
+# ── Timer ─────────────────────────────────────────────────────────────────────
+
+PacketLimit:
+    # Same as TimerA.max-behind-ms.
+    max-behind-ms: 250.0
+    clear-per-second: 0.5
+    # Above this ping (ms), stop crediting a player for falling behind, so high
+    # ping can't be abused. Set with a proxy's extra latency in mind.
+    high-ping-cap-ms: 2000
+
+# Timer: a game clock running faster than real time. The block under
+# checks: is called TimerA as well.
+TimerA:
+    # How far (ms) a player's clock may fall behind real time. Proxies and
+    # version translation bunch packets up, so be generous. Running ahead,
+    # which is what a timer hack does, is caught either way.
+    max-behind-ms: 250.0
+    # Violations removed per second.
+    clear-per-second: 0.5
+
+# ── Knockback ─────────────────────────────────────────────────────────────────
+
+Explosion:
+    # How far explosion knockback may differ from the prediction.
+    threshold: 0.00001
+
+Knockback:
+    buildup-keep-ratio: 0.999
+    min-offset: 0.001
+    instant-rubberband-offset: 0.1
+    # How much difference may build up before a setback (-1 = no limit).
+    rubberband-after-buildup: 1.0
+    # Upper limit for that build-up.
+    buildup-limit: 4.0
+
+# ── Combat ────────────────────────────────────────────────────────────────────
+
+AnchorAura:
+    # Respawn anchor uses per second.
+    max-per-second: 8
+
+AttributeSwap:
+    # Full swaps (slot A to B, hit, back to A) in a row before a flag. Any
+    # normal hit resets the count.
+    min-consecutive: 4
+    # How quickly the swap back has to happen. Raising it starts to catch normal
+    # weapon changes.
+    max-return-ticks: 1
+
+AutoBlock:
+    # Attacks while blocking, in a row, before a flag.
+    min-consecutive: 2
+    # Skip above this ping (ms).
+    max-ping: 500
+
+AutoClickerA:
+    # Clicks per second that are flagged straight away. Butterfly and drag
+    # clicking go past 20, so leave room.
+    max-cps: 40.0
+    # Below this spread between clicks, the clicking is too regular for a hand.
+    min-cv: 0.10
+    # Clicks looked at together.
+    window-size: 20
+    # Windows over max-cps in a row before a flag.
+    min-consecutive-cps: 2
+    # Cancel the player's hits for cancel-duration-ms first instead of kicking
+    # straight away. Someone clicking fast stops and the violations fade; a
+    # macro keeps going and gets kicked.
+    cancel-before-kick: true
+    cancel-duration-ms: 3000
+
+AutoClickerB:
+    # Violations removed per second, so a shaky connection doesn't add up.
+    clear-per-second: 1.0
+    # Several swings in one tick, this many times within burst-window-ms,
+    # before a flag.
+    min-bursts: 6
+    burst-window-ms: 4000
+    # Same as AutoClickerA.
+    cancel-before-kick: true
+    cancel-duration-ms: 3000
+
+# AutoClickerC: attacking for minutes while completely still (AFK farm
+# macros). A weighted mouse button looks the same.
+AutoClickerC:
+    # Ticks without any movement or turning first. 6000 = 5 minutes.
+    min-stationary-ticks: 6000
+    # Attacks during that time before the first flag.
+    min-attacks: 40
+    # Flag again every this many attacks.
+    reflag-every-attacks: 20
+
+# AutoClickerD: slow or randomised clicking, judged over minutes.
+AutoClickerD:
+    # Gaps between attacks looked at together. 60 at ~4 s each is ~4 minutes.
+    window-size: 60
+    # Only gaps in this range count. Faster is AutoClickerA's job; longer
+    # means the player stopped for a while.
+    min-interval-ms: 200
+    max-interval-ms: 30000
+    # A macro reads below this. People are around 0.25-0.50.
+    max-cv: 0.12
+    # Longest gap divided by the typical one. People sometimes pause; random
+    # delays in a macro don't.
+    max-tail-ratio: 1.6
+    # Humans are lopsided (a few long gaps); around 1.0 is too even.
+    symmetry-low: 0.7
+    symmetry-high: 1.3
+    # How many of the three signs have to agree, over how many windows.
+    min-machine-stats: 2
+    min-consecutive-windows: 2
+
+AutoPot:
+    # Violations removed per second.
+    clear-per-second: 0.05
+    # That many instant reactions in a row before a flag.
+    min-consecutive: 3
+    # Using a potion faster than this (ms) after taking damage counts.
+    min-react-ms: 80
+
+AutoTotem:
+    # Putting a new totem in the off hand faster than this (ms, ping removed)
+    # after one pops counts.
+    min-react-ms: 150
+    # That many times in a row before a flag.
+    min-consecutive: 2
+
+AutoWeapon:
+    # Switching weapon and hitting in the same tick, that many times in a row.
+    min-consecutive: 6
+
+BedAura:
+    # Bed placements per second with a bed in the main hand.
+    max-per-second: 8
+
+Criticals:
+    # Violations removed per second. The ground check occasionally disagrees
+    # for real players; a crit hack flags on nearly every hit.
+    clear-per-second: 0.05
+    # Skip above this ping (ms).
+    max-ping: 500
+
+CrystalAura:
+    # Violations removed per second.
+    clear-per-second: 0.05
+    # Crystal hits per second. Good crystal PvP players reach 12-16.
+    max-ips: 16
+    # Placing and hitting a crystal faster than this (and faster than half the
+    # player's ping) means the client hit a crystal it couldn't see yet.
+    min-place-detonate-ms: 50
+    # That many times in a row before a flag.
+    min-consecutive: 3
+
+FastBow:
+    # Shortest bow draw (ms) before a release counts.
+    min-charge-ms: 45
+
+FastUse:
+    # Shortest time (ms) to finish eating or drinking.
+    min-use-ms: 1500
+
+KillAuraB:
+    # Different entities hit in one tick before a flag. Vanilla can only hit one.
+    min-targets: 2
+
+KillAuraC:
+    # Hits in a row with a container open before a flag. One hit can be sent
+    # just as the container opens.
+    min-consecutive: 2
+
+KillAuraD:
+    # How far (degrees) the target may be from where the player looks.
+    # Moving targets are tracked a little late, so keep it high.
+    max-angle-deg: 135.0
+    # Skip above this ping (ms).
+    max-ping: 300
+    # That many hits in a row before a flag.
+    min-consecutive: 3
+
+Multitask:
+    # Violations removed per second.
+    clear-per-second: 0.05
+    # Attacks while using an item, in a row, before a flag.
+    min-consecutive: 4
+
+NoHitDelay:
+    # Attacks in one client tick that count as a bad tick. Vanilla can
+    # occasionally fit two.
+    max-per-tick: 3
+    # Bad ticks in a row before a flag.
+    min-consecutive: 2
+
+# Reach. threshold is extra hitbox margin in blocks; real reach hacks are
+# 3.3 blocks or more.
+Reach:
+    block-impossible-hits: true
+    # Check again at the end of the tick. A little stricter; off is fine.
+    enable-post-packet: false
+    threshold: 0.05
+    # Blocks allowed on top of the vanilla 3.0.
+    extra-reach: 0.3
+    # Extra margin while sneaking; the lower eye height arrives a tick late.
+    sneak-lenience: 0.1
+
+# ReachB tracks entities itself. A hit counts when the distance is above
+# max-reach + base-lenience + ping x ping-lenience-per-ms, min-consecutive times.
+ReachB:
+    max-reach: 3.4
+    hitbox-pad: 0.30
+    base-lenience: 0.30
+    ping-lenience-per-ms: 0.003
+    min-consecutive: 4
+    # Ignore hits for this long (ms) after the player takes knockback.
+    knockback-grace-ms: 600
+    # Farther than this is a tracking glitch, not reach.
+    max-plausible-distance: 10.0
+
+# No real client moves more than about 4 blocks in one packet. A hit within
+# window-ms of a longer move (max-move) without a server teleport is
+# cancelled and flagged.
+TeleportHit:
+    max-move: 8.0
+    window-ms: 150
+
+# A hit counts when it lands within max-acquire-ticks of the crosshair
+# reaching the target. People need 3-5 ticks.
+TriggerBot:
+    max-acquire-ticks: 1
+    min-consecutive: 5
+    max-ping: 400
+
+# ── Aim ───────────────────────────────────────────────────────────────────────
+
+# AimA currently never flags: its maths can't produce a violation. Kept so
+# the settings stay in place.
+AimA:
+    min-consecutive: 15
+    combat-window-ticks: 40
+
+# ── Placing blocks ────────────────────────────────────────────────────────────
+
+FastPlace:
+    # Cancel placements from this violation level on. 0 = never.
+    cancelVL: 0
+    # Blocks per second. Fast bridging reaches 12-15; scaffold hacks go well past
+    # this. Scaffolding is not counted.
+    max-bps: 16
+
+GhostBlock:
+    # Placing against a block the server doesn't have, in a row, before a flag.
+    min-consecutive: 2
+
+ScaffoldGoDown:
+    # Cancel placements from this violation level on. 0 = never.
+    cancelVL: 0
+    # Longest gap (ms) between two steps of a downward staircase.
+    max-interval-ms: 250
+    # Steps in a row before a flag. Good players manage short runs.
+    min-consecutive: 6
+
+Tower:
+    # Cancel placements from this violation level on. 0 = never.
+    cancelVL: 0
+    # Placing under yourself while jumping faster than this (ms) counts.
+    min-interval-ms: 100
+    # That many times in a row before a flag.
+    min-consecutive: 2
+
+# ── Breaking blocks ───────────────────────────────────────────────────────────
+
+AutoTool:
+    # Switching item this soon (ms) before starting to mine counts.
+    switch-ms: 50
+    # That many times in a row before a flag.
+    min-consecutive: 3
+
+FastBreak:
+    # How much faster than the calculated break time is allowed. 2.0 = twice as
+    # fast. Raise it if custom enchants still get flagged; lower it towards 1.0
+    # on a vanilla server.
+    speed-tolerance: 3.0
+
+# Raise these if you use area-breaking enchants (CrazyEnchantments Blast and
+# the like). Their extra breaks don't show in the packets and look like nuking.
+NukerA:
+    # Finished breaks allowed within window-seconds.
+    max-breaks-per-window: 15
+    window-seconds: 3
+    # Different blocks started in one client tick.
+    max-simultaneous: 3
+
+NukerB:
+    # Three breaks within half a second spread wider than this around the
+    # player count as nuking. Blocks right at the player's feet are ignored.
+    max-span-degrees: 120.0
+    max-creative-bps: 8
+
+PacketMine:
+    # Start and finish of a break closer than this (ms) counts as instant.
+    max-instant-ms: 30
+    # That many instant breaks in a row before a flag.
+    min-consecutive: 3
+
+VeinMiner:
+    # Violations removed per second.
+    clear-per-second: 0.05
+    # Finished block breaks per second. Vanilla tops out around 3.3.
+    max-bps: 5
+
+# ── Player and inventory ──────────────────────────────────────────────────────
+
+AutoArmor:
+    # Time window (ms) for putting armor on.
+    max-burst-ms: 200
+    # Different armor slots filled within that window before a flag. Taking
+    # armor off doesn't count.
+    burst-threshold: 4
+
+AutoEat:
+    # Eating faster than this (ms) after the hunger bar drops counts.
+    min-react-ms: 100
+    # That many times in a row before a flag.
+    min-consecutive: 5
+
+AutoFish:
+    # Reeling in faster than this after a bite counts. Includes the round trip.
+    min-react-ms: 150
+
+AutoRespawn:
+    # Respawning faster than this after dying counts. Vanilla keeps the button
+    # disabled for a full second.
+    min-respawn-ms: 300
+
+ChestStealer:
+    # Container clicks per second.
+    max-cps: 22
+    # Shortest gap (ms) between two container clicks.
+    min-interval-ms: 40
+    # Different slots emptied in one burst before a flag.
+    burst-threshold: 8
+
+GhostItem:
+    min-consecutive: 2
+    # Skip above this ping (ms).
+    max-ping: 600
+
+InventoryWalk:
+    # Slower than this (blocks per tick) is leftover sliding, not walking.
+    min-speed: 0.10
+    # Ticks of walking with a container open before a flag and setback.
+    min-consecutive: 6
+
+# ── Elytra ────────────────────────────────────────────────────────────────────
+
+# Flags rocket use while gliding that is timed like a machine. Holding
+# right-click (one rocket every 200 ms) is left alone.
+FireworkBoost:
+    window-size: 8
+    max-cv: 0.06
+    max-interval-ms: 1200
+
+# ── Vehicles ──────────────────────────────────────────────────────────────────
+
+BoatClip:
+    # Longest vehicle move per packet (blocks). Blue ice racing reaches ~3.5.
+    max-delta: 5.0
+    # That many in a row before a flag.
+    min-consecutive: 2
+
+BoatFly:
+    # Ticks of a boat climbing through the air before a flag. A boat thrown by
+    # an explosion slows down every tick and doesn't count.
+    min-rise-ticks: 15
+    # Blocks climbed in that time.
+    min-rise: 3.0
+
+EntityFly:
+    # Ticks of a mount climbing without slowing down. A jump always slows down,
+    # so it can't count.
+    min-rise-ticks: 25
+    # Blocks climbed in that time.
+    min-rise: 4.0
+
+# Mount and boat speed in blocks per tick (x20 for blocks per second).
+EntitySpeed:
+    # Normal ground. A boat on water tops out near 0.4, a fast horse near 0.67.
+    max-speed: 0.85
+    # Used on ice instead. Ice boats are very fast.
+    ice-max-speed: 4.0
+    # Ticks over the limit before a flag. Ticks where the speed is dropping
+    # (a camel dash, knockback) don't count.
+    min-consecutive: 6
+    # Jumps bigger than this are teleports, not travel.
+    ignore-above: 8.0
+
+# ── Sprint ────────────────────────────────────────────────────────────────────
+
+# Violations removed per second.
+SprintA: { clear-per-second: 0.5 }
+SprintB: { clear-per-second: 0.5 }
+SprintC: { clear-per-second: 0.5 }
+SprintD: { clear-per-second: 0.5 }
+SprintE: { clear-per-second: 0.5 }
+SprintF: { clear-per-second: 0.5 }
+SprintG: { clear-per-second: 0.5 }
+
+# ── Doing two things at once ──────────────────────────────────────────────────
+
+# Violations removed per second.
+MultiActionsA: { clear-per-second: 0.5 }
+MultiActionsB: { clear-per-second: 0.5 }
+MultiActionsC: { clear-per-second: 0.5 }
+MultiActionsD: { clear-per-second: 0.5 }
+MultiActionsE: { clear-per-second: 0.5 }
+MultiActionsF: { clear-per-second: 0.5 }
+MultiActionsG: { clear-per-second: 0.5 }
+
+# ── Packet order ──────────────────────────────────────────────────────────────
+
+PacketOrderI:
+    # Turn on if players using 1.7 animation mods get flagged.
+    exempt-placing-while-digging: false
+
+# ----------------------------------------------------------------------------
+#  Engine settings
+# ----------------------------------------------------------------------------
+# The defaults suit almost every server.
+
+exploit:
+    # false blocks the extra speed from sprint jumping with an elytra on.
+    allow-sprint-jumping-when-using-elytra: true
+    # Let players build against blocks their client shows but the server
+    # doesn't have.
+    allow-building-on-ghostblocks: true
+    # How far around the player to look for those (2-4).
+    distance-to-check-for-ghostblocks: 2
+
+# Turn off the built-in block resync after setbacks. Only if another plugin
+# does it.
+disable-default-resync-handler: false
+
+# Drop the extra position packet 1.17+ clients send when using an item.
+cancel-duplicate-packet: true
+
+# Ignore the rotation in that extra packet.
+ignore-duplicate-packet-rotation: false
+
+# Client brand alerts. Brands matching ignored-clients are not announced.
+client-brand:
+    ignored-clients:
+        - "^vanilla$"
+        - "^fabric$"
+        - "^lunarclient:v\\d+\\.\\d+\\.\\d+-\\d{4},(?:fabric|forge)$"
+        - "^Feather Fabric$"
+        - "^labymod$"
+    # Kick Forge versions with known exploits.
+    disconnect-blacklisted-forge-versions: true
+
+# /jester spectate. hide-regardless hides staff with the spectate permission
+# even when they aren't spectating; allowed-worlds limits hiding to those
+# worlds (empty = everywhere).
+spectators:
+    hide-regardless: false
+    allowed-worlds:
+        - ""
+
+# Kick a player who doesn't answer the anticheat's transactions for this many
+# seconds.
+max-transaction-time: 60
+
+# The anticheat hides the replies to its own transactions from the server.
+# Turn this on only if another plugin needs to see them.
+disable-pong-cancelling: false
+
+# Above this ping (ms), don't flag players leaving fly mode.
+max-ping-out-of-flying: 1000
+
+# Above this ping (ms), stop predicting firework boosts exactly.
+max-ping-firework-boost: 1000
+
+# Packets per tick before a player is kicked for packet spam.
+packet-spam-threshold: 100
+
+# Skip movement prediction while gliding. Only for heavily modified elytras.
+exempt-elytra: false
+
+# Hold players to vanilla slowdown when using items or sneaking.
+force-slow-movement: true
+
+# Hold players to vanilla speed in cobwebs and berry bushes.
+force-stuck-speed: true
+
+# Alerts only in the console and no punishments. For testing.
+test-mode: false
+
+# Treat item use as finished on these events, like vanilla. Leave on.
+reset-item-usage-on-attack: true
+reset-item-usage-on-item-update: true
+reset-item-usage-on-item-use: true
+reset-item-usage-on-slot-change: true
+
+# ----------------------------------------------------------------------------
+#  Grouped punishments (old style)
+# ----------------------------------------------------------------------------
+
+# Old style grouped punishments. The blocks under checks: already do alerts
+# and kicks, so this is only used for [log] entries and any extra commands you
+# add. [alert], [proxy] and [webhook] are ignored here.
+# Format: <threshold>:<interval> <command>  (interval 0 = once)
+Punishments:
+    - checks:
+          - '!BadPackets'
+          - '!Crash'
+      remove-violations-after: 300
+      commands:
+          - '1:1 [alert]'
+          - '1:1 [log]'
+    - checks:
+          - 'BadPackets'
+          - 'Crash'
+      remove-violations-after: 300
+      commands:
+          - '1:1 [alert]'
+          - '1:0 [log]'
