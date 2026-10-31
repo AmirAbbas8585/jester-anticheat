@@ -6,7 +6,9 @@ plugins {
 }
 
 tasks.named<ShadowJar>("shadowJar") {
-    minimize()
+    minimize {
+        exclude(dependency("com.mysql:mysql-connector-j:.*"))
+    }
     val isPrivateBuild = (project.findProperty("private") as String?)?.toBoolean() == true
     archiveFileName = "${rootProject.name}-${rootProject.version}${if (isPrivateBuild) "-private" else ""}.jar"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

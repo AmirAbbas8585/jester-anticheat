@@ -80,6 +80,7 @@ public class CloudCommandService implements CommandService {
         new JesterInfo().register(commandManager, commandAdapter);
         new JesterCheck().register(commandManager, commandAdapter);
         new JesterLogs().register(commandManager, commandAdapter);
+        new JesterTestWebhook().register(commandManager, commandAdapter);
 
         final RequirementPostprocessor<Sender, SenderRequirement>
                 senderRequirementPostprocessor = RequirementPostprocessor.of(

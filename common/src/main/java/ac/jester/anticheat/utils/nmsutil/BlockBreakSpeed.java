@@ -135,7 +135,9 @@ public class BlockBreakSpeed {
 
         OptionalInt miningFatigue = player.compensatedEntities.getPotionLevelForSelfPlayer(PotionTypes.MINING_FATIGUE);
 
-        if (miningFatigue.isPresent()) {
+        if (miningFatigue.isPresent() && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+            speedMultiplier *= (float) Math.pow(0.3, miningFatigue.getAsInt() + 1);
+        } else if (miningFatigue.isPresent()) {
             switch (miningFatigue.getAsInt()) {
                 case 0:
                     speedMultiplier *= 0.3f;
@@ -153,7 +155,7 @@ public class BlockBreakSpeed {
 
         speedMultiplier *= (float) player.compensatedEntities.self.getAttributeValue(Attributes.BLOCK_BREAK_SPEED);
 
-        if (player.fluidOnEyes == FluidTag.WATER) {
+        if (player.isEyeInFluid(FluidTag.WATER)) {
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21)) {
                 speedMultiplier *= (float) player.compensatedEntities.self.getAttributeValue(Attributes.SUBMERGED_MINING_SPEED);
             } else {

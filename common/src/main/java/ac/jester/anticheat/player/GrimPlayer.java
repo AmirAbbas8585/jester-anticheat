@@ -16,6 +16,7 @@ import ac.jester.anticheat.manager.player.features.FeatureManagerImpl;
 import ac.jester.anticheat.manager.player.handlers.DefaultResyncHandler;
 import ac.jester.anticheat.manager.player.handlers.NoOpResyncHandler;
 import ac.jester.anticheat.platform.api.player.PlatformPlayer;
+import ac.jester.anticheat.predictionengine.EntityFluidInteraction;
 import ac.jester.anticheat.predictionengine.MovementCheckRunner;
 import ac.jester.anticheat.predictionengine.PointThreeEstimator;
 import ac.jester.anticheat.predictionengine.UncertaintyHandler;
@@ -27,6 +28,7 @@ import ac.jester.anticheat.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.jester.anticheat.utils.data.*;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntity;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntityHappyGhast;
+import ac.jester.anticheat.utils.data.packetentity.PacketEntityNautilus;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntitySelf;
 import ac.jester.anticheat.utils.data.tags.SyncedTags;
 import ac.jester.anticheat.utils.enums.FluidTag;
@@ -49,6 +51,7 @@ import com.github.retrooper.packetevents.protocol.ConnectionState;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.component.ComponentTypes;
 import com.github.retrooper.packetevents.protocol.component.builtin.item.ItemEquippable;
+import com.github.retrooper.packetevents.protocol.entity.EntityPositionData;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.item.ItemStack;
@@ -113,7 +116,6 @@ public class GrimPlayer implements GrimUser {
     private long transactionPing = 0;
     public long lastTransSent = 0;
     public long lastTransReceived = 0;
-    @Getter
     private long playerClockAtLeast = System.nanoTime();
     public double lastWasClimbing = 0;
     public boolean canSwimHop = false;
@@ -174,8 +176,6 @@ public class GrimPlayer implements GrimUser {
     public boolean wasTouchingWater = false;
     public boolean wasWasTouchingWater = false;
     public boolean wasTouchingLava = false;
-    public boolean slightlyTouchingLava = false;
-    public boolean slightlyTouchingWater = false;
     public boolean wasEyeInWater = false;
     public FluidTag fluidOnEyes;
     public boolean softHorizontalCollision;
@@ -250,6 +250,8 @@ public class GrimPlayer implements GrimUser {
     public boolean wasLastPredictionCompleteChecked;
     public boolean isJumping;
     public boolean lastJumping;
+    public EntityFluidInteraction fluidInteraction = new EntityFluidInteraction(this, FluidTag.WATER, FluidTag.LAVA);
+    public boolean canFloatWhileRidden = false;
 
     public GrimPlayer(@NotNull User user) {
         this.user = user;
@@ -327,7 +329,12 @@ public class GrimPlayer implements GrimUser {
         possibleMovements.add(new VectorData(clientVelocity, VectorData.VectorType.Normal));
 
         if (canSwimHop && !onGround) {
-            possibleMovements.add(new VectorData(clientVelocity.clone().setY(0.3f), VectorData.VectorType.Swimhop));
+            Vector3dm vector = clientVelocity.clone().setY(0.30000001192092896 + (canFloatWhileRidden ? 0.03999999910593033 : 0.0));
+            if (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2)) {
+                Collisions.resolveBlockEffects(this, vector, true, finalMovementsThisTick);
+            }
+
+            possibleMovements.add(new VectorData(vector, VectorData.VectorType.Swimhop));
         }
 
         if (riptideSpinAttackTicks >= 0 && Collections.max(uncertaintyHandler.riptideEntities) > 0) {
@@ -369,7 +376,7 @@ public class GrimPlayer implements GrimUser {
             if (viaPacketTracker != null) viaPacketTracker.setIntervalPackets(viaPacketTracker.getIntervalPackets() - 1);
 
             if (skipped > 0 && System.currentTimeMillis() - joinTime > 5000)
-                checkManager.getCheck(TransactionOrder.class).flagAndAlert("skipped: " + skipped);
+                checkManager.getCheck(TransactionOrder.class).flagAndAlert("skipped=" + skipped);
 
             do {
                 data = transactionsSent.poll();
@@ -458,7 +465,8 @@ public class GrimPlayer implements GrimUser {
     }
 
     public double getEyeHeight() {
-        return getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) ? pose.eyeHeight
+        return getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) ?
+                compensatedEntities.self.getAttributeValue(Attributes.SCALE) * pose.eyeHeight
                 : isSneaking ? 1.54f : 1.62f;
     }
 
@@ -573,6 +581,8 @@ public class GrimPlayer implements GrimUser {
     }
 
     public boolean isTickingReliablyFor(int ticks) {
+        if (!cameraEntity.isSelf()) return false;
+
         return !canSkipTicks() || (inVehicle()
                 || !uncertaintyHandler.lastPointThree.hasOccurredSince(ticks))
                 && !uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(1);
@@ -626,6 +636,13 @@ public class GrimPlayer implements GrimUser {
     public int getKeepAlivePing() {
         if (platformPlayer == null) return -1;
         return PacketEvents.getAPI().getPlayerManager().getPing(platformPlayer.getNative());
+    }
+
+    public long getPlayerClockAtLeast() {
+        if (lastTransactionSent.get() == 0) {
+            playerClockAtLeast = System.nanoTime();
+        }
+        return playerClockAtLeast;
     }
 
     public SetbackTeleportUtil getSetbackTeleportUtil() {
@@ -690,15 +707,19 @@ public class GrimPlayer implements GrimUser {
                 int ridingId = getRidingVehicleId();
                 TrackerData data = compensatedEntities.serverPositionsMap.get(ridingId);
                 if (data != null) {
-                    user.writePacket(new WrapperPlayServerEntityTeleport(ridingId, new Vector3d(data.getX(), data.getY(), data.getZ()), data.getXRot(), data.getYRot(), false));
+                    final Vector3d pos = new Vector3d(data.getX(), data.getY(), data.getZ());
+                    if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_2)) {
+                        user.writePacket(new WrapperPlayServerEntityPositionSync(ridingId, new EntityPositionData(pos, new Vector3d(), data.getXRot(), data.getYRot()), false));
+                    } else {
+                        user.writePacket(new WrapperPlayServerEntityTeleport(ridingId, pos, data.getXRot(), data.getYRot(), false));
+                    }
                 }
             }
         });
 
         latencyUtils.addRealTimeTask(lastTransactionSent.get(), () -> {
             this.vehicleData.wasVehicleSwitch = true;
-            if (getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14) ||
-                    (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5) && EntityTypes.MINECART == entityType)) {
+            if (getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14)) {
                 compensatedEntities.hasSprintingAttributeEnabled = false;
             }
         });
@@ -712,11 +733,11 @@ public class GrimPlayer implements GrimUser {
         if (getClientVersion().isOlderThan(ClientVersion.V_1_21_2)
                 || PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_21_2)) return false;
 
-        return isGlider(inventory.getHelmet(), EquipmentSlot.CHEST_PLATE)
-                || isGlider(inventory.getChestplate(), EquipmentSlot.LEGGINGS)
-                || isGlider(inventory.getLeggings(), EquipmentSlot.BOOTS)
-                || isGlider(inventory.getBoots(), EquipmentSlot.OFF_HAND)
-                || isGlider(inventory.getOffHand(), EquipmentSlot.HELMET);
+        return isGlider(inventory.getHelmet(), EquipmentSlot.HELMET)
+                || isGlider(inventory.getChestplate(), EquipmentSlot.CHEST_PLATE)
+                || isGlider(inventory.getLeggings(), EquipmentSlot.LEGGINGS)
+                || isGlider(inventory.getBoots(), EquipmentSlot.BOOTS)
+                || isGlider(inventory.getOffHand(), EquipmentSlot.OFF_HAND);
     }
 
     private static boolean isGlider(ItemStack stack, EquipmentSlot slot) {
@@ -958,5 +979,21 @@ public class GrimPlayer implements GrimUser {
         }
 
         return blockStateId;
+    }
+
+    public double getFluidHeight(FluidTag fluidTag) {
+        if (getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_21_11)) return this.fluidHeight.getDouble(fluidTag);
+        return this.fluidInteraction.getFluidHeight(fluidTag);
+    }
+
+    public boolean isEyeInFluid(FluidTag fluidTag) {
+        if (getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_21_11)) return this.fluidOnEyes == fluidTag;
+        return this.fluidInteraction.isEyeInFluid(fluidTag);
+    }
+
+    public boolean isPushedByFluid() {
+        if (!this.inVehicle()) return !this.isFlying;
+        PacketEntity vehicle = getVehicle();
+        return !(vehicle instanceof PacketEntityNautilus);
     }
 }

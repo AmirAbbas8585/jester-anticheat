@@ -25,7 +25,7 @@ public final class AttackCooldownHandler extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() == PacketType.Play.Client.ANIMATION) {
+        if (isAnimation(event.getPacketType())) {
             reset();
             return;
         }
@@ -42,7 +42,7 @@ public final class AttackCooldownHandler extends Check implements PacketCheck {
             if (!stackChanged) {
                 ticksSinceLastSwing++;
             }
-            updateHeldItem();
+            updateHeldItem(true);
             stackChanged = false;
         }
     }
@@ -58,7 +58,8 @@ public final class AttackCooldownHandler extends Check implements PacketCheck {
         return GrimMath.clamp((ticksSinceLastSwing + 0.5f) / ticks, 0f, 1f);
     }
 
-    private void updateHeldItem() {
+    public void updateHeldItem(boolean tick) {
+        if (!tick && player.supportsEndTick()) return;
         ItemStack current = player.inventory.getHeldItem();
         if (current == null) current = ItemStack.EMPTY;
 

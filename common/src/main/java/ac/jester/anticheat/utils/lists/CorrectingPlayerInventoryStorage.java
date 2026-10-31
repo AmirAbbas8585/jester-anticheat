@@ -49,6 +49,10 @@ public class CorrectingPlayerInventoryStorage extends InventoryStorage {
         }
 
         super.setItem(item, stack);
+
+        if (item == player.inventory.inventory.selected + Inventory.HOTBAR_OFFSET) {
+            player.attackCooldown.updateHeldItem(false);
+        }
     }
 
     private void checkThatBukkitIsSynced(int slot) {

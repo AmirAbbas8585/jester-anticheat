@@ -115,6 +115,8 @@ public class FluidTypeFlowing {
                 return true;
             } else if (type == StateTypes.SOUL_SAND) {
                 return player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_12_2) || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16);
+            } else if (type == StateTypes.MUD) {
+                return true;
             } else if (type == StateTypes.LADDER) {
                 return data.getFacing().getOppositeFace() == direction;
             } else if (BlockTags.TRAPDOORS.contains(type)) {

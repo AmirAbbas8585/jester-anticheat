@@ -2,6 +2,7 @@ package ac.jester.anticheat.predictionengine.predictions;
 
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.data.VectorData;
+import ac.jester.anticheat.utils.enums.FluidTag;
 import ac.jester.anticheat.utils.math.GrimMath;
 import ac.jester.anticheat.utils.math.Vector3dm;
 
@@ -19,7 +20,7 @@ public class PredictionEngineLava extends PredictionEngine {
                 existingVelocities.add(new VectorData(vector.vector.clone().add(0, 0.04f, 0), vector, VectorData.VectorType.Jump));
             }
 
-            if (player.slightlyTouchingLava && player.lastOnGround && !player.onGround) {
+            if (player.getFluidHeight(FluidTag.LAVA) <= 0.4D && player.lastOnGround && !player.onGround) {
                 Vector3dm withJump = vector.vector.clone();
                 super.doJump(player, withJump);
                 existingVelocities.add(new VectorData(withJump, vector, VectorData.VectorType.Jump));

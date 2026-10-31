@@ -157,9 +157,10 @@ public class CompensatedEntities {
             return;
         }
 
-        passenger.setPositionRaw(player, riding.getPossibleLocationBoxes().offset(0, BoundingBoxSize.getMyRidingOffset(riding) + BoundingBoxSize.getPassengerRidingOffset(player, passenger), 0));
+        double offset = BoundingBoxSize.getMyRidingOffset(passenger) + BoundingBoxSize.getPassengerRidingOffset(player, riding);
+        passenger.setPositionRaw(player, riding.getPossibleLocationBoxes().offset(0, offset, 0));
 
-        for (PacketEntity passengerPassenger : riding.passengers) {
+        for (PacketEntity passengerPassenger : passenger.passengers) {
             tickPassenger(passenger, passengerPassenger);
         }
     }
@@ -235,6 +236,9 @@ public class CompensatedEntities {
         PacketEntity entity = player.compensatedEntities.getEntity(entityID);
         if (entity == null) return;
 
+        final int ageableOffset = PacketEvents.getAPI().getServerManager().getVersion()
+                .isNewerThanOrEquals(ServerVersion.V_26_1) ? 1 : 0;
+
         if (entity.isAgeable) {
             int id;
             if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_8_8)) {
@@ -248,7 +252,7 @@ public class CompensatedEntities {
             } else if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_16_5)) {
                 id = 15;
             } else {
-                id = 16;
+                id = 16 + (EntityTypes.isTypeInstanceOf(entity.type, EntityTypes.ABSTRACT_PIGLIN) ? 1 : 0);
             }
 
             EntityData<?> ageableObject = WatchableIndexUtil.getIndex(watchableObjects, id);
@@ -274,8 +278,16 @@ public class CompensatedEntities {
                 id = 14;
             } else if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_16_5)) {
                 id = 15;
-            } else {
+            } else if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_26_2)) {
                 id = 16;
+            } else {
+                final EntityType type = sizeable.type;
+                final boolean cubeMob = type == EntityTypes.SLIME || type == EntityTypes.MAGMA_CUBE || type == EntityTypes.SULFUR_CUBE;
+                if (cubeMob) {
+                    id = 18;
+                } else {
+                    id = 16;
+                }
             }
 
             EntityData<?> sizeObject = WatchableIndexUtil.getIndex(watchableObjects, id);
@@ -310,17 +322,13 @@ public class CompensatedEntities {
                 shulker.facing = BlockFace.valueOf(shulkerAttached.getValue().toString().toUpperCase());
             }
 
-            EntityData<?> height = WatchableIndexUtil.getIndex(watchableObjects, id + 2);
+            int peekOffset = PacketEvents.getAPI().getServerManager().getVersion()
+                    .isNewerThanOrEquals(ServerVersion.V_1_17) ? 1 : 2;
+            EntityData<?> height = WatchableIndexUtil.getIndex(watchableObjects, id + peekOffset);
             if (height != null) {
-                if ((byte) height.getValue() == 0) {
-                    ShulkerData data = new ShulkerData(shulker, player.lastTransactionSent.get(), true);
-                    player.compensatedWorld.openShulkerBoxes.remove(data);
-                    player.compensatedWorld.openShulkerBoxes.add(data);
-                } else {
-                    ShulkerData data = new ShulkerData(shulker, player.lastTransactionSent.get(), false);
-                    player.compensatedWorld.openShulkerBoxes.remove(data);
-                    player.compensatedWorld.openShulkerBoxes.add(data);
-                }
+                ShulkerData data = new ShulkerData(shulker, player.lastTransactionSent.get(), (byte) height.getValue() == 0);
+                player.compensatedWorld.openShulkerBoxes.remove(data);
+                player.compensatedWorld.openShulkerBoxes.add(data);
             }
         }
 
@@ -347,31 +355,35 @@ public class CompensatedEntities {
                 if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_5))
                     offset = 1;
 
-                EntityData<?> pigSaddle = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset);
-                if (pigSaddle != null) {
-                    rideable.hasSaddle = (boolean) pigSaddle.getValue();
+                if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_21_5)) {
+                    EntityData<?> pigSaddle = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset + ageableOffset);
+                    if (pigSaddle != null) {
+                        rideable.hasSaddle = (boolean) pigSaddle.getValue();
+                    }
                 }
 
-                EntityData<?> pigBoost = WatchableIndexUtil.getIndex(watchableObjects, 18 - offset);
+                EntityData<?> pigBoost = WatchableIndexUtil.getIndex(watchableObjects, 18 - offset + ageableOffset);
                 if (pigBoost != null) {
                     rideable.boostTimeMax = (int) pigBoost.getValue();
                     rideable.currentBoostTime = 0;
                 }
             } else if (entity instanceof PacketEntityStrider) {
-                EntityData<?> striderBoost = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset);
+                EntityData<?> striderBoost = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset + ageableOffset);
                 if (striderBoost != null) {
                     rideable.boostTimeMax = (int) striderBoost.getValue();
                     rideable.currentBoostTime = 0;
                 }
 
-                EntityData<?> striderShaking = WatchableIndexUtil.getIndex(watchableObjects, 18 - offset);
+                EntityData<?> striderShaking = WatchableIndexUtil.getIndex(watchableObjects, 18 - offset + ageableOffset);
                 if (striderShaking != null) {
                     ((PacketEntityStrider) rideable).isShaking = (boolean) striderShaking.getValue();
                 }
 
-                EntityData<?> striderSaddle = WatchableIndexUtil.getIndex(watchableObjects, 19 - offset);
-                if (striderSaddle != null) {
-                    rideable.hasSaddle = (boolean) striderSaddle.getValue();
+                if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_21_5)) {
+                    EntityData<?> striderSaddle = WatchableIndexUtil.getIndex(watchableObjects, 19 - offset + ageableOffset);
+                    if (striderSaddle != null) {
+                        rideable.hasSaddle = (boolean) striderSaddle.getValue();
+                    }
                 }
             }
         }
@@ -390,7 +402,7 @@ public class CompensatedEntities {
                     offset = 1;
                 }
 
-                EntityData<?> horseByte = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset);
+                EntityData<?> horseByte = WatchableIndexUtil.getIndex(watchableObjects, 17 - offset + ageableOffset);
                 if (horseByte != null) {
                     byte info = (byte) horseByte.getValue();
 
@@ -401,7 +413,7 @@ public class CompensatedEntities {
 
                 if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_20)) {
                     if (entity instanceof PacketEntityCamel camel) {
-                        EntityData<?> entityData = WatchableIndexUtil.getIndex(watchableObjects, 18);
+                        EntityData<?> entityData = WatchableIndexUtil.getIndex(watchableObjects, 18 + ageableOffset);
                         if (entityData != null) {
                             camel.setDashing((boolean) entityData.getValue());
 
@@ -422,7 +434,7 @@ public class CompensatedEntities {
         }
 
         if (entity instanceof PacketEntityNautilus nautilus) {
-            EntityData<?> entityData = WatchableIndexUtil.getIndex(watchableObjects, 19);
+            EntityData<?> entityData = WatchableIndexUtil.getIndex(watchableObjects, 19 + ageableOffset);
             if (entityData != null) {
                 nautilus.setDashing((boolean) entityData.getValue());
 

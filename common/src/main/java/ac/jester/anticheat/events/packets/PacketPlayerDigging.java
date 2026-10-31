@@ -193,7 +193,7 @@ public class PacketPlayerDigging extends PacketListenerAbstract {
                         && player.packetStateData.getSlowedByUsingItemSlot() != player.packetStateData.lastSlotSelected;
                 if (slotChanged || player.inventory.getItemInHand(player.packetStateData.itemInUseHand).isEmpty()) {
                     player.packetStateData.setSlowedByUsingItem(false);
-                    if (slotChanged) player.checkManager.getPostPredictionCheck(NoSlow.class).didSlotChangeLastTick = true;
+                    if (slotChanged) player.checkManager.getNoSlow().didSlotChangeLastTick = true;
                 }
             }
         }

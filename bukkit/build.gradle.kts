@@ -29,11 +29,15 @@ repositories {
         if (BuildConfig.mavenLocalOverride) {
             forRepositories(
                 mavenLocal(),
+                maven("https://maven.grim.ac/public/releases"),
+                maven("https://maven.grim.ac/public/snapshots"),
                 maven("https://repo.grim.ac/snapshots"),
                 maven("https://repo.codemc.io/repository/maven-releases/")
             )
         } else {
             forRepositories(
+                maven("https://maven.grim.ac/public/releases"),
+                maven("https://maven.grim.ac/public/snapshots"),
                 maven("https://repo.grim.ac/snapshots"),
                 maven("https://repo.codemc.io/repository/maven-releases/")
             )
@@ -127,6 +131,31 @@ bukkit {
             default = Permission.Default.FALSE
         }
 
+        register("jester.alerts.silent") {
+            description = "Auto-enable alerts on join without a message"
+            default = Permission.Default.FALSE
+        }
+
+        register("jester.verbose.silent") {
+            description = "Auto-enable verbose on join without a message"
+            default = Permission.Default.FALSE
+        }
+
+        register("jester.brand.silent") {
+            description = "Auto-enable brand alerts on join without a message"
+            default = Permission.Default.FALSE
+        }
+
+        register("jester.consoledebug") {
+            description = "Use the console debug command"
+            default = Permission.Default.OP
+        }
+
+        register("jester.afk.bypass") {
+            description = "Exempt from AFK kicks"
+            default = Permission.Default.OP
+        }
+
         register("jester.brand") {
             description = "Receive client brand alerts (auto-enabled on join)"
             default = Permission.Default.FALSE
@@ -199,6 +228,11 @@ bukkit {
 
         register("jester.history") {
             description = "View violation history"
+            default = Permission.Default.OP
+        }
+
+        register("jester.testwebhook") {
+            description = "Send a test message to the Discord webhook"
             default = Permission.Default.OP
         }
 

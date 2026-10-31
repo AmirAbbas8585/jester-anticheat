@@ -49,7 +49,7 @@ public class BlockProperties {
             return player.isSprinting ? 0.025999999F : 0.02f;
         }
 
-        return player.lastSprintingForSpeed ? (float) ((double) 0.02f + 0.005999999865889549D) : 0.02f;
+        return player.lastSprintingForSpeed ? player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_18_2) ? (0.02f + 0.006f) : (float) ((double) 0.02f + 0.005999999865889549D) : 0.02f;
     }
 
     public static StateType getOnPos(GrimPlayer player, MainSupportingBlockData mainSupportingBlockData, Vector3d playerPos) {

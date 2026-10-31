@@ -8,6 +8,7 @@ import ac.jester.anticheat.checks.impl.badpackets.BadPacketsH;
 import ac.jester.anticheat.checks.impl.elytra.ElytraC;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.data.KnownInput;
+import ac.jester.anticheat.utils.data.SprintingState;
 import ac.jester.anticheat.utils.data.TrackerData;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntitySelf;
 import ac.jester.anticheat.utils.enums.Pose;
@@ -138,6 +139,7 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
                 final boolean keepTrackedData = this.hasFlag(respawn, KEEP_TRACKED_DATA);
 
                 if (!keepTrackedData) {
+                    player.food = 20;
                     player.powderSnowFrozenTicks = 0;
                     player.compensatedEntities.self.hasGravity = true;
                     player.playerEntityHasGravity = true;
@@ -146,6 +148,7 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
 
                     if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_19_4)) {
                         player.isSprinting = false;
+                        player.vehicleData.camelSprintingState = SprintingState.STOPPED;
                     } else {
                         player.lastSprintingForSpeed = false;
                     }
@@ -165,6 +168,7 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
                     player.compensatedWorld.chunks.clear();
                     player.compensatedWorld.isRaining = false;
                     player.checkManager.getBlockPlaceCheck(BadPacketsH.class).onWorldChange();
+                    player.compensatedWorld.clearPredictions();
                 }
                 player.dimensionType = respawn.getDimensionType();
                 player.worldName = respawn.getWorldName().orElse(null);
@@ -175,11 +179,14 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
 
                 if (player.getClientVersion().isOlderThan(ClientVersion.V_1_14)) {
                     player.isSprinting = false;
+                    player.vehicleData.camelSprintingState = SprintingState.STOPPED;
                     player.checkManager.getPacketCheck(BadPacketsF.class).lastSprinting = false;
                     player.compensatedEntities.hasSprintingAttributeEnabled = false;
                 }
                 player.pose = Pose.STANDING;
-                player.clientVelocity = new Vector3dm();
+                if (!keepTrackedData || player.getClientVersion().isOlderThan(ClientVersion.V_1_21_2)) {
+                    player.clientVelocity = new Vector3dm();
+                }
                 if (!GrimAPI.INSTANCE.getSpectateManager().isSpectating(player.uuid)) {
                     player.gamemode = respawn.getGameMode();
                 }

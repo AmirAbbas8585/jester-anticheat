@@ -8,6 +8,7 @@ import ac.jester.anticheat.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.jester.anticheat.utils.data.VectorData;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntity;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntityStrider;
+import ac.jester.anticheat.utils.data.tags.SyncedTags;
 import ac.jester.anticheat.utils.enums.FluidTag;
 import ac.jester.anticheat.utils.math.GrimMath;
 import ac.jester.anticheat.utils.math.Vector3dm;
@@ -149,7 +150,11 @@ public class MovementTicker {
         player.boundingBox = GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z);
         final PacketEntity riding = player.compensatedEntities.self.getRiding();
         if (player.getClientVersion() != ClientVersion.V_1_21_4 && (!player.wasTouchingWater && (riding == null || (!riding.isBoat && !riding.isHappyGhast)))) {
-            PlayerBaseTick.updateInWaterStateAndDoWaterCurrentPushing(player);
+            if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_21_11)) {
+                PlayerBaseTick.updateInWaterStateAndDoWaterCurrentPushing(player);
+            } else {
+                PlayerBaseTick.updateFluidInteraction(player);
+            }
         }
 
         if (player.onGround) {
@@ -377,14 +382,15 @@ public class MovementTicker {
                 player.lastWasClimbing = FluidFallingAdjustedMovement.getFluidFallingAdjustedMovement(player, playerGravity, isFalling, player.clientVelocity.clone().setY(0.2D * 0.8F)).getY();
             }
 
-            floatInWaterWhileRidden();
+            floatInLiquidWhileRidden();
         } else {
+            player.canFloatWhileRidden = false;
             if (player.wasTouchingLava && !player.isFlying && !(lavaLevel > 0 && canStandOnLava())) {
                 player.friction = 0.5F;
 
                 doLavaMove();
 
-                if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16) && player.slightlyTouchingLava) {
+                if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16) && player.getFluidHeight(FluidTag.LAVA) <= 0.4D) {
                     player.clientVelocity = player.clientVelocity.multiply(0.5D, 0.800000011920929D, 0.5D);
                     player.clientVelocity = FluidFallingAdjustedMovement.getFluidFallingAdjustedMovement(player, playerGravity, isFalling, player.clientVelocity);
                 } else {
@@ -393,6 +399,10 @@ public class MovementTicker {
 
                 if (player.hasGravity)
                     player.clientVelocity.add(0.0D, -playerGravity / 4.0D, 0.0D);
+
+                if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+                    floatInLiquidWhileRidden();
+                }
             } else if (player.isGliding) {
                 if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5) && Collisions.onClimbable(player, player.lastX, player.lastY, player.lastZ)) {
                     float blockFriction = BlockProperties.getFriction(player, player.mainSupportingBlockData, new Vector3d(player.lastX, player.lastY, player.lastZ));
@@ -421,14 +431,20 @@ public class MovementTicker {
         Collisions.applyEffectsFromBlocks(player);
     }
 
-    private void floatInWaterWhileRidden() {
-        if (player.getClientVersion().isOlderThan(ClientVersion.V_1_21_11) || !player.inVehicle()) return;
+    private boolean canFloatWhileRidden() {
+        if (player.getClientVersion().isOlderThan(ClientVersion.V_1_21_11) || !player.inVehicle()) return false;
 
         PacketEntity vehicle = player.getVehicle();
-        boolean canFloatWhileRidden = EntityTypeTags.CAN_FLOAT_WHILE_RIDDEN.anyOf(vehicle.type);
-        double fluidHeight = player.fluidHeight.getDouble(FluidTag.WATER);
-        if (canFloatWhileRidden && player.inVehicle() && fluidHeight > 0.4) {
-            player.clientVelocity.add(0.0, 0.04F, 0.0);
+        double fluidHeight = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)
+                ? player.fluidInteraction.getFluidHeight(player.tagManager.fluid(SyncedTags.ENTITY_FLOATABLE))
+                : player.getFluidHeight(FluidTag.WATER);
+        return EntityTypeTags.CAN_FLOAT_WHILE_RIDDEN.anyOf(vehicle.type) && fluidHeight > 0.4;
+    }
+
+    private void floatInLiquidWhileRidden() {
+        player.canFloatWhileRidden = canFloatWhileRidden();
+        if (player.canFloatWhileRidden) {
+            player.clientVelocity.add(0.0, 0.03999999910593033, 0.0);
         }
     }
 

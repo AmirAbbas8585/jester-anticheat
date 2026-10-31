@@ -1,11 +1,16 @@
 package ac.jester.anticheat;
 
 import ac.grim.grimac.api.event.EventBus;
+import ac.grim.grimac.api.storage.backend.BackendRegistry;
+import ac.grim.grimac.internal.storage.backend.BackendRegistryImpl;
+import ac.grim.grimac.internal.storage.backend.memory.InMemoryBackendProvider;
+import ac.grim.grimac.internal.storage.backend.sqlite.SqliteBackendProvider;
 import ac.grim.grimac.api.plugin.GrimPlugin;
 import ac.grim.grimac.internal.plugin.resolver.GrimExtensionManager;
 import ac.grim.grimac.internal.event.OptimizedEventBus;
 import ac.jester.anticheat.manager.AlertManagerImpl;
 import ac.jester.anticheat.manager.AlertRateLimiter;
+import ac.jester.anticheat.manager.DiscordManager;
 import ac.jester.anticheat.manager.FreezeManager;
 import ac.jester.anticheat.manager.InitManager;
 import ac.jester.anticheat.manager.JesterCheckConfig;
@@ -42,11 +47,13 @@ public final class GrimAPI {
     private final AlertRateLimiter alertRateLimiter;
     private final SpectateManager spectateManager;
     private final FreezeManager freezeManager;
+    private final DiscordManager discordManager;
     private final PlayerDataManager playerDataManager;
     private final TickManager tickManager;
     private final GrimExtensionManager extensionManager;
     private final EventBus eventBus;
     private final GrimExternalAPI externalAPI;
+    private final BackendRegistry backendRegistry = buildBackendRegistry();
     private ViolationDatabaseManager violationDatabaseManager;
     private PlatformLoader loader;
     @Getter
@@ -59,11 +66,19 @@ public final class GrimAPI {
         this.alertRateLimiter = new AlertRateLimiter();
         this.spectateManager = new SpectateManager();
         this.freezeManager = new FreezeManager();
+        this.discordManager = new DiscordManager();
         this.playerDataManager = new PlayerDataManager();
         this.tickManager = new TickManager();
         this.extensionManager = new GrimExtensionManager();
         this.eventBus = new OptimizedEventBus(extensionManager);
         this.externalAPI = new GrimExternalAPI(this);
+    }
+
+    private static BackendRegistry buildBackendRegistry() {
+        BackendRegistryImpl registry = new BackendRegistryImpl();
+        registry.register(new SqliteBackendProvider());
+        registry.register(new InMemoryBackendProvider());
+        return registry;
     }
 
     private static Platform detectPlatform() {
@@ -92,8 +107,8 @@ public final class GrimAPI {
 
     public void stop() {
         checkInitialized();
-        ac.jester.anticheat.database.DatabaseManager.shutdown();
         initManager.stop();
+        ac.jester.anticheat.database.DatabaseManager.shutdown();
     }
 
     public PlatformScheduler getScheduler() {

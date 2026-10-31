@@ -18,6 +18,14 @@ public class BaseConfigManager {
     @Getter
     private String prefix = "&#c19a6bᴊᴇꜱᴛᴇʀ &8»";
     @Getter
+    private String webhookNotEnabled;
+    @Getter
+    private String webhookTestMessage;
+    @Getter
+    private String webhookTestSucceeded;
+    @Getter
+    private String webhookTestFailed;
+    @Getter
     private String disconnectTimeout;
     @Getter
     private String disconnectClosed;
@@ -40,16 +48,24 @@ public class BaseConfigManager {
         }
 
         ignoredClientPatterns.clear();
-        for (String string : config.getStringList("client-brand.ignored-clients")) {
-            try {
-                ignoredClientPatterns.add(Pattern.compile(string));
-            } catch (PatternSyntaxException e) {
-                throw new RuntimeException("Failed to compile client pattern", e);
+        List<String> ignoredClients = config.getStringList("client-brand.ignored-clients");
+        if (ignoredClients != null) {
+            for (String string : ignoredClients) {
+                try {
+                    ignoredClientPatterns.add(Pattern.compile(string));
+                } catch (PatternSyntaxException e) {
+                    throw new RuntimeException("Failed to compile client pattern", e);
+                }
             }
         }
 
         printAlertsToConsole = config.getBooleanElse("alerts.print-to-console", true);
         prefix = config.getStringElse("prefix", "&#c19a6bᴊᴇꜱᴛᴇʀ &8»");
+
+        webhookNotEnabled = config.getStringElse("webhook-not-enabled", "%prefix% &cDiscord webhooks are not enabled!");
+        webhookTestMessage = config.getStringElse("webhook-test-message", "Jester Anti Cheat webhook test");
+        webhookTestSucceeded = config.getStringElse("webhook-test-succeeded", "%prefix% &aDiscord webhook test succeeded!");
+        webhookTestFailed = config.getStringElse("webhook-test-failed", "%prefix% &cDiscord webhook test failed! See console for details.");
 
         disconnectTimeout = config.getStringElse("disconnect.timeout", "<lang:disconnect.timeout>");
         disconnectClosed = config.getStringElse("disconnect.closed", "<lang:disconnect.timeout>");

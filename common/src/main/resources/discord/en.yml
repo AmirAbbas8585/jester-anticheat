@@ -1,0 +1,35 @@
+# Jester Anti Cheat - Discord webhook
+# For help with webhooks: https://support.discord.com/hc/en-us/articles/228383668
+#
+# Every staff alert that is sent in-game is also posted to this webhook, so the
+# per-check alert settings in config.yml (dont-alert-until, alert-interval,
+# alert-cooldown-ms) apply here too. Run /jester testwebhook to check it works,
+# and /jester reload after editing.
+
+# Used by the plugin to update this file after an upgrade. Don't change it.
+config-version: 1
+
+enabled: false
+# https://discord.com/api/webhooks/<id>/<token>
+webhook: ""
+# Set to true to bypass the webhook URL format check. This allows any valid
+# HTTPS URL (useful for proxies or forwarders).
+disable-webhook-validation: false
+embed-title: "**Jester Alert**"
+embed-color: "#C19A6B"
+include-timestamp: true
+# Add the raw verbose line of the flag as an extra field.
+include-verbose: true
+# Replaces backticks in values (like client brands) so they don't break
+# Discord's text formatting. Set to "`" to disable this replacement.
+backtick-replacement-char: "ˋ" # Defaults to U+02CB
+# %player% and %brand% are wrapped in backticks (`) so special characters
+# can't break the formatting.
+violation-content:
+    - "**Player**: `%player%`"
+    - "**Check**: %check%"
+    - "**Violations**: %violations%"
+    - "**Client Version**: %version%"
+    - "**Brand**: `%brand%`"
+    - "**Ping**: %ping%"
+    - "**TPS**: %tps%"

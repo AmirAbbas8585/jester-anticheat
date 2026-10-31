@@ -51,6 +51,7 @@ public class InitManager {
                 .add(new PacketLimiter())
                 .add(new ac.jester.anticheat.manager.init.start.ViolationDecayer())
                 .add(GrimAPI.INSTANCE.getAlertManager())
+                .add(GrimAPI.INSTANCE.getDiscordManager())
                 .add(GrimAPI.INSTANCE.getSpectateManager())
                 .add(GrimAPI.INSTANCE.getViolationDatabaseManager())
                 .add(new JavaVersion())

@@ -30,7 +30,7 @@ public class PredictionEngineWater extends PredictionEngine {
     public static Set<VectorData> transformSwimmingVectors(GrimPlayer player, Set<VectorData> base) {
         Set<VectorData> swimmingVelocities = new HashSet<>();
 
-        if ((player.wasEyeInWater || player.fluidOnEyes == FluidTag.WATER || player.isSwimming || player.wasSwimming) && !player.inVehicle()) {
+        if ((player.wasEyeInWater || player.isEyeInFluid(FluidTag.WATER) || player.isSwimming || player.wasSwimming) && !player.inVehicle()) {
             for (VectorData vector : base) {
                 double lookYAmount = ReachUtils.getLook(player, player.yaw, player.pitch).getY();
                 double scalar = lookYAmount < -0.2 ? 0.085 : 0.06;
@@ -61,7 +61,7 @@ public class PredictionEngineWater extends PredictionEngine {
                 existingVelocities.add(new VectorData(vector.vector.clone().add(0, 0.04f, 0), vector, VectorData.VectorType.Jump));
             }
 
-            if (player.slightlyTouchingWater && player.lastOnGround && !player.onGround) {
+            if (player.getFluidHeight(FluidTag.WATER) <= 0.4D && player.lastOnGround && !player.onGround) {
                 Vector3dm withJump = vector.vector.clone();
                 super.doJump(player, withJump);
                 existingVelocities.add(new VectorData(withJump, vector, VectorData.VectorType.Jump));

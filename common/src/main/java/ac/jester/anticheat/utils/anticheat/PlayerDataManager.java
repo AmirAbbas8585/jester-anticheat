@@ -21,7 +21,9 @@ public class PlayerDataManager {
     @Nullable
     public GrimPlayer getPlayer(final @NotNull UUID uuid) {
         Object channel = PacketEvents.getAPI().getProtocolManager().getChannel(uuid);
+        if (channel == null) return null;
         User user = PacketEvents.getAPI().getProtocolManager().getUser(channel);
+        if (user == null) return null;
         return getPlayer(user);
     }
 

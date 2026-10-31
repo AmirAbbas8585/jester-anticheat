@@ -22,6 +22,7 @@ import com.github.retrooper.packetevents.protocol.item.ItemStack;
 import com.github.retrooper.packetevents.protocol.item.type.ItemType;
 import com.github.retrooper.packetevents.protocol.item.type.ItemTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
@@ -41,12 +42,11 @@ import com.github.retrooper.packetevents.wrapper.play.client.*;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerAcknowledgeBlockChanges;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Function;
 
 public class CheckManagerListener extends PacketListenerAbstract {
+    private static final boolean TELEPORT_CONTAINS_POSITION = PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_26_3);
+
     private static final Function<StateType, Boolean> BREAKABLE = type -> !type.isAir() && type.getHardness() != -1.0f && type != StateTypes.WATER && type != StateTypes.LAVA;
 
     public CheckManagerListener() {
@@ -367,6 +367,20 @@ public class CheckManagerListener extends PacketListenerAbstract {
         }
 
         TeleportAcceptData teleportData = null;
+        WrapperPlayClientTeleportConfirm teleportConfirm = null;
+        if (TELEPORT_CONTAINS_POSITION && event.getPacketType() == PacketType.Play.Client.TELEPORT_CONFIRM) {
+            teleportConfirm = new WrapperPlayClientTeleportConfirm(event);
+
+            if (!Double.isFinite(teleportConfirm.getX()) || !Double.isFinite(teleportConfirm.getY()) || !Double.isFinite(teleportConfirm.getZ()) || !Float.isFinite(teleportConfirm.getYaw()) || !Float.isFinite(teleportConfirm.getPitch())) {
+                event.setCancelled(true);
+                player.onPacketCancel();
+                return;
+            }
+
+            Vector3d position = VectorUtils.clampVector(new Vector3d(teleportConfirm.getX(), teleportConfirm.getY(), teleportConfirm.getZ()));
+            teleportData = player.getSetbackTeleportUtil().checkTeleportQueue(position.getX(), position.getY(), position.getZ(), teleportConfirm.getYaw(), teleportConfirm.getPitch(), teleportConfirm.getTeleportId());
+            player.packetStateData.lastPacketWasTeleport = teleportData.isTeleport();
+        }
 
         if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
             player.serverOpenedInventoryThisTick = false;
@@ -374,34 +388,37 @@ public class CheckManagerListener extends PacketListenerAbstract {
             WrapperPlayClientPlayerFlying flying = new WrapperPlayClientPlayerFlying(event);
 
             Vector3d position = VectorUtils.clampVector(flying.getLocation().getPosition());
-            teleportData = flying.hasPositionChanged() && flying.hasRotationChanged() ? player.getSetbackTeleportUtil().checkTeleportQueue(position.getX(), position.getY(), position.getZ(), flying.getLocation().getYaw(), flying.getLocation().getPitch()) : new TeleportAcceptData();
+            teleportData = !TELEPORT_CONTAINS_POSITION && flying.hasPositionChanged() && flying.hasRotationChanged() ? player.getSetbackTeleportUtil().checkTeleportQueue(position.getX(), position.getY(), position.getZ(), flying.getLocation().getYaw(), flying.getLocation().getPitch()) : new TeleportAcceptData();
             player.packetStateData.lastPacketWasTeleport = teleportData.isTeleport();
 
             if (flying.hasRotationChanged() && !flying.hasPositionChanged() && !flying.isOnGround() && !flying.isHorizontalCollision()) {
-                List<RotationData> rotations = new ArrayList<>();
+                RotationData last = null;
+                int transaction = player.getLastTransactionReceived();
+                float yaw = flying.getLocation().getYaw();
+                float pitch = flying.getLocation().getPitch();
 
                 for (RotationData data : player.pendingRotations) {
-                    rotations.add(data);
+                    if (transaction == data.getTransaction()
+                            && (data.isRelativeYaw() || data.getYaw() == yaw)
+                            && (data.isRelativePitch() || data.getPitch() == pitch)) {
+                        last = data;
+                    }
+
                     if (!data.isAccepted()) {
                         break;
                     }
                 }
 
-                Collections.reverse(rotations);
-
-                for (RotationData data : rotations) {
-                    if (data.getYaw() == flying.getLocation().getYaw() && data.getPitch() == flying.getLocation().getPitch() && data.getTransaction() == player.getLastTransactionReceived()) {
-                        player.packetStateData.lastPacketWasTeleport = true;
-                        data.accept();
-                        break;
-                    }
+                if (last != null) {
+                    player.packetStateData.lastPacketWasTeleport = true;
+                    last.accept();
                 }
             }
 
             player.packetStateData.lastPacketWasOnePointSeventeenDuplicate = isMojangStupid(player, event, flying);
         }
 
-        if (player.inVehicle() ? event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE : WrapperPlayClientPlayerFlying.isFlying(event.getPacketType()) && !player.packetStateData.lastPacketWasOnePointSeventeenDuplicate) {
+        if ((teleportConfirm != null && teleportData.isTeleport()) || (player.inVehicle() ? event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE : WrapperPlayClientPlayerFlying.isFlying(event.getPacketType()) && !player.packetStateData.lastPacketWasOnePointSeventeenDuplicate)) {
             int kbEntityId = player.inVehicle() ? player.getRidingVehicleId() : player.entityID;
 
             VelocityData calculatedFirstBreadKb = player.checkManager.getKnockbackHandler().calculateFirstBreadKnockback(kbEntityId, player.lastTransactionReceived.get());
@@ -417,9 +434,15 @@ public class CheckManagerListener extends PacketListenerAbstract {
 
         player.checkManager.onPrePredictionReceivePacket(event);
 
-        if (event.isCancelled() && (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType()) || event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE)) {
+        if (event.isCancelled() && (teleportConfirm != null || WrapperPlayClientPlayerFlying.isFlying(event.getPacketType()) || event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE || event.getPacketType() == PacketType.Play.Client.TELEPORT_CONFIRM)) {
             player.packetStateData.cancelDuplicatePacket = false;
+            player.packetStateData.lastPacketWasTeleport = false;
             return;
+        }
+
+        if (teleportConfirm != null && teleportData.isTeleport()) {
+            player.serverOpenedInventoryThisTick = false;
+            handleFlying(player, teleportConfirm.getX(), teleportConfirm.getY(), teleportConfirm.getZ(), teleportConfirm.getYaw(), teleportConfirm.getPitch(), true, true, false, teleportData, event);
         }
 
         if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
@@ -525,7 +548,7 @@ public class CheckManagerListener extends PacketListenerAbstract {
             player.packetStateData.cancelDuplicatePacket = false;
         }
 
-        if (event.getPacketType() == PacketType.Play.Client.CLIENT_TICK_END) {
+        if (event.getPacketType() == PacketType.Play.Client.CLIENT_TICK_END && player.supportsEndTick()) {
             player.serverOpenedInventoryThisTick = false;
             if (!player.packetStateData.didSendMovementBeforeTickEnd) {
                 player.packetStateData.didLastLastMovementIncludePosition = player.packetStateData.didLastMovementIncludePosition;
@@ -548,11 +571,13 @@ public class CheckManagerListener extends PacketListenerAbstract {
         GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
         if (player == null) return;
 
-        if (event.getPacketType() == PacketType.Play.Server.OPEN_WINDOW) {
+        final PacketTypeCommon packetType = event.getPacketType();
+        if (packetType == PacketType.Play.Server.OPEN_WINDOW || packetType == PacketType.Play.Server.OPEN_HORSE_WINDOW) {
+            player.sendTransaction();
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.serverOpenedInventoryThisTick = true);
         }
 
-        if (event.getPacketType() == PacketType.Play.Server.BUNDLE) {
+        if (packetType == PacketType.Play.Server.BUNDLE) {
             player.packetStateData.sendingBundlePacket = !player.packetStateData.sendingBundlePacket;
         }
 
@@ -566,15 +591,13 @@ public class CheckManagerListener extends PacketListenerAbstract {
         final Location location = flying.getLocation();
         final double threshold = player.getMovementThreshold();
 
-        if (!player.packetStateData.lastPacketWasTeleport && flying.hasPositionChanged() && flying.hasRotationChanged() &&
+        if (flying.hasPositionChanged() && flying.hasRotationChanged() &&
                 ((flying.isOnGround() == player.packetStateData.packetPlayerOnGround
                         && (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_17) &&
                         player.filterMojangStupidityOnMojangStupidity.distanceSquared(location.getPosition()) < threshold * threshold))
                         || player.inVehicle())) {
-            if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThanOrEquals(ServerVersion.V_1_9)) {
-                if (player.isCancelDuplicatePacket()) {
-                    player.packetStateData.cancelDuplicatePacket = true;
-                }
+            if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9) && player.isCancelDuplicatePacket()) {
+                player.packetStateData.cancelDuplicatePacket = true;
             } else {
                 flying.setLocation(new Location(player.filterMojangStupidityOnMojangStupidity.getX(), player.filterMojangStupidityOnMojangStupidity.getY(), player.filterMojangStupidityOnMojangStupidity.getZ(), location.getYaw(), location.getPitch()));
                 event.markForReEncode(true);

@@ -26,6 +26,7 @@ public final class UpdateChecker {
 
     private final JavaPlugin plugin;
     private ScheduledExecutorService executor;
+    private volatile String lastAnnounced = "";
 
     public UpdateChecker(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -63,6 +64,28 @@ public final class UpdateChecker {
             UpdateState.set(newer, current, latest);
             if (newer) {
                 LogUtil.info("A new version is available: " + latest + " (current: " + current + ").");
+                if (!latest.equals(lastAnnounced)) {
+                    lastAnnounced = latest;
+                    notifyOnlineStaff();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void notifyOnlineStaff() {
+        try {
+            var cfg = GrimAPI.INSTANCE.getConfigManager().getConfig();
+            String perm = cfg.getStringElse("update-checker.notify-permission", "jester.update");
+            String msg = cfg.getStringElse("update-available",
+                            "%prefix% <yellow>A new version is available: <green>%latest%</green> <gray>(running <red>%current%</red>)")
+                    .replace("%latest%", UpdateState.latest())
+                    .replace("%current%", UpdateState.current());
+            for (org.bukkit.entity.Player online : plugin.getServer().getOnlinePlayers()) {
+                var platformPlayer = GrimAPI.INSTANCE.getPlatformPlayerFactory().getFromNativePlayerType(online);
+                if (platformPlayer.hasPermission(perm, false)) {
+                    platformPlayer.sendMessage(ac.jester.anticheat.utils.anticheat.MessageUtil.miniMessage(msg));
+                }
             }
         } catch (Exception ignored) {
         }

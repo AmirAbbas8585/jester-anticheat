@@ -9,6 +9,7 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
+import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.player.InteractionHand;
@@ -34,14 +35,14 @@ public class PacketOrderB extends Check implements PacketCheck {
     public void onPacketReceive(PacketReceiveEvent event) {
         if (exempt) return;
 
-        if (event.getPacketType() == PacketType.Play.Client.ANIMATION
-            && new WrapperPlayClientAnimation(event).getHand() == InteractionHand.MAIN_HAND) {
+        if (isAnimation(event.getPacketType()) && (event.getPacketType() == PacketType.Play.Client.PUNCH
+                || new WrapperPlayClientAnimation(event).getHand() == InteractionHand.MAIN_HAND)) {
             sentAnimationSinceLastAttack = sentAnimation = true;
             sentAttack = sentSlotSwitch = false;
             return;
         }
 
-        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
+        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY && (player.gamemode != GameMode.SPECTATOR || player.getClientVersion().isOlderThan(ClientVersion.V_1_21_11))) {
             WrapperPlayClientInteractEntity packet = new WrapperPlayClientInteractEntity(event);
             if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
                 onAttack(event);
@@ -56,7 +57,7 @@ public class PacketOrderB extends Check implements PacketCheck {
 
         if (event.getPacketType() == PacketType.Play.Client.PLAYER_DIGGING) {
             WrapperPlayClientPlayerDigging packet = new WrapperPlayClientPlayerDigging(event);
-            if (packet.getAction() == DiggingAction.STAB) {
+            if (packet.getAction() == DiggingAction.STAB && player.getClientVersion().isOlderThan(ClientVersion.V_26_3)) {
                 onAttack(event);
                 return;
             }

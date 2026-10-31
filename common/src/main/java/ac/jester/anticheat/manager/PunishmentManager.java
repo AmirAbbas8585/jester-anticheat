@@ -77,11 +77,13 @@ public class PunishmentManager implements ConfigReloadable {
                                 excluded.add(check);
                             } else {
                                 checksList.add(check);
-                                check.setEnabled(true);
                             }
                         }
                     }
                     for (AbstractCheck check : excluded) checksList.remove(check);
+                }
+                for (AbstractCheck check : checksList) {
+                    check.setEnabled(true);
                 }
 
                 for (String command : commands) {
@@ -289,6 +291,10 @@ public class PunishmentManager implements ConfigReloadable {
             GrimAPI.INSTANCE.getAlertManager().sendAlert(alertComponent, verboseListeners);
         }
         sentDebug = true;
+
+        if (!testMode) {
+            GrimAPI.INSTANCE.getDiscordManager().sendAlert(player, verbose, check.getDisplayName(), currentVL);
+        }
 
         if (ProxyAlertMessenger.canSendAlerts()) {
             ProxyAlertMessenger.sendPluginMessage(

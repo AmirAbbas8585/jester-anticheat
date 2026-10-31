@@ -26,18 +26,21 @@ public class BadPacketsL extends Check implements PacketCheck {
             if (packet.getAction() == DiggingAction.START_DIGGING || packet.getAction() == DiggingAction.FINISHED_DIGGING || packet.getAction() == DiggingAction.CANCELLED_DIGGING)
                 return;
 
-            final int expectedFace = player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_7_10) && packet.getAction() == DiggingAction.RELEASE_USE_ITEM
-                    ? 255 : 0;
+            final boolean directionChange = packet.getAction() == DiggingAction.CHANGE_DESTROY_DIRECTION;
+            final boolean allowLegacyFace = player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_7_10)
+                    && packet.getAction() == DiggingAction.RELEASE_USE_ITEM;
+            final boolean isValidFace = directionChange ? packet.getBlockFaceId() >= 0 && packet.getBlockFaceId() <= 5
+                    : packet.getBlockFaceId() == 0 || allowLegacyFace && packet.getBlockFaceId() == 255;
 
-            if (packet.getBlockFaceId() != expectedFace
-                    || packet.getBlockPosition().getX() != 0
+            if (!isValidFace
+                    || !directionChange && (packet.getBlockPosition().getX() != 0
                     || packet.getBlockPosition().getY() != 0
-                    || packet.getBlockPosition().getZ() != 0
+                    || packet.getBlockPosition().getZ() != 0)
                     || packet.getSequence() != 0
             ) {
                 if (flagAndAlert("pos="
                         + packet.getBlockPosition().getX() + ", " + packet.getBlockPosition().getY() + ", " + packet.getBlockPosition().getZ()
-                        + ", face=" + packet.getBlockFace()
+                        + ", face=" + packet.getBlockFaceId()
                         + ", sequence=" + packet.getSequence()
                         + ", action=" + packet.getAction().toString().toLowerCase(Locale.ROOT)
                 ) && shouldModifyPackets() && canCancel(packet.getAction())) {

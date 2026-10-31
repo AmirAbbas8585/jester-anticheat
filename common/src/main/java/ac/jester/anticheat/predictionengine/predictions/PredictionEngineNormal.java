@@ -7,6 +7,7 @@ import ac.jester.anticheat.utils.math.GrimMath;
 import ac.jester.anticheat.utils.math.Vector3dm;
 import ac.jester.anticheat.utils.nmsutil.Collisions;
 import ac.jester.anticheat.utils.nmsutil.JumpPower;
+import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.item.ItemStack;
 import com.github.retrooper.packetevents.protocol.item.type.ItemTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
@@ -25,7 +26,12 @@ public class PredictionEngineNormal extends PredictionEngine {
             adjustedY += (0.05 * (levitation.getAsInt() + 1) - vector.getY()) * 0.2;
             player.fallDistance = 0;
         } else if (player.hasGravity) {
-            adjustedY -= player.gravity;
+            double gravity = player.compensatedEntities.self.getAttributeValue(Attributes.GRAVITY);
+            if (vector.getY() <= 0 && player.compensatedEntities.getSlowFallingAmplifier().isPresent()) {
+                gravity = player.getClientVersion().isOlderThan(ClientVersion.V_1_20_5) ? 0.01 : Math.min(gravity, 0.01);
+            }
+
+            adjustedY -= gravity;
         }
 
         vector.setX(vector.getX() * player.friction);

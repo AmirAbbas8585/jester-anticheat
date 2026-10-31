@@ -247,6 +247,10 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
     }
 
     public TeleportAcceptData checkTeleportQueue(double x, double y, double z, float yaw, float pitch) {
+        return checkTeleportQueue(x, y, z, yaw, pitch, null);
+    }
+
+    public TeleportAcceptData checkTeleportQueue(double x, double y, double z, float yaw, float pitch, @Nullable Integer teleportId) {
         TeleportAcceptData teleportData = new TeleportAcceptData();
 
         TeleportData teleportPos;
@@ -271,7 +275,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
                 rotationMatches = Math.abs(expectedPitch - pitch) < 1f;
             }
 
-            if (player.lastTransactionReceived.get() == teleportPos.getTransaction() && Math.abs(clamped.getX() - x) <= threshold && closeEnoughY && Math.abs(clamped.getZ() - z) <= threshold && rotationMatches) {
+            if ((teleportId == null || teleportId.equals(teleportPos.getTeleportId())) && player.lastTransactionReceived.get() == teleportPos.getTransaction() && Math.abs(clamped.getX() - x) <= threshold && closeEnoughY && Math.abs(clamped.getZ() - z) <= threshold && rotationMatches) {
                 pendingTeleports.poll();
                 hasAcceptedSpawnTeleport = true;
                 blockOffsets = false;

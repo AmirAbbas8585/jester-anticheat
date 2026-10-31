@@ -5,6 +5,7 @@ import ac.jester.anticheat.predictionengine.blockeffects.BlockCollisions;
 import ac.jester.anticheat.predictionengine.blockeffects.BlockEffectsResolver;
 import ac.jester.anticheat.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.jester.anticheat.utils.math.GrimMath;
+import ac.jester.anticheat.utils.math.Vector3dm;
 import ac.jester.anticheat.utils.nmsutil.Collisions;
 import ac.jester.anticheat.utils.nmsutil.GetBoundingBox;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
@@ -22,7 +23,7 @@ public class BlockEffectsResolverV1_21_2 implements BlockEffectsResolver {
     public static BlockEffectsResolver INSTANCE = new BlockEffectsResolverV1_21_2();
 
     @Override
-    public void applyEffectsFromBlocks(GrimPlayer player, List<GrimPlayer.Movement> movements) {
+    public void applyEffectsFromBlocks(GrimPlayer player, Vector3dm clientVelocity, boolean onlyApplyVelocity, List<GrimPlayer.Movement> movements) {
         LongSet visitedBlocks = player.visitedBlocks;
         SimpleCollisionBox boundingBox = (player.inVehicle()
                 ? GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z)
@@ -41,7 +42,7 @@ public class BlockEffectsResolverV1_21_2 implements BlockEffectsResolver {
                 }
 
                 if (visitedBlocks.add(GrimMath.asLong(blockPos))) {
-                    Collisions.onInsideBlock(player, blockType, blockState, blockPos.x, blockPos.y, blockPos.z, true);
+                    Collisions.onInsideBlock(player, clientVelocity, onlyApplyVelocity, blockType, blockState, blockPos.x, blockPos.y, blockPos.z, true);
                 }
             }
         }

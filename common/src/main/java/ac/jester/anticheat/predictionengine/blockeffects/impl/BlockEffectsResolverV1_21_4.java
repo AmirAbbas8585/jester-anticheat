@@ -4,6 +4,7 @@ import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.predictionengine.blockeffects.BlockEffectsResolver;
 import ac.jester.anticheat.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.jester.anticheat.utils.math.GrimMath;
+import ac.jester.anticheat.utils.math.Vector3dm;
 import ac.jester.anticheat.utils.nmsutil.Collisions;
 import ac.jester.anticheat.utils.nmsutil.GetBoundingBox;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
@@ -20,7 +21,7 @@ public class BlockEffectsResolverV1_21_4 implements BlockEffectsResolver {
     public static final BlockEffectsResolver INSTANCE = new BlockEffectsResolverV1_21_4();
 
     @Override
-    public void applyEffectsFromBlocks(GrimPlayer player, List<GrimPlayer.Movement> movements) {
+    public void applyEffectsFromBlocks(GrimPlayer player, Vector3dm clientVelocity, boolean onlyApplyVelocity, List<GrimPlayer.Movement> movements) {
         LongSet visitedBlocks = player.visitedBlocks;
 
         for (GrimPlayer.Movement movement : movements) {
@@ -37,7 +38,7 @@ public class BlockEffectsResolverV1_21_4 implements BlockEffectsResolver {
                 }
 
                 if (visitedBlocks.add(GrimMath.asLong(blockPos))) {
-                    Collisions.onInsideBlock(player, blockType, blockState, blockPos.x, blockPos.y, blockPos.z, true);
+                    Collisions.onInsideBlock(player, clientVelocity, onlyApplyVelocity, blockType, blockState, blockPos.x, blockPos.y, blockPos.z, true);
                 }
             }
         }

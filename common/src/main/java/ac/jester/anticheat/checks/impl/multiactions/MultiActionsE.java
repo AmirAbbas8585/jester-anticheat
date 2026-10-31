@@ -21,7 +21,7 @@ public class MultiActionsE extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (!dropping && player.packetStateData.isSlowedByUsingItem() && (player.packetStateData.lastSlotSelected == player.packetStateData.getSlowedByUsingItemSlot() || player.packetStateData.itemInUseHand == InteractionHand.OFF_HAND) && event.getPacketType() == PacketType.Play.Client.ANIMATION) {
+        if (!dropping && player.packetStateData.isSlowedByUsingItem() && (player.packetStateData.lastSlotSelected == player.packetStateData.getSlowedByUsingItemSlot() || player.packetStateData.itemInUseHand == InteractionHand.OFF_HAND) && isAnimation(event.getPacketType())) {
             if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_7_10)) {
                 return;
             }
@@ -36,7 +36,9 @@ public class MultiActionsE extends Check implements PacketCheck {
             dropping = false;
         }
 
-        if (event.getPacketType() == PacketType.Play.Client.PLAYER_DIGGING && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_15)) {
+        if (event.getPacketType() == PacketType.Play.Client.PLAYER_DIGGING
+                && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_15)
+                && player.getClientVersion().isOlderThan(ClientVersion.V_26_3)) {
             DiggingAction action = new WrapperPlayClientPlayerDigging(event).getAction();
             dropping = action == DiggingAction.DROP_ITEM || action == DiggingAction.DROP_ITEM_STACK;
         }

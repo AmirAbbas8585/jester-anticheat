@@ -2,6 +2,7 @@ package ac.jester.anticheat.events.packets;
 
 import ac.jester.anticheat.GrimAPI;
 import ac.jester.anticheat.player.GrimPlayer;
+import ac.jester.anticheat.utils.data.SprintingState;
 import ac.jester.anticheat.utils.nmsutil.WatchableIndexUtil;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
@@ -61,6 +62,9 @@ public class PacketSelfMetadataListener extends PacketListenerAbstract {
                         player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                             player.isSwimming = isSwimming;
                             player.lastSprinting = isSprinting;
+                            if (!isSprinting) {
+                                player.vehicleData.camelSprintingState = SprintingState.STOPPING;
+                            }
                             if (player.isGliding != isGliding) {
                                 player.pointThreeEstimator.updatePlayerGliding();
                             }

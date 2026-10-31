@@ -10,7 +10,11 @@ public class CompensatedDashableEntities {
     public void tick() {
         if (dashableMap.isEmpty()) return;
         for (DashableEntity dashable : dashableMap.values()) {
+            boolean hasCooldown = dashable.getDashCooldown() > 0;
             dashable.setDashCooldown(Math.max(0, dashable.getDashCooldown() - 1));
+            if (hasCooldown && dashable.getDashCooldown() == 0) {
+                dashable.setDashing(false);
+            }
         }
     }
 

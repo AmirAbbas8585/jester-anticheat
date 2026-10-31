@@ -6,7 +6,7 @@
 # after editing.
 
 # Used by the plugin to update this file after an upgrade. Don't change it.
-config-version: 3
+config-version: 4
 
 # ----------------------------------------------------------------------------
 #  Alerts
@@ -137,6 +137,16 @@ upload-log: '%prefix% &fUploaded debug log to: &#c19a6b%url%'
 upload-log-start: '%prefix% &7Uploading log... please wait'
 upload-log-not-found: '%prefix% &cUnable to find that log'
 upload-log-upload-failure: '%prefix% &cSomething went wrong while uploading. See console for details.'
+
+# ----------------------------------------------------------------------------
+#  Discord webhook (/jester testwebhook) - settings are in discord.yml
+# ----------------------------------------------------------------------------
+
+webhook-not-enabled: '%prefix% &cDiscord webhooks are not enabled! Set enabled: true and a webhook URL in discord.yml.'
+# Text sent to Discord by /jester testwebhook.
+webhook-test-message: 'Jester Anti Cheat webhook test'
+webhook-test-succeeded: '%prefix% &aDiscord webhook test succeeded!'
+webhook-test-failed: '%prefix% &cDiscord webhook test failed! See console for details.'
 
 # ----------------------------------------------------------------------------
 #  Other

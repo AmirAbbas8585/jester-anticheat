@@ -20,7 +20,10 @@ public class PredictionEngineElytra extends PredictionEngine {
         double length = lookVector.length();
 
         double vertCosRotation = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_18_2) ? Math.cos(pitchRadians) : player.trigHandler.cos(pitchRadians);
-        vertCosRotation = (float) (vertCosRotation * vertCosRotation * Math.min(1.0D, length / 0.4D));
+        vertCosRotation = vertCosRotation * vertCosRotation * Math.min(1.0D, length / 0.4D);
+        if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_4)) {
+            vertCosRotation = (float) vertCosRotation;
+        }
 
         double recalculatedGravity = player.compensatedEntities.self.getAttributeValue(Attributes.GRAVITY);
         if (player.clientVelocity.getY() <= 0 && player.compensatedEntities.getSlowFallingAmplifier().isPresent()) {

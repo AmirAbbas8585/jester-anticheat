@@ -20,7 +20,7 @@ public class BadPacketsT extends Check implements PacketCheck {
 
     public BadPacketsT(final GrimPlayer player) {
         super(player);
-        double expansion = player.getClientVersion().isOlderThan(ClientVersion.V_1_9) ? 0.1 : 0;
+        double expansion = player.getClientVersion().isOlderThan(ClientVersion.V_1_9) ? 0.1f : 0;
         maxHorizontalDisplacement = 0.3001 + expansion;
         minVerticalDisplacement = -0.0001 - expansion;
         maxVerticalDisplacement = 2.0001 + expansion;
@@ -33,6 +33,11 @@ public class BadPacketsT extends Check implements PacketCheck {
         if (event.getPacketType().equals(PacketType.Play.Client.INTERACT_ENTITY)) {
             final WrapperPlayClientInteractEntity wrapper = new WrapperPlayClientInteractEntity(event);
             wrapper.getTarget().ifPresent(targetVector -> {
+                if (!Double.isFinite(targetVector.x) || !Double.isFinite(targetVector.y) || !Double.isFinite(targetVector.z)) {
+                    flagAndAlert("non-finite target=" + targetVector.x + ", " + targetVector.y + ", " + targetVector.z);
+                    return;
+                }
+
                 final PacketEntity packetEntity = player.compensatedEntities.getEntity(wrapper.getEntityId());
                 if (packetEntity == null) {
                     return;

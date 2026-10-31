@@ -1,21 +1,26 @@
 package ac.jester.anticheat.utils.data.packetentity;
 
+import com.github.retrooper.packetevents.protocol.vector.positionpath.PositionPath;
 import ac.jester.anticheat.checks.impl.sprint.SprintD;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.jester.anticheat.utils.data.attribute.ValuedAttribute;
 import ac.jester.anticheat.utils.inventory.EnchantmentHelper;
+import ac.jester.anticheat.utils.inventory.Inventory;
 import ac.jester.anticheat.utils.math.GrimMath;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
+import com.github.retrooper.packetevents.protocol.item.ItemStack;
 import com.github.retrooper.packetevents.protocol.item.enchantment.type.EnchantmentTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
+import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.potion.PotionType;
 import com.github.retrooper.packetevents.protocol.potion.PotionTypes;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -25,12 +30,12 @@ public class PacketEntitySelf extends PacketEntity {
 
     public PacketEntitySelf(GrimPlayer player) {
         super(player, EntityTypes.PLAYER);
+        this.trackEntityEquipment = true;
         this.player = player;
     }
 
     public PacketEntitySelf(GrimPlayer player, PacketEntitySelf old) {
-        super(player, EntityTypes.PLAYER);
-        this.player = player;
+        this(player);
         this.opLevel = old.opLevel;
         this.attributeMap.putAll(old.attributeMap);
     }
@@ -149,15 +154,49 @@ public class PacketEntitySelf extends PacketEntity {
     }
 
     @Override
-    public void onFirstTransaction(boolean relative, boolean hasPos, double relX, double relY, double relZ, GrimPlayer player) {
+    public void onFirstTransaction(boolean relative, boolean hasPos, double relX, double relY, double relZ,
+                                   @Nullable Float packetXRot, @Nullable Float packetYRot, GrimPlayer player, @Nullable PositionPath path, boolean positionSync, int transaction) {
     }
 
     @Override
-    public void onSecondTransaction() {
+    public void onSecondTransaction(int transaction) {
     }
 
     @Override
     public SimpleCollisionBox getPossibleCollisionBoxes() {
         return player.boundingBox.copy();
+    }
+
+    @Override
+    public void setItemBySlot(EquipmentSlot slot, ItemStack item) {
+        if (slot == null || !player.inventory.isPacketInventoryActive && player.platformPlayer != null) return;
+        if (item == null) item = ItemStack.EMPTY;
+        switch (slot) {
+            case MAIN_HAND -> player.inventory.inventory.setHeldItem(item);
+            case OFF_HAND -> player.inventory.inventory.getInventoryStorage().setItem(Inventory.SLOT_OFFHAND, item);
+            case BOOTS -> player.inventory.inventory.getInventoryStorage().setItem(Inventory.SLOT_BOOTS, item);
+            case LEGGINGS -> player.inventory.inventory.getInventoryStorage().setItem(Inventory.SLOT_LEGGINGS, item);
+            case CHEST_PLATE -> player.inventory.inventory.getInventoryStorage().setItem(Inventory.SLOT_CHESTPLATE, item);
+            case HELMET -> player.inventory.inventory.getInventoryStorage().setItem(Inventory.SLOT_HELMET, item);
+        }
+    }
+
+    @Override
+    public ItemStack getItemBySlot(EquipmentSlot slot) {
+        if (slot == null) return ItemStack.EMPTY;
+        return switch (slot) {
+            case MAIN_HAND -> player.inventory.getHeldItem();
+            case OFF_HAND -> player.inventory.getOffHand();
+            case BOOTS -> player.inventory.getBoots();
+            case LEGGINGS -> player.inventory.getLeggings();
+            case CHEST_PLATE -> player.inventory.getChestplate();
+            case HELMET -> player.inventory.getHelmet();
+            case BODY, SADDLE -> ItemStack.EMPTY;
+        };
+    }
+
+    @Override
+    public boolean hasItemInSlot(EquipmentSlot slot) {
+        return !getItemBySlot(slot).isEmpty();
     }
 }

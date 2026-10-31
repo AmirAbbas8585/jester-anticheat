@@ -328,6 +328,11 @@ public class MovementCheckRunner extends Check implements PositionCheck {
                     && Math.abs((pair.second().getY() + 0.5625D) - player.y) <= player.getMovementThreshold()) {
                 player.uncertaintyHandler.isSteppingOnBouncyBlock = true;
             }
+            if (data.getType() == StateTypes.SHELF_MUSHROOM && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)
+                    && (Math.abs((pair.second().getY() + 0.6875) - player.y) <= player.getMovementThreshold()
+                    || Math.abs((pair.second().getY() + (data.getAge() == 0 ? 0.5625 : 0.5)) - player.y) <= player.getMovementThreshold())) {
+                player.uncertaintyHandler.isSteppingOnBouncyBlock = true;
+            }
             if (BlockTags.ICE.contains(data.getType())) {
                 player.uncertaintyHandler.isSteppingOnIce = true;
             }

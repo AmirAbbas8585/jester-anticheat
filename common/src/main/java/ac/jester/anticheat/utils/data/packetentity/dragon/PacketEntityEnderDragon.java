@@ -29,4 +29,9 @@ public final class PacketEntityEnderDragon extends PacketEntity {
             entityMap.put(entityID + i, parts.get(i - 1));
         }
     }
+
+    @Override
+    public double clampScale(double scale) {
+        return 1;
+    }
 }

@@ -124,6 +124,17 @@ public enum BlockPlaceResult {
         }
     }, ItemTypes.LADDER),
 
+    SHELF_MUSHROOM((player, place) -> {
+        for (BlockFace face : place.getNearestPlacingDirections()) {
+            if (BlockFaceHelper.isFaceHorizontal(face) && place.isFullFace(face)) {
+                WrappedBlockState mushroom = place.material.createBlockState(CompensatedWorld.blockVersion);
+                mushroom.setFacing(face.getOppositeFace());
+                place.set(mushroom);
+                return;
+            }
+        }
+    }, ItemTypes.SHELF_MUSHROOM),
+
     FARM_BLOCK((player, place) -> {
         WrappedBlockState above = place.getAboveState();
         if (!above.getType().isBlocking() && !BlockTags.FENCE_GATES.contains(above.getType()) && above.getType() != StateTypes.MOVING_PISTON) {
@@ -313,14 +324,14 @@ public enum BlockPlaceResult {
 
         if (!primaryValid) return;
 
-        WrappedBlockState toPlace = StateTypes.POINTED_DRIPSTONE.createBlockState(CompensatedWorld.blockVersion);
+        WrappedBlockState toPlace = place.getMaterial().createBlockState(CompensatedWorld.blockVersion);
         toPlace.setVerticalDirection(VerticalDirection.valueOf(primaryDir.name()));
 
         Vector3i placedPos = place.getPlacedBlockPos();
         Dripstone.update(player, toPlace, placedPos.getX(), placedPos.getY(), placedPos.getZ(), place.isSecondaryUse());
 
         place.set(toPlace);
-    }, ItemTypes.POINTED_DRIPSTONE),
+    }, ItemTypes.POINTED_DRIPSTONE, ItemTypes.SULFUR_SPIKE),
 
     CACTUS((player, place) -> {
         for (BlockFace face : BlockPlace.BY_2D) {

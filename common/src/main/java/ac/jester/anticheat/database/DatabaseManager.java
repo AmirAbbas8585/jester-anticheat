@@ -151,8 +151,6 @@ public final class DatabaseManager {
             createIndexQuietly(conn, "CREATE INDEX idx_viol_uuid ON jester_violations(uuid)");
             createIndexQuietly(conn, "CREATE INDEX idx_viol_check ON jester_violations(check_name)");
             createIndexQuietly(conn, "CREATE INDEX idx_viol_time ON jester_violations(flagged_at)");
-            createIndexQuietly(conn, "CREATE INDEX idx_pun_uuid ON jester_punishments(uuid)");
-            createIndexQuietly(conn, "CREATE INDEX idx_pun_time ON jester_punishments(punished_at)");
 
             conn.createStatement().executeUpdate(
                 "CREATE TABLE IF NOT EXISTS jester_punishments (" +
@@ -173,6 +171,9 @@ public final class DatabaseManager {
                 "    last_seen      BIGINT NOT NULL," +
                 "    total_vl       DOUBLE NOT NULL DEFAULT 0" +
                 ")");
+
+            createIndexQuietly(conn, "CREATE INDEX idx_pun_uuid ON jester_punishments(uuid)");
+            createIndexQuietly(conn, "CREATE INDEX idx_pun_time ON jester_punishments(punished_at)");
         }
     }
 
@@ -328,6 +329,11 @@ public final class DatabaseManager {
 
     public static void shutdown() {
         asyncExecutor.shutdown();
+        try {
+            asyncExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
         }

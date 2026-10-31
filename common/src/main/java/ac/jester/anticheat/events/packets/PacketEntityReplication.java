@@ -6,17 +6,20 @@ import ac.jester.anticheat.checks.Check;
 import ac.jester.anticheat.checks.type.PacketCheck;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.anticheat.LogUtil;
+import ac.jester.anticheat.utils.data.SprintingState;
 import ac.jester.anticheat.utils.data.TrackerData;
+import ac.jester.anticheat.utils.data.interpolation.EntityMovementTransaction;
 import ac.jester.anticheat.utils.data.packetentity.DashableEntity;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntity;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntityHook;
-import ac.jester.anticheat.utils.data.packetentity.PacketEntityTrackXRot;
+import ac.jester.anticheat.utils.enums.Pose;
+import ac.jester.anticheat.utils.nmsutil.EntityMetadataPoseUtil;
+import ac.jester.anticheat.utils.viaversion.ViaMovementTranslator;
 import ac.jester.anticheat.utils.viaversion.ViaVersionUtil;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
-import com.github.retrooper.packetevents.protocol.entity.EntityPositionData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
@@ -25,6 +28,10 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.InteractionHand;
 import com.github.retrooper.packetevents.protocol.player.UserProfile;
 import com.github.retrooper.packetevents.protocol.potion.PotionType;
+import com.github.retrooper.packetevents.protocol.vector.positionpath.LinearPositionPath;
+import com.github.retrooper.packetevents.protocol.vector.positionpath.PositionPath;
+import com.github.retrooper.packetevents.protocol.vector.vecdelta.LinearVecDelta;
+import com.github.retrooper.packetevents.protocol.vector.vecdelta.VecDelta;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerAttachEntity;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
@@ -50,6 +57,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSp
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerWindowItems;
 
+import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -80,6 +88,12 @@ public class PacketEntityReplication extends Check implements PacketCheck {
                 entity.onMovement(isTickingReliably);
             }
         }
+
+        if (player.vehicleData.camelSprintingState == SprintingState.STOPPING) {
+            player.vehicleData.camelSprintingState = SprintingState.STOPPED;
+        } else if (player.vehicleData.camelSprintingState == SprintingState.STOPPED && player.isSprinting) {
+            player.vehicleData.camelSprintingState = SprintingState.STARTED;
+        }
     }
 
     @Override
@@ -100,24 +114,65 @@ public class PacketEntityReplication extends Check implements PacketCheck {
             addEntity(packetOutEntity.getEntityId(), packetOutEntity.getUUID(), EntityTypes.PAINTING, packetOutEntity.getPosition().toVector3d(), 0, 0f, null, packetOutEntity.getDirection().getHorizontalIndex());
         } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_RELATIVE_MOVE) {
             WrapperPlayServerEntityRelativeMove move = new WrapperPlayServerEntityRelativeMove(event);
-            handleMoveEntity(event, move.getEntityId(), move.getDeltaX(), move.getDeltaY(), move.getDeltaZ(), null, null, true, true);
+            double deltaX = move.getDeltaX();
+            double deltaY = move.getDeltaY();
+            double deltaZ = move.getDeltaZ();
+            VecDelta delta = null;
+
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+                delta = ViaMovementTranslator.convert(player.getClientVersion(), move.getServerVersion(), move.getDelta());
+            } else if (move.getServerVersion().isNewerThanOrEquals(ServerVersion.V_26_3)) {
+                LinearVecDelta legacyDelta = ViaMovementTranslator.modernToLegacy(move.getDelta());
+                deltaX = legacyDelta.dx();
+                deltaY = legacyDelta.dy();
+                deltaZ = legacyDelta.dz();
+            }
+
+            handleMoveEntity(event, move.getEntityId(), deltaX, deltaY, deltaZ, null, null, true, true, delta, null);
         } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_RELATIVE_MOVE_AND_ROTATION) {
             WrapperPlayServerEntityRelativeMoveAndRotation move = new WrapperPlayServerEntityRelativeMoveAndRotation(event);
-            handleMoveEntity(event, move.getEntityId(), move.getDeltaX(), move.getDeltaY(), move.getDeltaZ(), move.getYaw() * 0.7111111F, move.getPitch() * 0.7111111F, true, true);
+            double deltaX = move.getDeltaX();
+            double deltaY = move.getDeltaY();
+            double deltaZ = move.getDeltaZ();
+            VecDelta delta = null;
+
+            float rotationScale = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3) ? 1F : 0.7111111F;
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+                delta = ViaMovementTranslator.convert(player.getClientVersion(), move.getServerVersion(), move.getDelta());
+            } else if (move.getServerVersion().isNewerThanOrEquals(ServerVersion.V_26_3)) {
+                LinearVecDelta legacyDelta = ViaMovementTranslator.modernToLegacy(move.getDelta());
+                deltaX = legacyDelta.dx();
+                deltaY = legacyDelta.dy();
+                deltaZ = legacyDelta.dz();
+            }
+
+            handleMoveEntity(event, move.getEntityId(), deltaX, deltaY, deltaZ, move.getYaw() * rotationScale, move.getPitch() * rotationScale, true, true, delta, null);
         } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_TELEPORT) {
             WrapperPlayServerEntityTeleport move = new WrapperPlayServerEntityTeleport(event);
             Vector3d pos = move.getPosition();
-            handleMoveEntity(event, move.getEntityId(), pos.getX(), pos.getY(), pos.getZ(), move.getYaw(), move.getPitch(), false, true);
+            LinearPositionPath path = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3) ? new LinearPositionPath(pos) : null;
+            handleMoveEntity(event, move.getEntityId(), pos.getX(), pos.getY(), pos.getZ(), move.getYaw(), move.getPitch(), false, true, null, path);
         } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_POSITION_SYNC) {
             WrapperPlayServerEntityPositionSync move = new WrapperPlayServerEntityPositionSync(event);
-            final EntityPositionData values = move.getValues();
-            final Vector3d pos = values.getPosition();
-            handleMoveEntity(event, move.getId(), pos.getX(), pos.getY(), pos.getZ(), values.getYaw(), values.getPitch(), false, true);
+            final Vector3d pos;
+            PositionPath path = null;
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
+                path = ViaMovementTranslator.convert(player.getClientVersion(), move.getServerVersion(), move.getPosition());
+                pos = path.getEndPosition();
+            } else if (move.getServerVersion().isNewerThanOrEquals(ServerVersion.V_26_3)) {
+                pos = ViaMovementTranslator.modernToLegacy(move.getPosition()).getEndPosition();
+            } else {
+                pos = move.getValues().getPosition();
+            }
+
+            handleMoveEntity(event, move.getId(), pos.getX(), pos.getY(), pos.getZ(), move.getYRot(), move.getXRot(), false, true, null, path);
         } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_ROTATION) {
             WrapperPlayServerEntityRotation move = new WrapperPlayServerEntityRotation(event);
-            handleMoveEntity(event, move.getEntityId(), 0, 0, 0, move.getYaw() * 0.7111111F, move.getPitch() * 0.7111111F, true, false);
+            float rotationScale = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3) ? 1F : 0.7111111F;
+            handleMoveEntity(event, move.getEntityId(), 0, 0, 0, move.getYaw() * rotationScale, move.getPitch() * rotationScale, true, false, null, null);
         } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_METADATA) {
             WrapperPlayServerEntityMetadata entityMetadata = new WrapperPlayServerEntityMetadata(event);
+            schedulePoseTransition(entityMetadata, event);
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> player.compensatedEntities.updateEntityMetadata(entityMetadata.getEntityId(), entityMetadata.getEntityMetadata()));
         } else if (event.getPacketType() == PacketType.Play.Server.ENTITY_EQUIPMENT) {
             WrapperPlayServerEntityEquipment equipment = new WrapperPlayServerEntityEquipment(event);
@@ -392,64 +447,63 @@ public class PacketEntityReplication extends Check implements PacketCheck {
         });
     }
 
-    private void handleMoveEntity(PacketSendEvent event, int entityId, double deltaX, double deltaY, double deltaZ, Float yaw, Float pitch, boolean isRelative, boolean hasPos) {
+    private void handleMoveEntity(PacketSendEvent event, int entityId, double deltaX, double deltaY, double deltaZ, Float yaw, Float pitch, boolean isRelative, boolean hasPos, @Nullable VecDelta delta, @Nullable PositionPath path) {
         TrackerData data = player.compensatedEntities.getTrackedEntity(entityId);
+        if (data == null) return;
 
         final boolean didNotSendPreWave = hasSentPreWavePacket.compareAndSet(false, true);
         if (didNotSendPreWave) player.sendTransaction();
 
-        if (data != null) {
-            if (isRelative) {
-                boolean vanillaVehicleFlight = player.compensatedEntities.serverPlayerVehicle != null
-                        && player.compensatedEntities.serverPlayerVehicle == entityId
-                        && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
-                        && PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_21_2)
-                        && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9);
-
-                if (vanillaVehicleFlight ||
-                        ((Math.abs(deltaX) >= 3.9375 || Math.abs(deltaY) >= 3.9375 || Math.abs(deltaZ) >= 3.9375) && player.getClientVersion().isOlderThan(ClientVersion.V_1_9) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9))) {
-                    player.user.writePacket(new WrapperPlayServerEntityTeleport(entityId, new Vector3d(data.getX() + deltaX, data.getY() + deltaY, data.getZ() + deltaZ), yaw == null ? data.getXRot() : yaw, pitch == null ? data.getYRot() : pitch, false));
-                    event.setCancelled(true);
-                    return;
-                }
-
-                data.setX(data.getX() + deltaX);
-                data.setY(data.getY() + deltaY);
-                data.setZ(data.getZ() + deltaZ);
-            } else {
-                data.setX(deltaX);
-                data.setY(deltaY);
-                data.setZ(deltaZ);
-            }
-            if (yaw != null) {
-                data.setXRot(yaw);
-                data.setYRot(pitch);
-            }
-
-            if (data.getLastTransactionHung() == player.lastTransactionSent.get()) {
-                player.sendTransaction();
-            }
-            data.setLastTransactionHung(player.lastTransactionSent.get());
+        if (delta != null) {
+            path = delta.applyAsPath(new Vector3d(data.getX(), data.getY(), data.getZ()));
         }
+
+        if (isRelative) {
+            boolean vanillaVehicleFlight = player.compensatedEntities.serverPlayerVehicle != null
+                    && player.compensatedEntities.serverPlayerVehicle == entityId
+                    && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
+                    && PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_21_2)
+                    && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9);
+
+            if (vanillaVehicleFlight ||
+                    ((Math.abs(deltaX) >= 3.9375 || Math.abs(deltaY) >= 3.9375 || Math.abs(deltaZ) >= 3.9375) && player.getClientVersion().isOlderThan(ClientVersion.V_1_9) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9))) {
+                Vector3d targetPosition = path != null ? path.getEndPosition() : new Vector3d(data.getX() + deltaX, data.getY() + deltaY, data.getZ() + deltaZ);
+                player.user.writePacket(new WrapperPlayServerEntityTeleport(entityId, targetPosition, yaw == null ? data.getXRot() : yaw, pitch == null ? data.getYRot() : pitch, false));
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        if (path != null) {
+            Vector3d endPosition = path.getEndPosition();
+            data.setX(endPosition.x);
+            data.setY(endPosition.y);
+            data.setZ(endPosition.z);
+        } else if (isRelative) {
+            data.setX(data.getX() + deltaX);
+            data.setY(data.getY() + deltaY);
+            data.setZ(data.getZ() + deltaZ);
+        } else {
+            data.setX(deltaX);
+            data.setY(deltaY);
+            data.setZ(deltaZ);
+        }
+        if (yaw != null) {
+            data.setXRot(yaw);
+            data.setYRot(pitch);
+        }
+
+        if (data.getLastTransactionHung() == player.lastTransactionSent.get()) {
+            player.sendTransaction();
+        }
+        data.setLastTransactionHung(player.lastTransactionSent.get());
 
         int lastTrans = player.lastTransactionSent.get();
 
-        player.latencyUtils.addRealTimeTask(lastTrans, () -> {
-            PacketEntity entity = player.compensatedEntities.getEntity(entityId);
-            if (entity == null) return;
-            if (entity instanceof PacketEntityTrackXRot xRotEntity && yaw != null) {
-                xRotEntity.packetYaw = yaw;
-                xRotEntity.steps = entity.isBoat ? 10 : 3;
-            }
-
-            entity.onFirstTransaction(isRelative, hasPos, deltaX, deltaY, deltaZ, player);
-        });
-
-        player.latencyUtils.addRealTimeTask(lastTrans + 1, () -> {
-            PacketEntity entity = player.compensatedEntities.getEntity(entityId);
-            if (entity == null) return;
-            entity.onSecondTransaction();
-        });
+        boolean positionSync = event.getPacketType() == PacketType.Play.Server.ENTITY_POSITION_SYNC;
+        EntityMovementTransaction task = new EntityMovementTransaction(player, entityId, path, yaw, pitch, isRelative, hasPos, deltaX, deltaY, deltaZ, positionSync, lastTrans);
+        player.latencyUtils.addRealTimeTask(lastTrans, task);
+        player.latencyUtils.addRealTimeTask(lastTrans + 1, task);
     }
 
     public void addEntity(int entityID, UUID uuid, EntityType type, Vector3d position, float xRot, float yRot, List<EntityData<?>> entityMetadata, int extraData) {
@@ -461,13 +515,69 @@ public class PacketEntityReplication extends Check implements PacketCheck {
 
         player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
             PacketEntity entity = player.compensatedEntities.addEntity(entityID, uuid, type, position, xRot, extraData);
+            if (entity != null) {
+                entity.initializeInterpolationRotation(xRot, yRot);
+                entity.onSecondTransaction(player.lastTransactionReceived.get());
+            }
             if (entity instanceof DashableEntity dashable) {
                 player.dashableEntities.addEntity(entityID, dashable);
             }
 
             if (entityMetadata != null) {
+                if (EntityMetadataPoseUtil.usesPoseMetadata(entity) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14)) {
+                    Pose initialPose = EntityMetadataPoseUtil.getPoseFromMetadata(entityMetadata);
+                    if (initialPose != null) {
+                        entity.currentPose = initialPose;
+                    }
+                }
+
                 player.compensatedEntities.updateEntityMetadata(entityID, entityMetadata);
             }
+        });
+    }
+
+    private void schedulePoseTransition(WrapperPlayServerEntityMetadata entityMetadata, PacketSendEvent event) {
+        if (player.getClientVersion().isOlderThan(ClientVersion.V_1_14)) return;
+
+        int entityId = entityMetadata.getEntityId();
+        if (entityId == player.entityID) return;
+
+        Pose newPose = EntityMetadataPoseUtil.getPoseFromMetadata(entityMetadata.getEntityMetadata());
+        if (newPose == null) return;
+
+        boolean shouldTrackPoseTransition = false;
+        PacketEntity entity = player.compensatedEntities.getEntity(entityId);
+        if (entity != null) {
+            shouldTrackPoseTransition = EntityMetadataPoseUtil.usesPoseMetadata(entity);
+        } else {
+            TrackerData trackedEntity = player.compensatedEntities.getTrackedEntity(entityId);
+            if (trackedEntity != null) {
+                shouldTrackPoseTransition = EntityMetadataPoseUtil.usesPoseMetadata(trackedEntity.getEntityType());
+            }
+        }
+
+        if (!shouldTrackPoseTransition) return;
+
+        player.sendTransaction();
+        player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
+            PacketEntity target = player.compensatedEntities.getEntity(entityId);
+            if (target == null) {
+                return;
+            }
+
+            target.beginPoseTransition(newPose);
+        });
+
+        event.getTasksAfterSend().add(() -> {
+            player.sendTransaction();
+            player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
+                PacketEntity target = player.compensatedEntities.getEntity(entityId);
+                if (target == null) {
+                    return;
+                }
+
+                target.completePoseTransition(newPose);
+            });
         });
     }
 

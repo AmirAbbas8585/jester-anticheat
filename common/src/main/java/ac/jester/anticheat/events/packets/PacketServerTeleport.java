@@ -104,6 +104,10 @@ public class PacketServerTeleport extends PacketListenerAbstract {
                 }
             }
 
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2) && player.compensatedEntities.serverPlayerVehicle != null) {
+                pos = player.getSetbackTeleportUtil().lastKnownGoodPosition.getPos();
+            }
+
             player.sendTransaction();
             final int lastTransactionSent = player.lastTransactionSent.get();
             event.getTasksAfterSend().add(player::sendTransaction);
@@ -135,7 +139,13 @@ public class PacketServerTeleport extends PacketListenerAbstract {
             }
 
             player.sendTransaction();
-            player.pendingRotations.add(new RotationData(packet.getYaw(), GrimMath.clamp(packet.getPitch() % 360F, -90F, 90F), player.getLastTransactionSent()));
+            player.pendingRotations.add(new RotationData(
+                    packet.getYaw(),
+                    packet.isRelativePitch() ? packet.getPitch() : GrimMath.clamp(packet.getPitch() % 360F, -90F, 90F),
+                    packet.isRelativeYaw(),
+                    packet.isRelativePitch(),
+                    player.getLastTransactionSent()
+            ));
             event.getTasksAfterSend().add(player::sendTransaction);
         }
 

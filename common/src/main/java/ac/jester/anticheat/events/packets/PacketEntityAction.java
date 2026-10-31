@@ -4,6 +4,7 @@ import ac.jester.anticheat.GrimAPI;
 import ac.jester.anticheat.checks.impl.elytra.ElytraA;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.data.Pair;
+import ac.jester.anticheat.utils.data.SprintingState;
 import ac.jester.anticheat.utils.data.packetentity.JumpableEntity;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntity;
 import com.github.retrooper.packetevents.PacketEvents;
@@ -31,9 +32,11 @@ public class PacketEntityAction extends PacketListenerAbstract {
             switch (action.getAction()) {
                 case START_SPRINTING:
                     player.isSprinting = true;
+                    player.vehicleData.camelSprintingState = SprintingState.STARTED;
                     break;
                 case STOP_SPRINTING:
                     player.isSprinting = false;
+                    player.vehicleData.camelSprintingState = SprintingState.STOPPED;
                     break;
                 case START_SNEAKING:
                     player.isSneaking = true;
@@ -55,8 +58,10 @@ public class PacketEntityAction extends PacketListenerAbstract {
                         player.onPacketCancel();
                         break;
                     }
-                    if (player.getClientVersion().isOlderThan(ClientVersion.V_1_15)) return;
+
                     player.checkManager.getPostPredictionCheck(ElytraA.class).onStartGliding(event);
+
+                    if (player.getClientVersion().isOlderThan(ClientVersion.V_1_15)) return;
 
                     if (player.canGlide()) {
                         player.isGliding = true;

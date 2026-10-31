@@ -32,6 +32,7 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
             initialized = true;
             config.addSource(GrimAPI.class, "config", getConfigFile("config.yml"));
             config.addSource(GrimAPI.class, "messages", getConfigFile("messages.yml"));
+            config.addSource(GrimAPI.class, "discord", getConfigFile("discord.yml"));
         }
 
         String languageCode = System.getProperty("user.language").toUpperCase();
@@ -58,6 +59,7 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
                 getConfigFile("config.yml"), "messages.yml");
         ConfigMigrator.migrate(getConfigFile("config.yml"), "config/en.yml");
         ConfigMigrator.migrate(getConfigFile("messages.yml"), "messages/en.yml", movedToMessages);
+        ConfigMigrator.migrate(getConfigFile("discord.yml"), "discord/en.yml");
 
         try {
             config.loadAll();

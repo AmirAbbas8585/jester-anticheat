@@ -37,7 +37,7 @@ public class PacketWorldReaderEighteen extends BasePacketWorldReader {
         for (int i = 0; i < chunks.length; i++) {
             Chunk_v1_18 chunk = (Chunk_v1_18) chunks[i];
             if (chunk != null) {
-                chunks[i] = new Chunk_v1_18(chunk.getBlockCount(), chunk.getChunkData(), null);
+                chunks[i] = new Chunk_v1_18(chunk.getBlockCount(), chunk.getFluidCount(), chunk.getChunkData(), null);
             }
         }
 

@@ -25,7 +25,7 @@ public class BadPacketsU extends Check implements PacketCheck {
         if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
             final WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement(event);
             if (packet.getFace() == BlockFace.OTHER) {
-                final int expectedY = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) ? 4095 : 255;
+        final int expectedY = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) ? -1 : 255;
 
                 final boolean failedItemCheck = packet.getItemStack().isPresent() && isEmpty(packet.getItemStack().get())
                         && player.getClientVersion().isOlderThan(ClientVersion.V_1_9);

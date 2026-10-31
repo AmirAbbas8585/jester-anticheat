@@ -93,6 +93,8 @@ public class MessageUtil {
 
             if (value == null) {
                 value = keyWithPercent;
+            } else if (removeFormatting) {
+                value = ac.jester.anticheat.utils.data.webhook.discord.CompiledDiscordTemplate.escapeMarkdown(value);
             }
 
             matcher.appendReplacement(sb, Matcher.quoteReplacement(value));

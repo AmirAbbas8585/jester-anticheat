@@ -32,6 +32,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerOp
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetPlayerInventory;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerWindowItems;
+import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
@@ -49,11 +50,8 @@ public class CompensatedInventory extends Check implements PacketCheck {
     private int openWindowID = 0;
     private int packetSendingInventorySize = PLAYER_INVENTORY_CASE;
 
+    @Getter
     private ItemStack startOfTickStack = ItemStack.EMPTY;
-
-    public ItemStack getStartOfTickStack() {
-        return startOfTickStack;
-    }
 
     public int getOpenWindowID() {
         return openWindowID;
@@ -226,6 +224,7 @@ public class CompensatedInventory extends Check implements PacketCheck {
                     }
                 }
                 inventory.setHeldItem(heldItem);
+            this.startOfTickStack = getHeldItem();
                 inventory.getInventoryStorage().handleClientClaimedSlotSet(Inventory.HOTBAR_OFFSET + player.packetStateData.lastSlotSelected);
             }
 
@@ -239,6 +238,7 @@ public class CompensatedInventory extends Check implements PacketCheck {
             if (slot > 8 || slot < 0) return;
 
             inventory.selected = slot;
+            player.attackCooldown.updateHeldItem(false);
         } else if (event.getPacketType() == PacketType.Play.Client.CREATIVE_INVENTORY_ACTION) {
             WrapperPlayClientCreativeInventoryAction action = new WrapperPlayClientCreativeInventoryAction(event);
             if (player.gamemode != GameMode.CREATIVE) return;
@@ -274,7 +274,7 @@ public class CompensatedInventory extends Check implements PacketCheck {
             }
         } else if (event.getPacketType() == PacketType.Play.Client.CLOSE_WINDOW) {
             this.closeActiveInventory();
-        } else if (event.getPacketType() == PacketType.Play.Client.CLIENT_TICK_END) {
+        } else if (isTickPacket(event.getPacketType())) {
             this.startOfTickStack = getHeldItem();
         }
     }
@@ -347,7 +347,8 @@ public class CompensatedInventory extends Check implements PacketCheck {
             final int cachedPacketInvSize = packetSendingInventorySize;
             final AtomicBoolean updatedValue = new AtomicBoolean();
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
-                if (slots.size() == cachedPacketInvSize || items.getWindowId() == 0) {
+                boolean forceUpdate = slots.size() == cachedPacketInvSize || items.getWindowId() == 0;
+                if (!isPacketInventoryActive && forceUpdate) {
                     isPacketInventoryActive = true;
                     updatedValue.set(true);
                 }

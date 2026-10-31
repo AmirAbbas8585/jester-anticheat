@@ -6,6 +6,7 @@ import ac.jester.anticheat.checks.CheckData;
 import ac.jester.anticheat.checks.type.BlockBreakCheck;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.anticheat.update.BlockBreak;
+import com.github.retrooper.packetevents.protocol.component.ComponentTypes;
 import com.github.retrooper.packetevents.protocol.item.type.ItemTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
@@ -52,7 +53,8 @@ public class AirLiquidBreak extends Check implements BlockBreakCheck {
                 || block == StateTypes.BUBBLE_COLUMN
                 || block == StateTypes.MOVING_PISTON
                 || block == StateTypes.FIRE && noFireHitbox
-                || block.getHardness() == -1.0f && blockBreak.action == DiggingAction.FINISHED_DIGGING;
+                || block.getHardness() == -1.0f && blockBreak.action == DiggingAction.FINISHED_DIGGING
+                || player.inventory.getHeldItem().hasComponent(ComponentTypes.PIERCING_WEAPON) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_11);
 
         if (invalid && flagAndAlert("block=" + block.getName() + ", type=" + blockBreak.action) && shouldModifyPackets()) {
             didLastFlag = true;

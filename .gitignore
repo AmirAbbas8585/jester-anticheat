@@ -79,3 +79,8 @@ fabric/run/
 
 # Python
 __pycache__/
+
+build-log.txt
+publish-log.txt
+*.patch
+jester-anticheat-updated.zip

@@ -5,6 +5,7 @@ import ac.grim.grimac.api.GrimUser;
 import ac.grim.grimac.api.alerts.AlertManager;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.api.event.EventBus;
+import ac.grim.grimac.api.storage.backend.BackendRegistry;
 import ac.grim.grimac.api.event.events.GrimReloadEvent;
 import ac.grim.grimac.api.plugin.GrimPlugin;
 import ac.jester.anticheat.manager.config.ConfigManagerFileImpl;
@@ -116,6 +117,11 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
         return this.api.getExtensionManager().getPlugin(o);
     }
 
+    @Override
+    public @NotNull BackendRegistry getBackendRegistry() {
+        return api.getBackendRegistry();
+    }
+
     public void load() {
         reload(configManagerFile);
         api.getLoader().registerAPIService();
@@ -184,6 +190,7 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
         ac.jester.anticheat.database.DatabaseManager.init(configManager);
         GrimAPI.INSTANCE.getAlertManager().reload(configManager);
         GrimAPI.INSTANCE.getSpectateManager().reload();
+        GrimAPI.INSTANCE.getDiscordManager().reload();
         GrimAPI.INSTANCE.getViolationDatabaseManager().reload();
         if (!started) return;
         for (GrimPlayer player : GrimAPI.INSTANCE.getPlayerDataManager().getEntries()) {

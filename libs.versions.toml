@@ -9,8 +9,8 @@ cloud-fabric = "2.0.0-beta.15"
 cloud-processors-requirements = "1.0.0-rc.1"
 
 # --- Minecraft-Specific APIs ---
-grim-api = "1.2.4.0"
-packetevents = "2.12.1"
+grim-api = "1.6.0.13"
+packetevents = "2.14.1+addb80e-SNAPSHOT"
 placeholderapi = "2.11.6"
 viaversion = "5.5.0"
 

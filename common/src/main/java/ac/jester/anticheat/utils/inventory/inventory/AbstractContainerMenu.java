@@ -216,6 +216,7 @@ public abstract class AbstractContainerMenu {
 
                 if (slot instanceof ResultSlot) {
                     player.inventory.isPacketInventoryActive = false;
+                    player.inventory.needResend = true;
                 }
 
                 if (slotItem.isEmpty()) {

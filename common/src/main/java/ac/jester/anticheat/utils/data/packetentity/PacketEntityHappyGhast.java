@@ -28,4 +28,9 @@ public class PacketEntityHappyGhast extends PacketEntityTrackXRot {
     public PacketEntity getFirstPassenger() {
         return this.passengers.isEmpty() ? null : this.passengers.get(0);
     }
+
+    @Override
+    public double clampScale(double scale) {
+        return Math.min(scale, 1);
+    }
 }

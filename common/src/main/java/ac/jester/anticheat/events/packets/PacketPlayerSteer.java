@@ -25,6 +25,7 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
+        if (event.isCancelled()) return;
         if (event.getPacketType() == PacketType.Play.Client.STEER_VEHICLE) {
             GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
             if (player == null) return;
@@ -33,6 +34,8 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
 
             float forwards = steer.getForward();
             float sideways = steer.getSideways();
+
+            if (!Float.isFinite(forwards) || !Float.isFinite(sideways)) return;
 
             player.vehicleData.nextVehicleForward = forwards;
             player.vehicleData.nextVehicleHorizontal = sideways;
@@ -129,6 +132,10 @@ public class PacketPlayerSteer extends PacketListenerAbstract {
                 player.compensatedEntities.hasSprintingAttributeEnabled = player.isSprinting;
             }
             player.lastSprinting = player.isSprinting;
+
+            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)) {
+                player.compensatedEntities.hasSprintingAttributeEnabled = false;
+            }
         }
 
         player.packetStateData.receivedSteerVehicle = true;

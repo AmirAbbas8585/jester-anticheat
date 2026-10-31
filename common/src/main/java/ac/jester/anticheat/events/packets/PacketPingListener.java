@@ -75,6 +75,9 @@ public class PacketPingListener extends PacketListenerAbstract {
             if (player == null) return;
             player.packetStateData.lastServerTransWasValid = false;
             if (id == (short) id) {
+        if (player.getLastTransactionSent() == 0) {
+            player.getPlayerClockAtLeast();
+        }
                 Short shortID = ((short) id);
                 if (player.didWeSendThatTrans.remove(shortID)) {
                     player.packetStateData.lastServerTransWasValid = true;

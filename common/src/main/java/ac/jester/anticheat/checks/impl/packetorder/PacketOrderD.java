@@ -32,6 +32,8 @@ public class PacketOrderD extends Check implements PacketCheck {
 
                 if (action == InteractAction.INTERACT && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1)) return;
 
+                if (action == InteractAction.INTERACT && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1)) return;
+
                 if (packet.getHand() == InteractionHand.OFF_HAND) {
                     if (action == InteractAction.INTERACT || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1)) {
                         if (!sentMainhand) {

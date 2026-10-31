@@ -12,11 +12,15 @@ repositories {
         if (BuildConfig.mavenLocalOverride) {
             forRepositories(
                 mavenLocal(),
+                maven("https://maven.grim.ac/public/releases"),
+                maven("https://maven.grim.ac/public/snapshots"),
                 maven("https://repo.grim.ac/snapshots"),
                 maven("https://repo.codemc.io/repository/maven-releases/")
             )
         } else {
             forRepositories(
+                maven("https://maven.grim.ac/public/releases"),
+                maven("https://maven.grim.ac/public/snapshots"),
                 maven("https://repo.grim.ac/snapshots"),
                 maven("https://repo.codemc.io/repository/maven-releases/")
             )

@@ -26,10 +26,12 @@ import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.util.Vector3d;
+import org.jetbrains.annotations.Nullable;
 
 // You may not copy the check unless you are licensed under GPL
 public class ReachInterpolationData {
     private final SimpleCollisionBox targetLocation;
+    private final Vector3d targetPosition;
     private final GrimPlayer player;
     private final PacketEntity entity;
     public SimpleCollisionBox startingLocation;
@@ -44,6 +46,7 @@ public class ReachInterpolationData {
         this.startingLocation = startingLocation;
         final Vector3d pos = position.getPos();
         this.targetLocation = new SimpleCollisionBox(pos.x, pos.y, pos.z, pos.x, pos.y, pos.z, false);
+        this.targetPosition = pos;
         this.player = player;
         this.entity = entity;
 
@@ -69,6 +72,7 @@ public class ReachInterpolationData {
     public ReachInterpolationData(GrimPlayer player, SimpleCollisionBox finishedLoc, PacketEntity entity) {
         this.startingLocation = finishedLoc;
         this.targetLocation = finishedLoc;
+        this.targetPosition = null;
         this.entity = entity;
         this.player = player;
     }
@@ -110,6 +114,22 @@ public class ReachInterpolationData {
 
     private int getInterpolationSteps() {
         return interpolationSteps;
+    }
+
+    public boolean hasActiveInterpolation() {
+        return interpolationStepsLowBound < getInterpolationSteps();
+    }
+
+    public boolean restatesTarget(Vector3d pos, @Nullable Float xRot, @Nullable Float yRot,
+                                  float targetXRot, float targetYRot) {
+        if (targetPosition == null || !hasActiveInterpolation()) return false;
+        if (targetPosition.x != pos.x
+                || targetPosition.y != pos.y
+                || targetPosition.z != pos.z) {
+            return false;
+        }
+
+        return xRot == null || yRot == null || (targetXRot == xRot && targetYRot == yRot);
     }
 
     public SimpleCollisionBox getPossibleLocationCombined() {

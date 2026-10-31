@@ -19,7 +19,7 @@ public class BadPacketsQ extends Check implements PacketCheck {
     public void onPacketReceive(PacketReceiveEvent event) {
         if (event.getPacketType() == Client.ENTITY_ACTION) {
             WrapperPlayClientEntityAction wrapper = new WrapperPlayClientEntityAction(event);
-            if (Math.abs(wrapper.getJumpBoost()) > 100
+            if (wrapper.getJumpBoost() < -100 || wrapper.getJumpBoost() > 100
                     || wrapper.getEntityId() != player.entityID
                     || wrapper.getAction() != Action.START_JUMPING_WITH_HORSE && wrapper.getJumpBoost() != 0) {
                 if (flagAndAlert("boost=" + wrapper.getJumpBoost() + ", action=" + wrapper.getAction() + ", entity=" + wrapper.getEntityId()) && shouldModifyPackets()) {

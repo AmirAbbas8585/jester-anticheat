@@ -5,6 +5,7 @@ import ac.jester.anticheat.platform.api.world.PlatformWorld;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
+import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class BukkitPlatformWorld implements PlatformWorld {
             int blockId = (block.getType().getId() << 4) | block.getData();
             return WrappedBlockState.getByGlobalId(blockId);
         } else {
+            if (BukkitPlatformChunk.isIllegalY(bukkitWorld, y)) return WrappedBlockState.getDefaultState(StateTypes.AIR);
             return SpigotConversionUtil.fromBukkitBlockData(bukkitWorld.getBlockAt(x, y, z).getBlockData());
         }
     }

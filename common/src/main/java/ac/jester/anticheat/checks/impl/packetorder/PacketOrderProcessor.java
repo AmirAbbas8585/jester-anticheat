@@ -5,6 +5,7 @@ import ac.jester.anticheat.checks.type.PacketCheck;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.math.GrimMath;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
@@ -44,7 +45,7 @@ public final class PacketOrderProcessor extends Check implements PacketCheck {
     public void onPacketReceive(PacketReceiveEvent event) {
         final PacketTypeCommon packetType = event.getPacketType();
 
-        if (packetType == PacketType.Play.Client.CLIENT_STATUS) {
+        if (packetType == PacketType.Play.Client.CLIENT_STATUS && event.getServerVersion().isOlderThan(ServerVersion.V_1_12)) {
             if (new WrapperPlayClientClientStatus(event).getAction() == WrapperPlayClientClientStatus.Action.OPEN_INVENTORY_ACHIEVEMENT) {
                 openingInventory = true;
             }
