@@ -1,10 +1,22 @@
+/**
+ *          Jester Anti Cheat Build Configuration
+ *
+ * Build Flags:
+ * -PshadePE=true   - Enables 'lite' mode
+ * -Prelocate=false - Adds 'no_relocate' modifier
+ * -Prelease=true   - Removes commit/modifiers for release build
+ *
+ * Logic in: buildSrc/versioning/BuildConfig.kt & VersionUtil.kt
+ */
+
 import versioning.BuildConfig
 import versioning.VersionUtil
 
 BuildConfig.init(project)
 
-val baseVersion = "0.0.6"
+val baseVersion = "0.0.7"
 group = "ac.jester.anticheat"
+// Clean, fixed version label for the beta (no git/lite build suffixes).
 version = "$baseVersion-beta"
 description = "Jester Anti Cheat - Advanced Minecraft Anti-Cheat."
 
@@ -29,6 +41,7 @@ tasks.register("printVersion") {
     }
 }
 
+// ---------- Java Compile Optimization ----------
 subprojects {
     tasks.withType<JavaCompile>().configureEach {
         options.isFork = true
