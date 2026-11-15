@@ -56,6 +56,9 @@ beta-checks: true
 # on your own server and trust it.
 beta-checks-punishable: false
 
+# Shares identical chunk sections between players to save memory (copy-on-write on edit).
+experimental-chunk-sharing: false
+
 # Above this ping (ms) checks still alert but won't punish, so nobody gets
 # kicked for lag. BadPackets, Crash and Exploit ignore it. 0 turns it off.
 high-ping:

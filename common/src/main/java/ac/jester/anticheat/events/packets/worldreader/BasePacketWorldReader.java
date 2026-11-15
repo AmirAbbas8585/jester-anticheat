@@ -20,6 +20,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerMu
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUnloadChunk;
 
 public class BasePacketWorldReader extends PacketListenerAbstract {
+
     public BasePacketWorldReader() {
         super(PacketListenerPriority.HIGH);
     }
@@ -34,6 +35,7 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
             unloadChunk(player, unloadChunk.getChunkX(), unloadChunk.getChunkZ());
         }
 
+        // 1.7 and 1.8 only
         if (event.getPacketType() == PacketType.Play.Server.MAP_CHUNK_BULK) {
             GrimPlayer player = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(event.getUser());
             if (player == null) return;
@@ -97,6 +99,7 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
     }
 
     public void handleMapChunkBulk(GrimPlayer player, PacketSendEvent event) {
+        // Only exists in 1.7 and 1.8
         WrapperPlayServerChunkDataBulk chunkData = new WrapperPlayServerChunkDataBulk(event);
         for (int i = 0; i < chunkData.getChunks().length; i++) {
             addChunkToCache(event, player, chunkData.getChunks()[i], true, chunkData.getX()[i], chunkData.getZ()[i]);
@@ -116,24 +119,20 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
 
         for (TeleportData teleports : player.getSetbackTeleportUtil().pendingTeleports) {
             if (teleports.getFlags().getMask() != 0) {
-                continue;
+                continue; // Worse that will happen is people will get an extra setback...
             }
             shouldPostTrans = shouldPostTrans || (Math.abs(teleports.getLocation().getX() - chunkCenterX) < 16 && Math.abs(teleports.getLocation().getZ() - chunkCenterZ) < 16);
         }
 
         if (shouldPostTrans) {
-            event.getTasksAfterSend().add(player::sendTransaction);
+            event.getTasksAfterSend().add(player::sendTransaction); // Player is in this unloaded chunk
         }
         if (isGroundUp) {
-            Column column = new Column(chunkX, chunkZ, chunks, player.lastTransactionSent.get());
+            Column column = new Column(chunkX, chunkZ, chunks, new long[chunks.length], player.lastTransactionSent.get());
             player.compensatedWorld.addToCache(column, chunkX, chunkZ);
         } else {
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
-                Column existingColumn = player.compensatedWorld.getChunk(chunkX, chunkZ);
-                if (existingColumn == null) {
-                    return;
-                }
-                existingColumn.mergeChunks(chunks);
+                ac.jester.anticheat.utils.chunks.ChunkSectionCache.mergeIncomingSections(player.compensatedWorld, chunkX, chunkZ, chunks);
             });
         }
     }
@@ -148,6 +147,7 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
         int range = 16;
 
         Vector3i blockPosition = blockChange.getBlockPosition();
+        // Don't spam transactions (block changes are sent in batches)
         if (Math.abs(blockPosition.getX() - player.x) < range && Math.abs(blockPosition.getY() - player.y) < range && Math.abs(blockPosition.getZ() - player.z) < range &&
                 player.lastTransSent + 2 < System.currentTimeMillis())
             player.sendTransaction();
@@ -162,12 +162,14 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
 
         final var blocks = multiBlockChange.getBlocks();
         for (WrapperPlayServerMultiBlockChange.EncodedBlock blockChange : blocks) {
+            // Don't send a transaction unless it's within 16 blocks of the player
             if (Math.abs(blockChange.getX() - player.x) < range && Math.abs(blockChange.getY() - player.y) < range && Math.abs(blockChange.getZ() - player.z) < range && player.lastTransSent + 2 < System.currentTimeMillis()) {
                 player.sendTransaction();
                 break;
             }
         }
 
+        // Add a single runnable to prevent excessive memory use when there are lots of block changes
         player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
             for (WrapperPlayServerMultiBlockChange.EncodedBlock blockChange : blocks) {
                 player.compensatedWorld.updateBlock(blockChange.getX(), blockChange.getY(), blockChange.getZ(), blockChange.getBlockId());

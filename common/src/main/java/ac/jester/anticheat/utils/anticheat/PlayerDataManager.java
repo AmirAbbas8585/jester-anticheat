@@ -20,10 +20,9 @@ public class PlayerDataManager {
 
     @Nullable
     public GrimPlayer getPlayer(final @NotNull UUID uuid) {
+        // Is it safe to interact with this, or is this internal PacketEvents code?
         Object channel = PacketEvents.getAPI().getProtocolManager().getChannel(uuid);
-        if (channel == null) return null;
         User user = PacketEvents.getAPI().getProtocolManager().getUser(channel);
-        if (user == null) return null;
         return getPlayer(user);
     }
 
@@ -40,6 +39,7 @@ public class PlayerDataManager {
         if (!ChannelHelper.isOpen(user.getChannel())) return false;
 
         if (user.getUUID() != null) {
+            // Has exempt permission
             GrimPlayer grimPlayer = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(user);
             if (grimPlayer != null && grimPlayer.hasPermission("jester.exempt")) {
                 exemptUsers.add(user);
@@ -59,7 +59,9 @@ public class PlayerDataManager {
     }
 
     public GrimPlayer remove(final @NotNull User user) {
-        return playerDataMap.remove(user);
+        GrimPlayer removed = playerDataMap.remove(user);
+        if (removed != null) ac.jester.anticheat.utils.chunks.ChunkSectionCache.releaseSharedSections(removed.compensatedWorld);
+        return removed;
     }
 
     public void onDisconnect(User user) {
@@ -69,8 +71,9 @@ public class PlayerDataManager {
 
         UUID uuid = user.getProfile().getUUID();
 
+        // Check if calling async is safe
         if (uuid == null)
-            return;
+            return; // folia doesn't like null getPlayer()
 
         GrimAPI.INSTANCE.getAlertManager().handlePlayerQuit(
                 GrimAPI.INSTANCE.getPlatformPlayerFactory().getFromUUID(uuid)
@@ -82,6 +85,7 @@ public class PlayerDataManager {
 
         GrimAPI.INSTANCE.getSpectateManager().onQuit(uuid);
 
+        // TODO (Cross-platform) confirm this is 100% correct and will always remove players from cache when necessary
         GrimAPI.INSTANCE.getPlatformPlayerFactory().invalidatePlayer(uuid);
     }
 
