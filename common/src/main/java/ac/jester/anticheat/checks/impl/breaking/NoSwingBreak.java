@@ -6,6 +6,7 @@ import ac.jester.anticheat.checks.type.BlockBreakCheck;
 import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.anticheat.update.BlockBreak;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.DiggingAction;
 
 @CheckData(name = "NoSwingBreak", description = "Did not swing while breaking block", experimental = true)

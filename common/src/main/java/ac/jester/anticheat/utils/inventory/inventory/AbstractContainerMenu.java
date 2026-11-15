@@ -24,6 +24,7 @@ import java.util.Set;
 
 public abstract class AbstractContainerMenu {
     protected final GrimPlayer player;
+    // Quick crafting/dragging
     private int quickcraftStatus = 0;
     private int quickcraftType = -1;
     private final Set<Slot> quickcraftSlots = Sets.newHashSet();
@@ -113,6 +114,7 @@ public abstract class AbstractContainerMenu {
     }
 
     public void setCarried(ItemStack stack) {
+        // Cannot be null
         carriedItem = stack == null ? ItemStack.EMPTY : stack;
     }
 
@@ -187,11 +189,11 @@ public abstract class AbstractContainerMenu {
             this.resetQuickCraft();
         } else if ((clickType == WrapperPlayClientClickWindow.WindowClickType.PICKUP || clickType == WrapperPlayClientClickWindow.WindowClickType.QUICK_MOVE) && (button == 0 || button == 1)) {
             ClickAction clickAction = ClickAction.values()[button];
-            if (slotID == -999) {
+            if (slotID == -999) { // Drop item
                 if (!getCarried().isEmpty()) {
-                    if (clickAction == ClickAction.PRIMARY) {
+                    if (clickAction == ClickAction.PRIMARY) { // Drops the entire stack
                         setCarried(ItemStack.EMPTY);
-                    } else {
+                    } else { // Drops a single item
                         getCarried().split(1);
                     }
                 }
@@ -214,11 +216,15 @@ public abstract class AbstractContainerMenu {
                 ItemStack slotItem = slot.getItem();
                 ItemStack carriedItem = getCarried();
 
+                // TODO: What do we do with crafting? I think this is overkill and we shouldn't attempt to track crafting, and just resync inventory.
+                // 1.17+ clients send changed itemstacks anyways, so just hack around stuff until people stop using decade old versions.
                 if (slot instanceof ResultSlot) {
                     player.inventory.isPacketInventoryActive = false;
                     player.inventory.needResend = true;
                 }
 
+                // TODO: Bundle support
+                //if (!carriedItem.overrideStackedOnOther(slotItem, clickAction) && !slotItem.overrideOtherStackedOnMe(slotItem, clickAction, carriedItem)) {
                 if (slotItem.isEmpty()) {
                     if (!carriedItem.isEmpty()) {
                         int l2 = clickAction == ClickAction.PRIMARY ? carriedItem.getAmount() : 1;
@@ -248,14 +254,19 @@ public abstract class AbstractContainerMenu {
                         });
                     }
                 }
+                //}
             }
         } else if (clickType == WrapperPlayClientClickWindow.WindowClickType.SWAP) {
             Slot hoveringSlot = slots.get(slotID);
 
+            // How the fuck did the player SWAP with true slot 38 (chestplate?)??
+            // A vanilla client can't do this... what cheat does this?
+            // TODO: What cheat does this?
             if (button != 40 && (button < 0 || button >= 9)) return;
 
             button = button == 40 ? Inventory.SLOT_OFFHAND : button + Inventory.HOTBAR_OFFSET;
 
+            // 40 is offhand
             ItemStack hotbarKeyStack = getPlayerInventoryItem(button);
             ItemStack hoveringItem2 = hoveringSlot.getItem();
 

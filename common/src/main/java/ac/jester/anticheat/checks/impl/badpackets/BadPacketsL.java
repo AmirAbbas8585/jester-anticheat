@@ -14,6 +14,7 @@ import java.util.Locale;
 
 @CheckData(name = "BadPacketsL", description = "Sent impossible dig packet")
 public class BadPacketsL extends Check implements PacketCheck {
+
     public BadPacketsL(GrimPlayer player) {
         super(player);
     }
@@ -27,6 +28,8 @@ public class BadPacketsL extends Check implements PacketCheck {
                 return;
 
             final boolean directionChange = packet.getAction() == DiggingAction.CHANGE_DESTROY_DIRECTION;
+            // 1.8 and above clients always send digging packets that aren't used for digging at 0, 0, 0, facing DOWN
+            // 1.7 and below clients do the same, except use SOUTH for RELEASE_USE_ITEM
             final boolean allowLegacyFace = player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_7_10)
                     && packet.getAction() == DiggingAction.RELEASE_USE_ITEM;
             final boolean isValidFace = directionChange ? packet.getBlockFaceId() >= 0 && packet.getBlockFaceId() <= 5
@@ -40,7 +43,7 @@ public class BadPacketsL extends Check implements PacketCheck {
             ) {
                 if (flagAndAlert("pos="
                         + packet.getBlockPosition().getX() + ", " + packet.getBlockPosition().getY() + ", " + packet.getBlockPosition().getZ()
-                        + ", face=" + packet.getBlockFaceId()
+                        + ", face=" + packet.getBlockFace()
                         + ", sequence=" + packet.getSequence()
                         + ", action=" + packet.getAction().toString().toLowerCase(Locale.ROOT)
                 ) && shouldModifyPackets() && canCancel(packet.getAction())) {

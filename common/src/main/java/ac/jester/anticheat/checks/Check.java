@@ -23,7 +23,8 @@ public class Check extends GrimProcessor implements AbstractCheck {
 
     public double violations;
     private double decay;
-    private double baseDecay;
+    private double baseDecay; // from @CheckData, restored when config stops overriding it
+    /** Whether clear-per-second is set in config for this check; see decayViolations(). */
     private boolean timeDecay;
     private double setbackVL;
 
@@ -48,6 +49,7 @@ public class Check extends GrimProcessor implements AbstractCheck {
         if (checkData != null) {
             this.checkName = checkData.name();
             this.configName = checkData.configName();
+            // Fall back to check name
             if (this.configName.equals("DEFAULT")) this.configName = this.checkName;
             this.decay = checkData.decay();
             this.baseDecay = this.decay;
@@ -67,20 +69,28 @@ public class Check extends GrimProcessor implements AbstractCheck {
                 && !player.noModifyPacketPermission
                 && !noModifyPacketPermission
                 && !exemptPermission
+                // A check that isn't allowed to judge a Bedrock player must not
+                // cancel or rewrite their packets either — that is what produces
+                // the constant rubber-banding Geyser users see from anticheats.
                 && !ac.jester.anticheat.manager.BedrockPolicy.shouldSkip(player, configName);
     }
 
     public final void updatePermissions() {
         if (configName == null || player.platformPlayer == null) return;
         final String id = configName.toLowerCase();
+        // defaultIfUnset=false is critical: these per-check nodes are not
+        // registered in plugin.yml, and Bukkit's default for unregistered
+        // permissions is OP — without it every OP was silently exempt from
+        // every check (no flags, no alerts)
         exemptPermission = player.platformPlayer.hasPermission("jester.exempt." + id, false);
         noSetbackPermission = player.platformPlayer.hasPermission("jester.nosetback." + id, false);
         noModifyPacketPermission = player.platformPlayer.hasPermission("jester.nomodifypacket." + id, false);
     }
 
+    /** check name -> last time we warned that it was suppressed by low TPS. */
     private static final java.util.Map<String, Long> TPS_SUPPRESSION_WARNED =
             new java.util.concurrent.ConcurrentHashMap<>();
-    private static final long TPS_WARN_INTERVAL_MS = 300_000L;
+    private static final long TPS_WARN_INTERVAL_MS = 300_000L; // 5 minutes per check
 
     private static void warnSuppressedByTps(String checkName, double tps, double required) {
         if (checkName == null) return;
@@ -113,24 +123,46 @@ public class Check extends GrimProcessor implements AbstractCheck {
 
     public final boolean flag(String verbose) {
         if (player.disableGrim || (experimental && !player.isExperimentalChecks()) || exemptPermission)
-            return false;
+            return false; // Avoid calling event if disabled
 
+        // Respect the per-check `enabled` config — a check set to enabled: false
+        // truly stops flagging (no violation, no alert, no setback), not just
+        // silenced alerts. Cached lookup, so this is cheap.
         ac.jester.anticheat.manager.JesterCheckConfig.CheckSettings checkCfg = configName == null
                 ? null : ac.jester.anticheat.manager.JesterCheckConfig.get(configName);
         if (checkCfg != null && !checkCfg.enabled)
             return false;
 
+        // minimum-tps was documented in every check's config block and read into
+        // CheckSettings, but nothing ever actually compared it against the live
+        // TPS — a server lag spike (packets processed late/bunched) distorts
+        // wall-clock-based timing checks like FastBreak with no way to suppress
+        // it. Below this TPS, treat it as noise rather than a violation.
         if (checkCfg != null) {
             double tps = GrimAPI.INSTANCE.getPlatformServer().getTPS();
             if (tps < checkCfg.minimumTps) {
+                // Say so. A check silenced this way produces no violation, no
+                // alert, no console line and no database row, which is
+                // indistinguishable from the player being clean — a cheater
+                // went unreported this way once already. Rate-limited hard so a
+                // laggy server cannot spam the log.
                 warnSuppressedByTps(configName, tps, checkCfg.minimumTps);
                 return false;
             }
         }
 
+        // GSit seats, crawling, and player-sit stacks distort position, pose,
+        // ground state, and hitboxes — suppress all flags while seated and
+        // shortly after standing up (the dismount teleport)
         if (ac.jester.anticheat.hooks.ExemptionProvider.safe().isSitting(player))
             return false;
 
+        // Bedrock players reach us through Geyser, which translates a different
+        // movement model, synthesises interaction rotation for touch controls,
+        // and produces click patterns no mouse makes. Checks built on those
+        // assumptions would flag them constantly for playing normally, so the
+        // affected ones are skipped — see BedrockPolicy for what still runs and
+        // why. Packet-integrity checks deliberately stay on.
         if (ac.jester.anticheat.manager.BedrockPolicy.shouldSkip(player, configName))
             return false;
 
@@ -172,6 +204,23 @@ public class Check extends GrimProcessor implements AbstractCheck {
         violations = Math.max(0, violations - decay);
     }
 
+    /**
+     * Time-based decay, applied once a second by
+     * {@link ac.jester.anticheat.manager.init.start.ViolationDecayer}, but ONLY
+     * for checks whose config sets clear-per-second explicitly.
+     *
+     * reward() only runs when a check chooses to call it, and several never do,
+     * so their violations could only ever go up; for noisy checks that is how
+     * one-off glitches piled up into alerts. Configuring clear-per-second opts a
+     * check into real per-second decay.
+     *
+     * It must stay opt-in. Many checks judge rare, high-confidence EVENTS —
+     * AutoRespawn once per death, AutoTotem once per totem pop, AutoFish once
+     * per catch — and flag far less often than once a second. Decaying those on
+     * a timer erased each violation before the next event could arrive, so they
+     * could never reach their threshold. The annotation's decay value was also
+     * tuned as a per-reward amount, not a per-second one.
+     */
     public final void decayViolations() {
         if (!timeDecay || violations <= 0) return;
         violations = Math.max(0, violations - decay);
@@ -192,6 +241,7 @@ public class Check extends GrimProcessor implements AbstractCheck {
 
     @Override
     public void onReload(ConfigManager config) {
+
     }
 
     public boolean alert(String verbose) {
@@ -220,13 +270,14 @@ public class Check extends GrimProcessor implements AbstractCheck {
 
     public static boolean isAsync(PacketTypeCommon packetType) {
         return packetType == PacketType.Play.Client.KEEP_ALIVE
-                || packetType == PacketType.Play.Client.CHUNK_BATCH_ACK
-                || packetType == PacketType.Play.Client.RESOURCE_PACK_STATUS;
+                || packetType == PacketType.Play.Client.CHUNK_BATCH_ACK;
     }
 
     public boolean isUpdate(PacketTypeCommon packetType) {
         return isFlying(packetType)
-                || packetType == PacketType.Play.Client.CLIENT_TICK_END
+                // ViaBackwards emulates this packet for clients older than 1.21.2, and it can arrive
+                // before the movement packet of the same client tick, so it tells us nothing about them
+                || packetType == PacketType.Play.Client.CLIENT_TICK_END && player.supportsEndTick()
                 || isTransaction(packetType);
     }
 
@@ -240,13 +291,30 @@ public class Check extends GrimProcessor implements AbstractCheck {
         return false;
     }
 
+    /**
+     * Whether this client marks EVERY tick with a packet, so that counting
+     * "per tick" or "for N ticks" by tick packets is meaningful.
+     *
+     * 1.21.2+ sends tick_end every tick and 1.8 sends a movement packet every
+     * tick. 1.9 to 1.21.1 send nothing at all while the player neither moves nor
+     * turns, apart from a position reminder every 20 ticks, so for them one
+     * "tick" by packet count can be a whole second of real time. A check that
+     * counts things per tick then sees, for a player standing still at a mob
+     * grinder, several ordinary clicks as one impossible burst.
+     */
     public boolean hasPerTickMarker() {
         ClientVersion version = player.getClientVersion();
         return version.isOlderThanOrEquals(ClientVersion.V_1_8)
                 || version.isNewerThanOrEquals(ClientVersion.V_1_21_2);
     }
 
+    public static boolean isAnimation(PacketTypeCommon packetType) {
+        return packetType == PacketType.Play.Client.ANIMATION || packetType == PacketType.Play.Client.PUNCH;
+    }
+
     public boolean isTickPacketIncludingNonMovement(PacketTypeCommon packetType) {
+        // On 1.21.2+ fall back to the TICK_END packet IF the player did not send a movement packet for their tick
+        // TickTimer checks to see if player did not send a tick end packet before new flying packet is sent
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2)
                 && !player.packetStateData.didSendMovementBeforeTickEnd) {
             if (packetType == PacketType.Play.Client.CLIENT_TICK_END) {
@@ -257,10 +325,17 @@ public class Check extends GrimProcessor implements AbstractCheck {
         return isFlying(packetType);
     }
 
+    // Backported from upstream Grim (2.0 branch, "fix noslow with invalid drop
+    // item packets"): cancelling a DROP_ITEM/DROP_ITEM_STACK packet leaves the
+    // client thinking it dropped an item it didn't actually drop — desyncs
+    // inventory state and can itself look like a NoSlow false. RELEASE_USE_ITEM
+    // is excluded for the same kind of reason (was already excluded before this).
     public boolean canCancel(com.github.retrooper.packetevents.protocol.player.DiggingAction action) {
         return action != com.github.retrooper.packetevents.protocol.player.DiggingAction.RELEASE_USE_ITEM
+                // 1.8- doesn't predict dropping items, so it's safe to cancel them there.
                 && (action != com.github.retrooper.packetevents.protocol.player.DiggingAction.DROP_ITEM
                         && action != com.github.retrooper.packetevents.protocol.player.DiggingAction.DROP_ITEM_STACK
                         || player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_8));
     }
+
 }

@@ -4,7 +4,9 @@ import ac.jester.anticheat.checks.Check;
 import ac.jester.anticheat.checks.CheckData;
 import ac.jester.anticheat.checks.type.PacketCheck;
 import ac.jester.anticheat.player.GrimPlayer;
+import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 
 @CheckData(name = "BadPacketsR", decay = 0.25, experimental = true)
@@ -37,12 +39,19 @@ public class BadPacketsR extends Check implements PacketCheck {
                 oldTransId = player.lastTransactionSent.get();
             }
         }
+        //
         if ((event.getPacketType() == PacketType.Play.Client.PLAYER_POSITION_AND_ROTATION ||
                 event.getPacketType() == PacketType.Play.Client.PLAYER_POSITION) && !player.inVehicle()) {
             positions++;
         } else if ((event.getPacketType() == PacketType.Play.Client.STEER_VEHICLE || event.getPacketType() == PacketType.Play.Client.VEHICLE_MOVE)
                 && player.inVehicle()) {
             positions++;
+        } else if (event.getPacketType() == PacketType.Play.Client.PLAYER_ROTATION && player.inVehicle()
+                && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_2)) {
+            // 1.21.2 replaced steer vehicle with player input, which is only sent when the input changes
+            // The rotation is the only packet a passenger still sends every tick
+            positions++;
         }
     }
+
 }

@@ -10,6 +10,8 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 
 @CheckData(name = "NoSlow", description = "Was not slowed while using an item", setback = 5)
 public class NoSlow extends Check implements PostPredictionCheck {
+    // The player sends that they switched items the next tick if they switch from an item that can be used
+    // to another item that can be used.  What the fuck mojang.  Affects 1.8 (and most likely 1.7) clients.
     public boolean didSlotChangeLastTick = false;
     public boolean flaggedLastTick = false;
     private double offsetToFlag;
@@ -23,7 +25,9 @@ public class NoSlow extends Check implements PostPredictionCheck {
     public void onPredictionComplete(final PredictionComplete predictionComplete) {
         if (!predictionComplete.isChecked()) return;
 
+        // If the player was using an item for certain, and their predicted velocity had a flipped item
         if (player.packetStateData.isSlowedByUsingItem()) {
+            // 1.8 users are not slowed the first tick they use an item, strangely
             if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_8) && didSlotChangeLastTick) {
                 didSlotChangeLastTick = false;
                 flaggedLastTick = false;
@@ -38,6 +42,9 @@ public class NoSlow extends Check implements PostPredictionCheck {
                 reward();
                 flaggedLastTick = false;
             }
+        } else {
+            // A failed tick from an earlier item use must not count towards the next one
+            flaggedLastTick = false;
         }
         bestOffset = 1;
     }
