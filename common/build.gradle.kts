@@ -6,8 +6,10 @@ plugins {
 }
 
 repositories {
+    // We still call mavenLocal() conditionally at the top for non-exclusive deps (general fallback)
     if (BuildConfig.mavenLocalOverride) mavenLocal()
 
+    // Grim API from grim snapshots; PacketEvents releases from CodeMC
     exclusiveContent {
         if (BuildConfig.mavenLocalOverride) {
             forRepositories(
@@ -31,16 +33,19 @@ repositories {
         }
     }
 
+    // ViaVersion
     exclusive("https://repo.viaversion.com", { mavenContent { releasesOnly() } }) {
         includeGroup("com.viaversion")
     }
 
+    // Configuralize
     exclusive("https://nexus.scarsz.me/content/repositories/releases", { mavenContent { releasesOnly() } }) {
         includeGroup("github.scarsz")
     }
 
     mavenCentral()
 }
+
 
 dependencies {
     if (BuildConfig.shadePE) {
@@ -61,6 +66,7 @@ dependencies {
     api(libs.adventure.text.minimessage)
     api(libs.jetbrains.annotations)
     api(libs.hikaricp)
+    // MySQL connector — shaded so MySQL mode works out-of-the-box; SQLite is bundled with Paper
     implementation(libs.mysql.connector)
 
     api(libs.grim.api)
@@ -70,6 +76,8 @@ dependencies {
     compileOnly(libs.viaversion)
     compileOnly(libs.netty)
 
+    // Provided by Paper at runtime (previously pulled in transitively by the
+    // removed floodgate-api dependency)
     compileOnly("com.google.guava:guava:32.1.2-jre")
     compileOnly("com.google.code.gson:gson:2.10.1")
     compileOnly("com.google.code.findbugs:jsr305:3.0.2")
@@ -79,6 +87,16 @@ publishing.publications.create<MavenPublication>("maven") {
     from(components["java"])
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bundled-config validation, run before every build.
+//
+// YAML quietly keeps only the LAST of two identical keys in the same block, so a
+// duplicated key is not an error anywhere at runtime: the earlier copy, often a
+// whole block, simply stops existing. That has shipped more than once (AimA's
+// punishment-commands). This fails the build instead. It also requires every
+// bundled file to carry config-version, which ConfigMigrator relies on to know
+// when an existing file needs rebuilding.
+// ─────────────────────────────────────────────────────────────────────────────
 val validateBundledConfig by tasks.registering {
     val files = fileTree("src/main/resources") { include("config/*.yml", "messages/*.yml") }
     inputs.files(files)
@@ -86,6 +104,7 @@ val validateBundledConfig by tasks.registering {
         val keyLine = Regex("""^(\s*)(- )?('[^']*'|"[^"]*"|[^\s#'"-][^:]*?):(\s|$)""")
         val problems = mutableListOf<String>()
         files.forEach { file ->
+            // (indent, key path, keys already seen directly under it)
             val stack = ArrayDeque<Triple<Int, String, MutableSet<String>>>()
             stack.addLast(Triple(-1, "", mutableSetOf()))
             file.readLines().forEachIndexed { index, raw ->
@@ -96,6 +115,7 @@ val validateBundledConfig by tasks.registering {
                 var indent = match.groupValues[1].length
                 val key = match.groupValues[3].trim('\'', '"')
                 if (match.groupValues[2].isNotEmpty()) {
+                    // "- key:" starts a new list item: a fresh scope of its own
                     while (stack.last().first >= indent) stack.removeLast()
                     stack.addLast(Triple(indent, stack.last().second + "[-]", mutableSetOf()))
                     indent += 2

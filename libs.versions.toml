@@ -12,7 +12,7 @@ cloud-processors-requirements = "1.0.0-rc.1"
 grim-api = "1.6.0.13"
 packetevents = "2.14.1+addb80e-SNAPSHOT"
 placeholderapi = "2.11.6"
-viaversion = "5.5.0"
+viaversion = "5.9.0"
 
 # --- General Java Utilities ---
 fastutil = "8.5.15"
