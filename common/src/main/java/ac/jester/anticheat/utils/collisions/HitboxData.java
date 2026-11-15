@@ -39,6 +39,7 @@ import java.util.Set;
 
 import static ac.jester.anticheat.utils.lists.ArrayUtils.combine;
 
+// Expansion to the CollisionData class, which is different than regular ray tracing hitboxes
 public enum HitboxData implements HitBoxFactory {
     VINE((player, item, version, data, isTargetBlock, x, y, z) -> {
         ComplexCollisionBox boxes = new ComplexCollisionBox(5);
@@ -63,6 +64,8 @@ public enum HitboxData implements HitBoxFactory {
         case ASCENDING_NORTH, ASCENDING_SOUTH, ASCENDING_EAST, ASCENDING_WEST -> {
             if (version.isOlderThan(ClientVersion.V_1_8)) {
                 StateType railType = data.getType();
+                // Activator rails always appear as flat detector rails in 1.7.10 because of ViaVersion
+                // Ascending power rails in 1.7 have flat rail hitbox https://bugs.mojang.com/browse/MC-9134
                 if (railType == StateTypes.ACTIVATOR_RAIL || (railType == StateTypes.POWERED_RAIL && data.isPowered())) {
                     yield new SimpleCollisionBox(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F, false);
                 }
@@ -70,8 +73,10 @@ public enum HitboxData implements HitBoxFactory {
             } else if (version.isOlderThan(ClientVersion.V_1_9)) {
                 yield new SimpleCollisionBox(0.0F, 0.0F, 0.0F, 1.0F, 0.625F, 1.0F, false);
             } else if (version.isNewerThanOrEquals(ClientVersion.V_1_9) && version.isOlderThan(ClientVersion.V_1_10)) {
+                // https://bugs.mojang.com/browse/MC-89552 sloped rails in 1.9 - it is slightly taller than a regular rail
                 yield new SimpleCollisionBox(0.0F, 0.0F, 0.0F, 1.0F, 0.15625F, 1.0F, false);
             } else if (version.isOlderThan(ClientVersion.V_1_11)) {
+                // https://bugs.mojang.com/browse/MC-102638 All sloped rails are full blocks in 1.10
                 yield new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
             }
             yield new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 8.0D, 16.0D);
@@ -110,6 +115,7 @@ public enum HitboxData implements HitBoxFactory {
         return isXAxis ? new HexCollisionBox(6.0D, 0.0D, 0.0D, 10.0D, 16.0D, 16.0D) : new HexCollisionBox(0.0D, 0.0D, 6.0D, 16.0D, 16.0D, 10.0D);
     }, BlockTags.FENCE_GATES.getStates().toArray(new StateType[0])),
 
+
     FENCE(new DynamicHitboxFence(), BlockTags.FENCES.getStates().toArray(new StateType[0])),
 
     PANE(new DynamicHitboxPane(), Materials.getPanes().toArray(new StateType[0])),
@@ -141,10 +147,13 @@ public enum HitboxData implements HitBoxFactory {
 
         return switch (face) {
             case FLOOR -> {
+                // X-AXIS
                 if (facing == BlockFace.EAST || facing == BlockFace.WEST) {
                     yield new SimpleCollisionBox(0.25, 0.0, 0.3125, 0.75, 0.375, 0.6875, false);
                 }
+                // Z-AXIS
                 yield new SimpleCollisionBox(0.3125, 0.0, 0.25, 0.6875, 0.375, 0.75, false);
+                // Z-AXIS
             }
             case WALL -> switch (facing) {
                 case EAST -> new SimpleCollisionBox(0.0, 0.25, 0.3125, 0.375, 0.75, 0.6875, false);
@@ -153,9 +162,11 @@ public enum HitboxData implements HitBoxFactory {
                 default -> new SimpleCollisionBox(0.3125, 0.25, 0.625, 0.6875, 0.75, 1.0, false);
             };
             default -> {
+                // X-AXIS
                 if (facing == BlockFace.EAST || facing == BlockFace.WEST) {
                     yield new SimpleCollisionBox(0.25, 0.625, 0.3125, 0.75, 1.0, 0.6875, false);
                 }
+                // Z-Axis
                 yield new SimpleCollisionBox(0.3125, 0.625, 0.25, 0.6875, 1.0, 0.75, false);
             }
         };
@@ -165,6 +176,7 @@ public enum HitboxData implements HitBoxFactory {
         final Face face = data.getFace();
         final BlockFace facing = data.getFacing();
         final boolean powered = data.isPowered();
+
 
         if (version.isOlderThan(ClientVersion.V_1_13)) {
             double f2 = (float) (data.isPowered() ? 1 : 2) / 16.0;
@@ -188,6 +200,7 @@ public enum HitboxData implements HitBoxFactory {
             }
         }
 
+
         switch (face) {
             case WALL:
                 return switch (facing) {
@@ -202,18 +215,22 @@ public enum HitboxData implements HitBoxFactory {
                     default -> NoCollisionBox.INSTANCE;
                 };
             case CEILING:
+                // ViaVersion shows lever
                 if (player.getClientVersion().isOlderThan(ClientVersion.V_1_8)) {
                     return LEVER.dynamic.fetch(player, item, version, data, isTargetBlock, x, y, z);
                 }
+                // x axis
                 if (facing == BlockFace.EAST || facing == BlockFace.WEST) {
                     return powered ? new HexCollisionBox(6.0, 15.0, 5.0, 10.0, 16.0, 11.0) : new HexCollisionBox(6.0, 14.0, 5.0, 10.0, 16.0, 11.0);
                 } else {
                     return powered ? new HexCollisionBox(5.0, 15.0, 6.0, 11.0, 16.0, 10.0) : new HexCollisionBox(5.0, 14.0, 6.0, 11.0, 16.0, 10.0);
                 }
             case FLOOR:
+                // ViaVersion shows lever
                 if (player.getClientVersion().isOlderThan(ClientVersion.V_1_8)) {
                     return LEVER.dynamic.fetch(player, item, version, data, isTargetBlock, x, y, z);
                 }
+                // x axis
                 if (facing == BlockFace.EAST || facing == BlockFace.WEST) {
                     return powered ? new HexCollisionBox(6.0, 0.0, 5.0, 10.0, 1.0, 11.0) : new HexCollisionBox(6.0, 0.0, 5.0, 10.0, 2.0, 11.0);
                 }
@@ -268,6 +285,7 @@ public enum HitboxData implements HitBoxFactory {
             StateTypes.BROWN_BANNER, StateTypes.GREEN_BANNER, StateTypes.RED_BANNER, StateTypes.BLACK_BANNER),
 
     WALL_BANNER((player, item, version, data, isTargetBlock, x, y, z) -> {
+        // ViaVersion replacement block
         if (version.isOlderThan(ClientVersion.V_1_8)) {
             return WALL_SIGN.dynamic.fetch(player, item, version, data, isTargetBlock, x, y, z);
         }
@@ -287,6 +305,8 @@ public enum HitboxData implements HitBoxFactory {
             StateTypes.BROWN_WALL_BANNER, StateTypes.GREEN_WALL_BANNER, StateTypes.RED_WALL_BANNER, StateTypes.BLACK_WALL_BANNER),
 
     BREWING_STAND((player, item, version, block, isTargetBlock, x, y, z) -> {
+        // BEWARE OF https://bugs.mojang.com/browse/MC-85109 FOR 1.8 PLAYERS
+        // 1.8 Brewing Stand hitbox is a fullblock until it is hit sometimes, can be caused be restarting client and joining server
         if (version.isOlderThan(ClientVersion.V_1_13)) {
             if (isTargetBlock && block.getType() == StateTypes.BREWING_STAND && player.getClientVersion().equals(ClientVersion.V_1_8)) {
                 return new ComplexCollisionBox(2,
@@ -312,12 +332,15 @@ public enum HitboxData implements HitBoxFactory {
     FIRE((player, item, version, data, isTargetBlock, x, y, z) -> {
         if (version.isNewerThanOrEquals(ClientVersion.V_1_16)) {
             ComplexCollisionBox boxes = new ComplexCollisionBox(5);
+            // FIXME: via does fire wrong
+            // FIXME: this doesn't work on 1.8 servers
 
             if (data.getWest() == West.TRUE) boxes.add(new HexCollisionBox(0, 0, 0, 1, 16, 16));
             if (data.getEast() == East.TRUE) boxes.add(new HexCollisionBox(15, 0, 0, 16, 16, 16));
             if (data.getNorth() == North.TRUE) boxes.add(new HexCollisionBox(0, 0, 0, 16, 16, 1));
             if (data.getSouth() == South.TRUE) boxes.add(new HexCollisionBox(0, 0, 15, 16, 16, 16));
 
+            // TODO: when was isUp() added?
             if (data.hasProperty(StateValue.UP) && data.isUp()) {
                 boxes.add(new HexCollisionBox(0, 15, 0, 16, 16, 16));
             }
@@ -337,6 +360,7 @@ public enum HitboxData implements HitBoxFactory {
 
     CACTUS((player, item, version, data, isTargetBlock, x, y, z) -> {
         if (version.isOlderThan(ClientVersion.V_1_13)) {
+            // https://bugs.mojang.com/browse/MC-59610
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
         }
         return new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 16.0D, 15.0D);
@@ -361,7 +385,7 @@ public enum HitboxData implements HitBoxFactory {
             common.add(new HexCollisionBox(10.666667D, 10.0D, 0.0D, 15.0D, 14.0D, 16.0D));
             common.add(new HexCollisionBox(6.333333D, 12.0D, 0.0D, 10.666667D, 16.0D, 16.0D));
             common.add(new HexCollisionBox(2.0D, 14.0D, 0.0D, 6.333333D, 18.0D, 16.0D));
-        } else {
+        } else { // SOUTH
             common.add(new HexCollisionBox(0.0D, 10.0D, 10.666667D, 16.0D, 14.0D, 15.0D));
             common.add(new HexCollisionBox(0.0D, 12.0D, 6.333333D, 16.0D, 16.0D, 10.666667D));
             common.add(new HexCollisionBox(0.0D, 14.0D, 2.0D, 16.0D, 18.0D, 6.333333D));
@@ -394,7 +418,7 @@ public enum HitboxData implements HitBoxFactory {
             }
 
             return box;
-        } else {
+        } else { // ViaVersion just replaces this with... nothing
             return NoCollisionBox.INSTANCE;
         }
     }, StateTypes.GLOW_LICHEN, StateTypes.SCULK_VEIN, StateTypes.RESIN_CLUMP),
@@ -402,7 +426,7 @@ public enum HitboxData implements HitBoxFactory {
     SPORE_BLOSSOM((player, item, version, data, isTargetBlock, x, y, z) -> {
         if (version.isNewerThan(ClientVersion.V_1_16_4)) {
             return new HexCollisionBox(2.0D, 13.0D, 2.0D, 14.0D, 16.0D, 14.0D);
-        } else {
+        } else { // ViaVersion replacement is a Peony
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
         }
     }, StateTypes.SPORE_BLOSSOM),
@@ -446,9 +470,12 @@ public enum HitboxData implements HitBoxFactory {
     PUMPKIN_STEM((player, item, version, data, isTargetBlock, x, y, z) ->
             new HexCollisionBox(7, 0, 7, 9, 2 * (data.getAge() + 1), 9), StateTypes.PUMPKIN_STEM, StateTypes.MELON_STEM),
 
+    // Hitbox/Outline is Same as Collision
     COCOA_BEANS((player, item, version, data, isTargetBlock, x, y, z) ->
             CollisionData.getCocoa(version, data.getAge(), data.getFacing()), StateTypes.COCOA),
 
+    // Easier to just use no collision box
+    // Redstone wire is very complex with its collision shapes and has many de-syncs
     REDSTONE_WIRE(NoCollisionBox.INSTANCE, StateTypes.REDSTONE_WIRE),
 
     SWEET_BERRY((player, item, version, data, isTargetBlock, x, y, z) -> {
@@ -484,6 +511,7 @@ public enum HitboxData implements HitBoxFactory {
         if (data.getAge() == 0) {
             return new HexCollisionBox(5.0D, 0.0D, 5.0D, 11.0D, 6.0D, 11.0D);
         }
+        // age is 1
         return new HexCollisionBox(5.0D, 0.0D, 5.0D, 11.0D, 10.0D, 11.0D);
     }, StateTypes.TORCHFLOWER_CROP),
 
@@ -525,6 +553,7 @@ public enum HitboxData implements HitBoxFactory {
 
     FUNGUS(new HexCollisionBox(4, 0, 4, 12, 9, 12), StateTypes.CRIMSON_FUNGUS, StateTypes.WARPED_FUNGUS),
 
+    // Then your enum entries become:
     TWISTING_VINES_BLOCK((player, item, version, data, isTargetBlock, x, y, z) ->
             getVineCollisionBox(version, false, true), StateTypes.TWISTING_VINES),
 
@@ -547,10 +576,12 @@ public enum HitboxData implements HitBoxFactory {
             new HexOffsetCollisionBox(data.getType(), 4.0D, 0.0D, 4.0D, 12.0D, 12.0D, 12.0D), StateTypes.BAMBOO_SAPLING),
 
     SCAFFOLDING((player, item, version, data, isTargetBlock, x, y, z) -> {
+        // holding scaffolding or via replacement (hay bale)
         if (item == StateTypes.SCAFFOLDING || version.isOlderThan(ClientVersion.V_1_14)) {
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
         }
 
+        // STABLE_SHAPE for the scaffolding
         ComplexCollisionBox box = new ComplexCollisionBox(9,
                 new HexCollisionBox(0.0D, 14.0D, 0.0D, 16.0D, 16.0D, 16.0D),
                 new HexCollisionBox(0.0D, 0.0D, 0.0D, 2.0D, 16.0D, 2.0D),
@@ -558,7 +589,7 @@ public enum HitboxData implements HitBoxFactory {
                 new HexCollisionBox(0.0D, 0.0D, 14.0D, 2.0D, 16.0D, 16.0D),
                 new HexCollisionBox(14.0D, 0.0D, 14.0D, 16.0D, 16.0D, 16.0D));
 
-        if (data.isBottom()) {
+        if (data.isBottom()) { // Add the unstable shape to the collision boxes
             box.add(new HexCollisionBox(0.0D, 0.0D, 0.0D, 2.0D, 2.0D, 16.0D));
             box.add(new HexCollisionBox(14.0D, 0.0D, 0.0D, 16.0D, 2.0D, 16.0D));
             box.add(new HexCollisionBox(0.0D, 0.0D, 14.0D, 16.0D, 2.0D, 16.0D));
@@ -574,7 +605,7 @@ public enum HitboxData implements HitBoxFactory {
 
         ComplexCollisionBox box = new ComplexCollisionBox(2);
 
-        if (data.getFacing() == BlockFace.NORTH) {
+        if (data.getFacing() == BlockFace.NORTH) { // Stem
             box.add(new HexCollisionBox(5.0D, 0.0D, 9.0D, 11.0D, 15.0D, 15.0D));
         } else if (data.getFacing() == BlockFace.SOUTH) {
             box.add(new HexCollisionBox(5.0D, 0.0D, 1.0D, 11.0D, 15.0D, 7.0D));
@@ -591,6 +622,7 @@ public enum HitboxData implements HitBoxFactory {
         }
 
         return box;
+
     }, StateTypes.BIG_DRIPLEAF),
 
     PINK_PETALS_BLOCK((player, item, version, data, isTargetBlock, x, y, z) -> {
@@ -615,7 +647,7 @@ public enum HitboxData implements HitBoxFactory {
     FROGSPAWN((player, item, version, data, isTargetBlock, x, y, z) -> {
         if (version.isNewerThan(ClientVersion.V_1_18_2)) {
             return new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 1.5D, 16.0D);
-        } else {
+        } else { // ViaVersion just replaces this with... nothing
             return NoCollisionBox.INSTANCE;
         }
     }, StateTypes.FROGSPAWN),
@@ -638,11 +670,13 @@ public enum HitboxData implements HitBoxFactory {
     LEAF_LITTER((player, item, version, data, isTargetBlock, x, y, z)
             -> version.isNewerThan(ClientVersion.V_1_21_4)
             ? getSegmentedHitBox(data.getSegmentAmount(), data.getFacing(), 1)
+            // GLOW_LICHEN Facing Upwards, can't call glow lichen dynamic because data has no isUp() key
             : new HexCollisionBox(0.0D, 15.0D, 0.0D, 16.0D, 16.0D, 16.0D), StateTypes.LEAF_LITTER),
 
     WILDFLOWERS((player, item, version, data, isTargetBlock, x, y, z)
             -> version.isNewerThan(ClientVersion.V_1_21_4)
             ? getSegmentedHitBox(data.getFlowerAmount(), data.getFacing(), 3)
+            // GLOW_LICHEN Facing Upwards, can't call glow lichen dynamic because data has no isUp() key
             : new HexCollisionBox(0.0D, 15.0D, 0.0D, 16.0D, 16.0D, 16.0D), StateTypes.WILDFLOWERS),
 
     CACTUS_FLOWER((player, item, version, data, isTargetBlock, x, y, z)
@@ -650,6 +684,7 @@ public enum HitboxData implements HitBoxFactory {
             ? new SimpleCollisionBox(0.0625, 0, 0.0625, 0.9375, 0.75, 0.9375)
             : CORAL_FAN.box.copy(), StateTypes.CACTUS_FLOWER),
 
+    // always a fullblock hitbox. Via replacement is obsidian
     SCULK_SHRIEKER(new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true), StateTypes.SCULK_SHRIEKER);
 
     private static final Map<StateType, HitboxData> lookup = new HashMap<>();
@@ -669,14 +704,14 @@ public enum HitboxData implements HitBoxFactory {
     HitboxData(CollisionBox box, StateType... materials) {
         this.box = box;
         Set<StateType> mList = new HashSet<>(Arrays.asList(materials));
-        mList.remove(null);
+        mList.remove(null); // Sets can contain one null
         this.materials = mList.toArray(new StateType[0]);
     }
 
     HitboxData(HitBoxFactory dynamic, StateType... materials) {
         this.dynamic = dynamic;
         Set<StateType> mList = new HashSet<>(Arrays.asList(materials));
-        mList.remove(null);
+        mList.remove(null); // Sets can contain one null
         this.materials = mList.toArray(new StateType[0]);
     }
 
@@ -693,6 +728,7 @@ public enum HitboxData implements HitBoxFactory {
         HitboxData data = getData(block.getType());
 
         if (data == null) {
+            // Fall back to collision boxes
             return CollisionData.getRawData(block.getType()).getMovementCollisionBox(player, version, block, x, y, z);
         }
 
@@ -715,6 +751,7 @@ public enum HitboxData implements HitBoxFactory {
                         : new SimpleCollisionBox(0.0625, 0, 0.0625, 0.9375, 1, 0.9375)
                     : new SimpleCollisionBox(0.25, 0, 0.25, 0.75, isBlock ? 0.9375 : 1, 0.75);
         } else {
+            // Via replacement - 4 sided vine
             return new ComplexCollisionBox(4,
                     new SimpleCollisionBox(0, 0, 0, 0.0625, 1, 1),
                     new SimpleCollisionBox(0.9375, 0, 0, 1, 1, 1),
@@ -724,14 +761,15 @@ public enum HitboxData implements HitBoxFactory {
         }
     }
 
+    // TODO, optimize? We don't have to return a CCB and will never return NCB, use SCB.encompass()?
     private static CollisionBox getSegmentedHitBox(int segments, BlockFace facing, int height) {
         return switch (segments) {
             case 0 -> NoCollisionBox.INSTANCE;
             case 1 -> switch (facing) {
-                case SOUTH -> new SimpleCollisionBox(0.5, 0, 0.5, 1, height / 16d, 1, false);
-                case WEST -> new SimpleCollisionBox(0.5, 0, 0, 1, height / 16d, 0.5, false);
-                case NORTH -> new SimpleCollisionBox(0, 0, 0, 0.5, height / 16d, 0.5, false);
-                case EAST -> new SimpleCollisionBox(0, 0, 0.5, 0.5, height / 16d, 1, false);
+                case SOUTH -> new SimpleCollisionBox(0.5, 0, 0.5, 1, height / 16d, 1, false); // SE
+                case WEST -> new SimpleCollisionBox(0.5, 0, 0, 1, height / 16d, 0.5, false);  // NE
+                case NORTH -> new SimpleCollisionBox(0, 0, 0, 0.5, height / 16d, 0.5, false); // NW
+                case EAST -> new SimpleCollisionBox(0, 0, 0.5, 0.5, height / 16d, 1, false);  // SW
                 default -> throw new IllegalStateException("Unexpected value: " + facing);
             };
             case 2 -> switch (facing) {

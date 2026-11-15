@@ -32,6 +32,7 @@ import java.util.Set;
 
 @UtilityClass
 public class BlockBreakSpeed {
+    // temporary hardcode to workaround PE bug https://github.com/retrooper/packetevents/issues/1217; see https://github.com/GrimAnticheat/Grim/issues/2117
     private static final Set<StateType> HARVESTABLE_TYPES_1_21_4 = Sets.newHashSet(
             StateTypes.BELL,
             StateTypes.LANTERN,
@@ -53,8 +54,21 @@ public class BlockBreakSpeed {
             StateTypes.ENDER_CHEST
     );
 
+    // Backported from upstream Grim (2.0 branch, #2610): same PE bug
+    // (retrooper/packetevents#1217), same workaround pattern, this time for
+    // the Vault block. See https://github.com/GrimAnticheat/Grim/issues/2574
     private static final Set<StateType> HARVESTABLE_TYPES_1_21 = Sets.newHashSet(
             StateTypes.VAULT
+    );
+
+    // the infested blocks that exist on 1.16.5 and below, see getBlockDamage
+    private static final Set<StateType> OLD_INFESTED_BLOCKS = Sets.newHashSet(
+            StateTypes.INFESTED_STONE,
+            StateTypes.INFESTED_COBBLESTONE,
+            StateTypes.INFESTED_STONE_BRICKS,
+            StateTypes.INFESTED_MOSSY_STONE_BRICKS,
+            StateTypes.INFESTED_CRACKED_STONE_BRICKS,
+            StateTypes.INFESTED_CHISELED_STONE_BRICKS
     );
 
     private static final boolean SERVER_USES_COMPONENTS_AND_RULES = PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_20_5);
@@ -68,6 +82,8 @@ public class BlockBreakSpeed {
     }
 
     public static double getBlockDamage(GrimPlayer player, ItemStack tool, StateType block) {
+        // GET destroy speed
+        // Starts with itemstack get destroy speed
         ItemType toolType = tool.getType();
 
         if (player.gamemode == GameMode.CREATIVE) {
@@ -87,11 +103,27 @@ public class BlockBreakSpeed {
 
         float blockHardness = block.getHardness();
 
+        // 1.15.2 and below need this hack
         if ((block == StateTypes.PISTON || block == StateTypes.PISTON_HEAD || block == StateTypes.STICKY_PISTON) && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_15_2)) {
             blockHardness = 0.5f;
         }
 
-        if (blockHardness == -1) return 0;
+        // 1.14.4 and below have end stone bricks at 0.8, same for the stairs, slab and wall 1.14 added. 1.15 changed all of them to 3
+        if ((block == StateTypes.END_STONE_BRICKS || block == StateTypes.END_STONE_BRICK_STAIRS || block == StateTypes.END_STONE_BRICK_SLAB
+                || block == StateTypes.END_STONE_BRICK_WALL) && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14_4)) {
+            blockHardness = 0.8f;
+        }
+
+        // Infested blocks broke instantly on 1.13 - 1.16.5 and were all 0.75 before that, 1.17 gave them half the hardness of the block they look like
+        if (OLD_INFESTED_BLOCKS.contains(block)) {
+            if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_12_2)) {
+                blockHardness = 0.75f;
+            } else if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_4)) {
+                blockHardness = 0;
+            }
+        }
+
+        if (blockHardness == -1) return 0; // Unbreakable block
 
         final ToolSpeedData toolSpeedData;
         if (SERVER_USES_COMPONENTS_AND_RULES && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)) {
@@ -103,7 +135,9 @@ public class BlockBreakSpeed {
         final float speedMultiplier = getSpeedMultiplierFromToolData(player, tool, toolSpeedData);
 
         final boolean canHarvest = !block.isRequiresCorrectTool() || toolSpeedData.isCorrectToolForDrop
+                // temporary hardcode to workaround PE bug https://github.com/retrooper/packetevents/issues/1217; see https://github.com/GrimAnticheat/Grim/issues/2091
                 || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_4) && HARVESTABLE_TYPES_1_21_4.contains(block)
+                // same reason as above; see https://github.com/GrimAnticheat/Grim/issues/2574
                 || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21) && HARVESTABLE_TYPES_1_21.contains(block);
 
         float damage = speedMultiplier / blockHardness;
@@ -115,9 +149,15 @@ public class BlockBreakSpeed {
         float speedMultiplier = data.speedMultiplier;
 
         if (speedMultiplier > 1.0f) {
+            // Raw vanilla Efficiency bonus from the ACTUAL enchant level — this
+            // formula is correct for any level, including over-vanilla ones like
+            // Efficiency 10.
             int digSpeed = tool.getEnchantmentLevel(EnchantmentTypes.BLOCK_EFFICIENCY);
             float enchantBonus = digSpeed > 0 ? digSpeed * digSpeed + 1 : 0;
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21)) {
+                // On 1.21+ vanilla uses a mining-efficiency attribute, but it may
+                // not fully reflect an over-max Efficiency level — take whichever
+                // is larger so a high Efficiency is always counted (no false flag).
                 float attr = (float) player.compensatedEntities.self.getAttributeValue(Attributes.MINING_EFFICIENCY);
                 speedMultiplier += Math.max(attr, enchantBonus);
             } else {
@@ -155,7 +195,7 @@ public class BlockBreakSpeed {
 
         speedMultiplier *= (float) player.compensatedEntities.self.getAttributeValue(Attributes.BLOCK_BREAK_SPEED);
 
-        if (player.isEyeInFluid(FluidTag.WATER)) {
+        if (player.fluidOnEyes == FluidTag.WATER) {
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21)) {
                 speedMultiplier *= (float) player.compensatedEntities.self.getAttributeValue(Attributes.SUBMERGED_MINING_SPEED);
             } else {
@@ -172,6 +212,9 @@ public class BlockBreakSpeed {
         return speedMultiplier;
     }
 
+    // TODO technically its possible to use packet level manipulation to enforce Tool rules on newer clients on older servers
+    // But I've yet to hear of anyone even trying to do such a thing rather than just update the server
+    // And we can't support this because we don't see the tool components/data before Via
     private static ToolSpeedData getModernToolSpeedData(GrimPlayer player, ItemStack tool, StateType block) {
         Optional<ItemTool> toolComponentOpt = tool.getComponent(ComponentTypes.TOOL);
         float speedMultiplier = 1.0f;
@@ -179,6 +222,8 @@ public class BlockBreakSpeed {
         if (toolComponentOpt.isPresent()) {
             ItemTool itemTool = toolComponentOpt.get();
 
+            // Initialize with final default values. These will be used if the loop doesn't find a value.
+            // isCorrectToolForDrop is already set to false, no need to set again as default
             speedMultiplier = itemTool.getDefaultMiningSpeed();
 
             boolean speedFound = false;
@@ -189,6 +234,7 @@ public class BlockBreakSpeed {
                 ResourceLocation tagKey = predicate.getTagKey();
                 boolean isMatch;
 
+                // First, determine if the current rule even applies to this block.
                 if (tagKey != null) {
                     SyncedTag<StateType> playerTag = player.tagManager.block(tagKey);
                     isMatch = (playerTag != null && playerTag.contains(block))
@@ -197,12 +243,15 @@ public class BlockBreakSpeed {
                     isMatch = predicate.getEntities().contains(block.getMapped());
                 }
 
+                // If the rule matches the block, check if we still need its properties.
                 if (isMatch) {
+                    // Check for speed if we haven't found it yet.
                     if (!speedFound && rule.getSpeed() != null) {
                         speedMultiplier = rule.getSpeed();
                         speedFound = true;
                     }
 
+                    // Check for drops if we haven't found it yet.
                     if (!dropsFound && rule.getCorrectForDrops() != null) {
                         isCorrectToolForDrop = rule.getCorrectForDrops();
                         dropsFound = true;
@@ -221,6 +270,7 @@ public class BlockBreakSpeed {
         ItemType toolType = tool.getType();
         float speedMultiplier = 1.0f;
         boolean isCorrectToolForDrop = false;
+        // 1.13 and below need their own huge methods to support this...
         if (toolType.hasAttribute(ItemTypes.ItemAttribute.AXE)) {
             isCorrectToolForDrop = player.tagManager.block(SyncedTags.MINEABLE_AXE).contains(block);
         } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.PICKAXE)) {
@@ -233,20 +283,20 @@ public class BlockBreakSpeed {
 
         if (isCorrectToolForDrop) {
             int tier = 0;
-            if (toolType.hasAttribute(ItemTypes.ItemAttribute.WOOD_TIER)) {
+            if (toolType.hasAttribute(ItemTypes.ItemAttribute.WOOD_TIER)) { // Tier 0
                 speedMultiplier = 2.0f;
-            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.STONE_TIER)) {
+            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.STONE_TIER)) { // Tier 1
                 speedMultiplier = 4.0f;
                 tier = 1;
-            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.IRON_TIER)) {
+            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.IRON_TIER)) { // Tier 2
                 speedMultiplier = 6.0f;
                 tier = 2;
-            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.DIAMOND_TIER)) {
+            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.DIAMOND_TIER)) { // Tier 3
                 speedMultiplier = 8.0f;
                 tier = 3;
-            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.GOLD_TIER)) {
+            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.GOLD_TIER)) { // Tier 0
                 speedMultiplier = 12.0f;
-            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.NETHERITE_TIER)) {
+            } else if (toolType.hasAttribute(ItemTypes.ItemAttribute.NETHERITE_TIER)) { // Tier 4
                 speedMultiplier = 9.0f;
                 tier = 4;
             }
@@ -260,6 +310,7 @@ public class BlockBreakSpeed {
             }
         }
 
+        // Shears can mine some blocks faster
         if (toolType == ItemTypes.SHEARS) {
             isCorrectToolForDrop = true;
 
@@ -277,6 +328,7 @@ public class BlockBreakSpeed {
             }
         }
 
+        // Swords can also mine some blocks faster
         if (toolType.hasAttribute(ItemTypes.ItemAttribute.SWORD)) {
             if (block == StateTypes.COBWEB) {
                 speedMultiplier = 15.0f;
@@ -286,6 +338,9 @@ public class BlockBreakSpeed {
 
             isCorrectToolForDrop = block == StateTypes.COBWEB;
         }
+        //
         return new ToolSpeedData(speedMultiplier, isCorrectToolForDrop);
     }
+
+
 }

@@ -27,8 +27,12 @@ public class WorldRayTrace {
     public static HitData getNearestBlockHitResult(GrimPlayer player, StateType heldItem, boolean sourcesHaveHitbox, boolean fluidPlacement, boolean itemUsePlacement) {
         Vector3d startingPos = new Vector3d(player.x, player.y + player.getEyeHeight(), player.z);
         Vector3dm startingVec = new Vector3dm(startingPos.getX(), startingPos.getY(), startingPos.getZ());
-        Ray trace = new Ray(player, startingPos.getX(), startingPos.getY(), startingPos.getZ(), player.yaw, player.pitch);
-        final double distance = itemUsePlacement && player.getClientVersion().isOlderThan(ClientVersion.V_1_20_5) ? 5 : player.compensatedEntities.self.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
+        boolean legacyItemRay = itemUsePlacement && player.getClientVersion().isOlderThan(ClientVersion.V_1_20_5);
+        Vector3dm direction = legacyItemRay
+                ? ReachUtils.getLegacyLook(player, player.yaw, player.pitch)
+                : ReachUtils.getLook(player, player.yaw, player.pitch);
+        Ray trace = new Ray(startingVec, direction);
+        final double distance = legacyItemRay ? 5.0 : player.compensatedEntities.self.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
         Vector3dm endVec = trace.getPointAtDistance(distance);
         Vector3d endPos = new Vector3d(endVec.getX(), endVec.getY(), endVec.getZ());
 
@@ -48,7 +52,7 @@ public class WorldRayTrace {
 
             for (SimpleCollisionBox box : boxes) {
                 Pair<Vector3dm, BlockFace> intercept = ReachUtils.calculateIntercept(box, trace.getOrigin(), trace.getPointAtDistance(distance));
-                if (intercept.first() == null) continue;
+                if (intercept.first() == null) continue; // No intercept
 
                 Vector3dm hitLoc = intercept.first();
 
@@ -80,7 +84,13 @@ public class WorldRayTrace {
         });
     }
 
+    // Copied from MCP...
+    // Returns null if there isn't anything.
+    //
+    // I do have to admit that I'm starting to like bifunctions/new java 8 things more than I originally did.
+    // although I still don't understand Mojang's obsession with streams in some of the hottest methods... that kills performance
     public static HitData traverseBlocks(GrimPlayer player, Vector3d start, Vector3d end, BiFunction<WrappedBlockState, Vector3i, HitData> predicate) {
+        // I guess go back by the collision epsilon?
         double endX = GrimMath.lerp(-1.0E-7D, end.x, start.x);
         double endY = GrimMath.lerp(-1.0E-7D, end.y, start.y);
         double endZ = GrimMath.lerp(-1.0E-7D, end.z, start.z);
@@ -90,6 +100,7 @@ public class WorldRayTrace {
         int floorStartX = GrimMath.floor(startX);
         int floorStartY = GrimMath.floor(startY);
         int floorStartZ = GrimMath.floor(startZ);
+
 
         if (start.equals(end)) return null;
 
@@ -115,6 +126,7 @@ public class WorldRayTrace {
         double d13 = posYInverse * (ySign > 0 ? 1.0D - GrimMath.frac(startY) : GrimMath.frac(startY));
         double d14 = posZInverse * (zSign > 0 ? 1.0D - GrimMath.frac(startZ) : GrimMath.frac(startZ));
 
+        // Can't figure out what this code does currently
         while (d12 <= 1.0D || d13 <= 1.0D || d14 <= 1.0D) {
             if (d12 < d13) {
                 if (d12 < d14) {

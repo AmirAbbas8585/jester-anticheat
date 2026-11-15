@@ -5,8 +5,10 @@ import ac.jester.anticheat.utils.data.Pair;
 import ac.jester.anticheat.utils.math.Vector3dm;
 import lombok.Getter;
 
+// Copied directly from Hawk
 @Getter
 public class Ray implements Cloneable {
+
     private final Vector3dm origin;
     private final Vector3dm direction;
 
@@ -21,14 +23,7 @@ public class Ray implements Cloneable {
     }
 
     public static Vector3dm calculateDirection(GrimPlayer player, float xRot, float yRot) {
-        Vector3dm vector = new Vector3dm();
-        float rotX = (float) Math.toRadians(xRot);
-        float rotY = (float) Math.toRadians(yRot);
-        vector.setY(-player.trigHandler.sin(rotY));
-        double xz = player.trigHandler.cos(rotY);
-        vector.setX(-xz * player.trigHandler.sin(rotX));
-        vector.setZ(xz * player.trigHandler.cos(rotX));
-        return vector;
+        return ReachUtils.getLook(player, xRot, yRot);
     }
 
     @SuppressWarnings("MethodDoesntCallSuperMethod")
@@ -47,6 +42,7 @@ public class Ray implements Cloneable {
         return orig.add(dir.multiply(distance));
     }
 
+    // https://en.wikipedia.org/wiki/Skew_lines#Nearest_Points
     public Pair<Vector3dm, Vector3dm> closestPointsBetweenLines(Ray other) {
         Vector3dm n1 = direction.clone().crossProduct(other.direction.clone().crossProduct(direction));
         Vector3dm n2 = other.direction.clone().crossProduct(direction.clone().crossProduct(other.direction));

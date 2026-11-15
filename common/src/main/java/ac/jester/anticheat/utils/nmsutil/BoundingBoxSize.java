@@ -19,6 +19,7 @@ import lombok.experimental.UtilityClass;
  */
 @UtilityClass
 public final class BoundingBoxSize {
+
     public static float getWidth(GrimPlayer player, PacketEntity packetEntity) {
         float width = getWidthMinusBaby(player, packetEntity);
         return width * (packetEntity.isBaby ? getBabyScaleFactor(player, packetEntity) : 1f);
@@ -39,8 +40,6 @@ public final class BoundingBoxSize {
             return 0.7f;
         } else if (type == EntityTypes.WITHER_SKELETON) {
             return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) ? 0.7f : 0.72f;
-        } else if (type == EntityTypes.WITHER_SKULL || type == EntityTypes.SHULKER_BULLET) {
-            return 0.3125f;
         } else if (type == EntityTypes.HOGLIN || type == EntityTypes.ZOGLIN) {
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2) && packetEntity.isBaby) return 0.75f;
             return 1.3964844f;
@@ -69,13 +68,13 @@ public final class BoundingBoxSize {
             }
 
             return 1.5f;
-        } else if (packetEntity instanceof PacketEntityGuardian packetEntityGuardian) {
+        } else if (packetEntity instanceof PacketEntityGuardian packetEntityGuardian) { // TODO: 2.35 * guardian?
             return packetEntityGuardian.isElder ? 1.9975f : 0.85f;
         } else if (type == EntityTypes.END_CRYSTAL) {
             return 2f;
         } else if (type == EntityTypes.ENDER_DRAGON) {
             return 16f;
-        } else if (type == EntityTypes.FIREBALL) {
+        } else if (type == EntityTypes.FIREBALL || type == EntityTypes.DRAGON_FIREBALL) {
             return 1f;
         } else if (type == EntityTypes.GHAST) {
             return 4f;
@@ -90,37 +89,34 @@ public final class BoundingBoxSize {
                 float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
-                        ? 2.04f * (0.255f * size) : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
-                        ? 0.51000005f * size : 0.6f * size;
+                        ? 2.04f * (0.255f * size)
+                        : 0.51000005f * size;
             }
 
             return 0.98f;
         } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.MINECART_ABSTRACT)) {
             return 0.98f;
         } else if (type == EntityTypes.PLAYER || type == EntityTypes.MANNEQUIN) {
-            float width = packetEntity.currentPose.width;
-            if (packetEntity.transitionalPose != null) {
-                width = Math.max(width, packetEntity.transitionalPose.width);
-            }
-
-            return width;
+            return 0.6f;
         } else if (type == EntityTypes.POLAR_BEAR) {
             return 1.4f;
         } else if (type == EntityTypes.RAVAGER) {
             return 1.95f;
         } else if (type == EntityTypes.SHULKER) {
             return 1f;
-        } else if (type == EntityTypes.SLIME) {
+        } else if (type == EntityTypes.SULFUR_CUBE && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2)) {
+            if (packetEntity instanceof PacketEntitySizeable sizeable) {
+                return 0.49f * sizeable.size;
+            }
+            return 0.3125f;
+        } else if (type == EntityTypes.SLIME || (player.getClientVersion().isOlderThan(ClientVersion.V_26_2) && type == EntityTypes.SULFUR_CUBE)) {
             if (packetEntity instanceof PacketEntitySizeable sizeable) {
                 float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
-                        ? 2.04f * (0.255f * size) : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
-                        ? 0.51000005f * size : 0.6f * size;
+                        ? 2.04f * (0.255f * size) : 0.51000005f * size;
             }
 
-            return 0.3125f;
-        } else if (type == EntityTypes.SMALL_FIREBALL) {
             return 0.3125f;
         } else if (type == EntityTypes.SPIDER) {
             return 1.4f;
@@ -135,17 +131,23 @@ public final class BoundingBoxSize {
         } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.CAMEL)) {
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2) && packetEntity.isBaby) return 0.95f;
             return 1.7f;
-        } else if (type == EntityTypes.WIND_CHARGE) {
-            return 0.3125f;
         } else if (type == EntityTypes.ARMOR_STAND) {
             return 0.5F;
         } else if (type == EntityTypes.FALLING_BLOCK) {
             return 0.98F;
-        } else if (type == EntityTypes.FIREWORK_ROCKET) {
-            return 0.25F;
         } else if ((EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_PIGLIN) || type == EntityTypes.DROWNED || type == EntityTypes.HUSK || type == EntityTypes.ZOMBIE || type == EntityTypes.VILLAGER || type == EntityTypes.ZOMBIE_VILLAGER || type == EntityTypes.ZOMBIFIED_PIGLIN) &&
-                        player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1) && packetEntity.isBaby) {
+                player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1) && packetEntity.isBaby) {
             return 0.49f;
+        } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_ARROW)) {
+            return 0.5f;
+        } else if (type == EntityTypes.WITHER_SKULL || type == EntityTypes.SHULKER_BULLET
+                || EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_WIND_CHARGE)
+                || type == EntityTypes.SMALL_FIREBALL) {
+            return 0.3125f;
+        } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.PROJECTILE_ABSTRACT) // this includes wind charges, so it must be after the wind charge check
+                || type == EntityTypes.FIREWORK_ROCKET || type == EntityTypes.EYE_OF_ENDER
+                || type == EntityTypes.LLAMA_SPIT || type == EntityTypes.FISHING_BOBBER) {
+            return 0.25f;
         }
         return 0.6f;
     }
@@ -157,9 +159,14 @@ public final class BoundingBoxSize {
         double z = (box.maxZ + box.minZ) / 2d;
 
         if (entity instanceof PacketEntityTrackXRot xRotEntity) {
+            // Horses desync here, and we can't do anything about it without interpolating animations.
+            // Mojang just has to fix it.  I'm not attempting to fix it.
+            // Striders also do the same with animations, causing a desync.
+            // At least the only people using buckets are people in boats for villager transportation
+            // and people trying to false the anticheat.
             if (EntityTypes.isTypeInstanceOf(entity.type, EntityTypes.BOAT)) {
                 float f = 0f;
-                float f1 = (float) (getPassengerRidingOffset(player, entity) - 0.35f);
+                float f1 = (float) (getPassengerRidingOffset(player, entity) - 0.35f); // hardcoded player offset
 
                 if (!entity.passengers.isEmpty()) {
                     int i = entity.passengers.indexOf(player.compensatedEntities.self);
@@ -239,7 +246,6 @@ public final class BoundingBoxSize {
         } else if (type == EntityTypes.HAPPY_GHAST) {
             return 0.5;
         } else if (type == EntityTypes.HOGLIN || type == EntityTypes.ZOGLIN) {
-            if (packetEntity.isBaby && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2)) return 0.875;
             return getHeight(player, packetEntity) - (packetEntity.isBaby ? 0.2 : 0.15);
         } else if (type == EntityTypes.LLAMA) {
             return getHeight(player, packetEntity) * 0.67;
@@ -251,11 +257,9 @@ public final class BoundingBoxSize {
             return (getHeight(player, packetEntity) * 0.75) - 0.1875;
         } else if (type == EntityTypes.SPIDER) {
             return getHeight(player, packetEntity) * 0.5;
-        } else if (type == EntityTypes.STRIDER) {
-            if (packetEntity.isBaby && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2)) return 0.65625;
+        } else if (type == EntityTypes.STRIDER) {// depends on animation position, good luck getting it exactly, this is the best you can do though
             return getHeight(player, packetEntity) - 0.19;
         }
-
         return getHeight(player, packetEntity) * 0.75;
     }
 
@@ -276,14 +280,14 @@ public final class BoundingBoxSize {
             return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1) && packetEntity.isBaby ? 0.63f : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) ? 0.8f : 0.95f;
         } else if (type == EntityTypes.PARROT || type == EntityTypes.BAT || type == EntityTypes.PIG || type == EntityTypes.SPIDER) {
             return 0.9f;
-        } else if (type == EntityTypes.WITHER_SKULL || type == EntityTypes.SHULKER_BULLET) {
-            return 0.3125f;
         } else if (type == EntityTypes.BLAZE) {
             return 1.8f;
         } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.BOAT)) {
+            // WHY DOES VIAVERSION OFFSET BOATS? THIS MAKES IT HARD TO SUPPORT, EVEN IF WE INTERPOLATE RIGHT.
+            // I gave up and just exempted boats from the reach check and gave up with interpolation for collisions
             return 0.5625f;
-        } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_NAUTILUS)) {
-            return 0.95f;
+        } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.NAUTILUS)) {
+            return 0.95F;
         } else if (type == EntityTypes.HAPPY_GHAST) {
             return 4.0f;
         } else if (type == EntityTypes.CAT) {
@@ -305,7 +309,7 @@ public final class BoundingBoxSize {
             return 1.7f;
         } else if (type == EntityTypes.DONKEY) {
             return 1.5f;
-        } else if (packetEntity instanceof PacketEntityGuardian packetEntityGuardian) {
+        } else if (packetEntity instanceof PacketEntityGuardian packetEntityGuardian) { // TODO: 2.35 * guardian?
             return packetEntityGuardian.isElder ? 1.9975f : 0.85f;
         } else if (type == EntityTypes.ENDERMAN || type == EntityTypes.WARDEN) {
             return 2.9f;
@@ -315,7 +319,7 @@ public final class BoundingBoxSize {
             return 2f;
         } else if (type == EntityTypes.ENDER_DRAGON) {
             return 8f;
-        } else if (type == EntityTypes.FIREBALL) {
+        } else if (type == EntityTypes.FIREBALL || type == EntityTypes.DRAGON_FIREBALL) {
             return 1f;
         } else if (type == EntityTypes.FOX) {
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2) && packetEntity.isBaby) return 0.42f;
@@ -341,8 +345,8 @@ public final class BoundingBoxSize {
                 float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
-                        ? 2.04f * (0.255f * size) : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
-                        ? 0.51000005f * size : 0.6f * size;
+                        ? 2.04f * (0.255f * size)
+                        : 0.51000005f * size;
             }
 
             return 0.7f;
@@ -363,12 +367,7 @@ public final class BoundingBoxSize {
 
             return 1.8f;
         } else if (type == EntityTypes.PLAYER || type == EntityTypes.MANNEQUIN) {
-            float height = packetEntity.currentPose.height;
-            if (packetEntity.transitionalPose != null) {
-                height = Math.max(height, packetEntity.transitionalPose.height);
-            }
-
-            return height;
+            return 1.8f;
         } else if (type == EntityTypes.POLAR_BEAR) {
             return 1.4f;
         } else if (type == EntityTypes.PUFFERFISH) {
@@ -383,7 +382,7 @@ public final class BoundingBoxSize {
         } else if (type == EntityTypes.SHEEP || type == EntityTypes.GOAT) {
             if (type == EntityTypes.GOAT && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2) && packetEntity.isBaby) return 0.65f;
             return 1.3f;
-        } else if (type == EntityTypes.SHULKER) {
+        } else if (type == EntityTypes.SHULKER) { // Could maybe guess peek size, although seems useless
             return 2f;
         } else if (type == EntityTypes.SILVERFISH) {
             return 0.3f;
@@ -391,17 +390,20 @@ public final class BoundingBoxSize {
             return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9) ? 1.99f : 1.95f;
         } else if (type == EntityTypes.SKELETON_HORSE) {
             return 1.6f;
-        } else if (type == EntityTypes.SLIME) {
+        } else if (type == EntityTypes.SULFUR_CUBE && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2)) {
+            if (packetEntity instanceof PacketEntitySizeable sizeable) {
+                return 0.49f * sizeable.size;
+            }
+            return 0.3125f;
+        } else if (type == EntityTypes.SLIME || (player.getClientVersion().isOlderThan(ClientVersion.V_26_2) && type == EntityTypes.SULFUR_CUBE)) {
             if (packetEntity instanceof PacketEntitySizeable sizeable) {
                 float size = sizeable.size;
                 return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_20_5)
                         ? 0.52f * size : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)
-                        ? 2.04f * (0.255f * size) : player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
-                        ? 0.51000005f * size : 0.6f * size;
+                        ? 2.04f * (0.255f * size)
+                        : 0.51000005f * size;
             }
 
-            return 0.3125f;
-        } else if (type == EntityTypes.SMALL_FIREBALL) {
             return 0.3125f;
         } else if (type == EntityTypes.SNOW_GOLEM) {
             return 1.9f;
@@ -430,20 +432,26 @@ public final class BoundingBoxSize {
             return 1.99f;
         } else if (type == EntityTypes.PARCHED) {
             return 1.99f;
-        } else if (type == EntityTypes.WIND_CHARGE) {
-            return 0.3125f;
         } else if (type == EntityTypes.ARMOR_STAND) {
             return 1.975F;
         } else if (type == EntityTypes.FALLING_BLOCK) {
             return 0.98F;
         } else if (type == EntityTypes.VILLAGER && player.getClientVersion().isOlderThan(ClientVersion.V_1_9)) {
             return 1.8F;
-        } else if (type == EntityTypes.FIREWORK_ROCKET) {
-            return 0.25F;
         } else if (type == EntityTypes.COPPER_GOLEM) {
             return 1.0F;
         } else if ((EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_PIGLIN) || type == EntityTypes.DROWNED || type == EntityTypes.HUSK || type == EntityTypes.ZOMBIE || type == EntityTypes.ZOMBIE_VILLAGER || type == EntityTypes.VILLAGER || type == EntityTypes.ZOMBIFIED_PIGLIN) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1) && packetEntity.isBaby) {
             return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_2) ? 0.98f : 0.99f;
+        } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_ARROW)) {
+            return 0.5f;
+        } else if (type == EntityTypes.WITHER_SKULL || type == EntityTypes.SHULKER_BULLET
+                || EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_WIND_CHARGE)
+                || type == EntityTypes.SMALL_FIREBALL) {
+            return 0.3125f;
+        } else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.PROJECTILE_ABSTRACT) // this includes wind charges, so it must be after the wind charge check
+                || type == EntityTypes.FIREWORK_ROCKET || type == EntityTypes.EYE_OF_ENDER
+                || type == EntityTypes.LLAMA_SPIT || type == EntityTypes.FISHING_BOBBER) {
+            return 0.25f;
         }
         return 1.95f;
     }
@@ -459,6 +467,7 @@ public final class BoundingBoxSize {
         else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.CAMEL)) return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1) ? 0.6f : 0.45f;
         else if (EntityTypes.isTypeInstanceOf(type, EntityTypes.ABSTRACT_HORSE) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1)) return 0.7f;
 
+        // in 26.1 mojang refactored baby variants, so they have their own independent size, so we return 1f to make this method do nothing
         else if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_1) && (
                 type == EntityTypes.CHICKEN ||
                         type == EntityTypes.SQUID ||

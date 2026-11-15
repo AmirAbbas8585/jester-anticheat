@@ -13,12 +13,14 @@ import com.github.retrooper.packetevents.protocol.world.states.type.StateValue;
 import lombok.experimental.UtilityClass;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @UtilityClass
 public class Materials {
     private static final Set<StateType> NO_PLACE_LIQUIDS = new HashSet<>();
+    // Includes iron panes in addition to glass panes
     private static final Set<StateType> PANES = new HashSet<>();
     private static final Set<StateType> WATER_LIQUIDS = new HashSet<>();
     private static final Set<StateType> WATER_LIQUIDS_LEGACY = new HashSet<>();
@@ -34,23 +36,47 @@ public class Materials {
 
     private static final Set<StateType> CLIENT_SIDE = new HashSet<>();
 
+    private static final Map<StateType, StateType> CONCRETE_BY_POWDER = Map.ofEntries(
+            Map.entry(StateTypes.WHITE_CONCRETE_POWDER, StateTypes.WHITE_CONCRETE),
+            Map.entry(StateTypes.ORANGE_CONCRETE_POWDER, StateTypes.ORANGE_CONCRETE),
+            Map.entry(StateTypes.MAGENTA_CONCRETE_POWDER, StateTypes.MAGENTA_CONCRETE),
+            Map.entry(StateTypes.LIGHT_BLUE_CONCRETE_POWDER, StateTypes.LIGHT_BLUE_CONCRETE),
+            Map.entry(StateTypes.YELLOW_CONCRETE_POWDER, StateTypes.YELLOW_CONCRETE),
+            Map.entry(StateTypes.LIME_CONCRETE_POWDER, StateTypes.LIME_CONCRETE),
+            Map.entry(StateTypes.PINK_CONCRETE_POWDER, StateTypes.PINK_CONCRETE),
+            Map.entry(StateTypes.GRAY_CONCRETE_POWDER, StateTypes.GRAY_CONCRETE),
+            Map.entry(StateTypes.LIGHT_GRAY_CONCRETE_POWDER, StateTypes.LIGHT_GRAY_CONCRETE),
+            Map.entry(StateTypes.CYAN_CONCRETE_POWDER, StateTypes.CYAN_CONCRETE),
+            Map.entry(StateTypes.PURPLE_CONCRETE_POWDER, StateTypes.PURPLE_CONCRETE),
+            Map.entry(StateTypes.BLUE_CONCRETE_POWDER, StateTypes.BLUE_CONCRETE),
+            Map.entry(StateTypes.BROWN_CONCRETE_POWDER, StateTypes.BROWN_CONCRETE),
+            Map.entry(StateTypes.GREEN_CONCRETE_POWDER, StateTypes.GREEN_CONCRETE),
+            Map.entry(StateTypes.RED_CONCRETE_POWDER, StateTypes.RED_CONCRETE),
+            Map.entry(StateTypes.BLACK_CONCRETE_POWDER, StateTypes.BLACK_CONCRETE)
+    );
+
     static {
+        // Base water, flowing on 1.12- but not on 1.13+ servers
         WATER_LIQUIDS.add(StateTypes.WATER);
         WATER_LIQUIDS_LEGACY.add(StateTypes.WATER);
 
+        // Becomes grass for legacy versions
         WATER_LIQUIDS.add(StateTypes.KELP);
         WATER_SOURCES.add(StateTypes.KELP);
         WATER_LIQUIDS.add(StateTypes.KELP_PLANT);
         WATER_SOURCES.add(StateTypes.KELP_PLANT);
 
+        // Is translated to air for legacy versions
         WATER_SOURCES.add(StateTypes.BUBBLE_COLUMN);
         WATER_LIQUIDS_LEGACY.add(StateTypes.BUBBLE_COLUMN);
         WATER_LIQUIDS.add(StateTypes.BUBBLE_COLUMN);
         WATER_SOURCES_LEGACY.add(StateTypes.BUBBLE_COLUMN);
 
+        // This is not water on 1.12- players
         WATER_SOURCES.add(StateTypes.SEAGRASS);
         WATER_LIQUIDS.add(StateTypes.SEAGRASS);
 
+        // This is not water on 1.12- players`
         WATER_SOURCES.add(StateTypes.TALL_SEAGRASS);
         WATER_LIQUIDS.add(StateTypes.TALL_SEAGRASS);
 
@@ -75,6 +101,8 @@ public class Materials {
         COPPER_TRAPDOORS.add(StateTypes.WAXED_WEATHERED_COPPER_TRAPDOOR);
         COPPER_TRAPDOORS.add(StateTypes.WAXED_OXIDIZED_COPPER_TRAPDOOR);
 
+        // Important blocks where we need to ignore right-clicking on for placing blocks
+        // We can ignore stuff like right-clicking a pumpkin with shears...
         CLIENT_SIDE.add(StateTypes.BARREL);
         CLIENT_SIDE.add(StateTypes.BEACON);
         CLIENT_SIDE.add(StateTypes.BREWING_STAND);
@@ -255,12 +283,16 @@ public class Materials {
 
         StateType type = state.getType();
 
+        // Waterlogged lanterns were added in 1.16.2
         if (clientVersion.isOlderThan(ClientVersion.V_1_16_2) && (type == StateTypes.LANTERN || type == StateTypes.SOUL_LANTERN))
             return false;
+        // ViaVersion small dripleaf -> fern (not waterlogged)
         if (clientVersion.isOlderThan(ClientVersion.V_1_17) && type == StateTypes.SMALL_DRIPLEAF)
             return false;
+        // Waterlogged rails were added in 1.17
         if (clientVersion.isOlderThan(ClientVersion.V_1_17) && BlockTags.RAILS.contains(type))
             return false;
+        // Nice check to see if waterlogged :)
         return state.hasProperty(StateValue.WATERLOGGED) && state.isWaterlogged();
     }
 
@@ -270,15 +302,31 @@ public class Materials {
                 || mat == ItemTypes.TADPOLE_BUCKET;
     }
 
+    public static StateType hardenedConcrete(StateType powder) {
+        return CONCRETE_BY_POWDER.getOrDefault(powder, powder);
+    }
+
     public static StateType transformBucketMaterial(ItemType mat) {
         if (mat == ItemTypes.LAVA_BUCKET) return StateTypes.LAVA;
         if (isPlaceableWaterBucket(mat)) return StateTypes.WATER;
         return null;
     }
 
+    // We are taking a shortcut here for the sake of speed and reducing world lookups
+    // As we have already assumed that the player does not have water at this block
+    // We do not have to track all the version differences in terms of looking for water
+    // For 1.7-1.12 clients, it is safe to check SOLID_BLACKLIST directly
     public static boolean isSolidBlockingBlacklist(StateType mat, ClientVersion ver) {
+        // Thankfully Mojang has not changed this code much across versions
+        // There very likely is a few lurking issues though, I've done my best but can't thoroughly compare 11 versions
+        // but from a look, Mojang seems to keep this definition consistent throughout their game (thankfully)
+        //
+        // What I do is look at 1.8, 1.12, and 1.17 source code, and when I see a difference, I find the version
+        // that added it.  I could have missed something if something was added to the blacklist in 1.9 but
+        // was removed from it in 1.10 (although this is unlikely as the blacklist rarely changes)
         if (!mat.isBlocking()) return true;
 
+        // 1.13-1.15 had banners on the blacklist - removed in 1.16, not implemented in 1.12 and below
         if (BlockTags.BANNERS.contains(mat))
             return ver.isNewerThanOrEquals(ClientVersion.V_1_13) && ver.isOlderThan(ClientVersion.V_1_16);
 
@@ -308,34 +356,42 @@ public class Materials {
     }
 
     public static boolean isClientSideOpenableDoor(StateType mat, ClientVersion ver) {
+        // Iron doors and all other blocks are not openable
         if (!BlockTags.MOB_INTERACTABLE_DOORS.contains(mat)) {
             return false;
         }
 
+        // Copper doors can only be opened in 1.20.3 and above, in older versions they appear as iron doors
         if (COPPER_DOORS.contains(mat)) {
             return ver.isNewerThanOrEquals(ClientVersion.V_1_20_3);
         }
 
+        // If it's not a copper door players in any version can open it
         return true;
     }
 
     public static boolean isClientSideOpenableTrapdoor(StateType mat, ClientVersion ver) {
+        // Everything except trapdoors
         if (!BlockTags.TRAPDOORS.contains(mat)) {
             return false;
         }
 
+        // In 1.7, only oak trapdoors exist so 1.7 players can open every type of trapdoor
         if (ver.isOlderThan(ClientVersion.V_1_8)) {
             return true;
         }
 
+        // Copper trapdoors can only be opened in 1.20.3 and above, in older versions they appear as iron trapdoors
         if (COPPER_TRAPDOORS.contains(mat)) {
             return ver.isNewerThanOrEquals(ClientVersion.V_1_20_3);
         }
 
+        // If it's not a copper or iron trapdoor, players in any version can open it
         return mat != StateTypes.IRON_TRAPDOOR;
     }
 
     public static boolean isCompostable(ItemType material) {
+        // This 3772 character line was auto generated
         return ItemTypes.JUNGLE_LEAVES.equals(material) || ItemTypes.OAK_LEAVES.equals(material) || ItemTypes.SPRUCE_LEAVES.equals(material) || ItemTypes.DARK_OAK_LEAVES.equals(material) || ItemTypes.ACACIA_LEAVES.equals(material) || ItemTypes.BIRCH_LEAVES.equals(material) || ItemTypes.AZALEA_LEAVES.equals(material) || ItemTypes.OAK_SAPLING.equals(material) || ItemTypes.SPRUCE_SAPLING.equals(material) || ItemTypes.BIRCH_SAPLING.equals(material) || ItemTypes.JUNGLE_SAPLING.equals(material) || ItemTypes.ACACIA_SAPLING.equals(material) || ItemTypes.DARK_OAK_SAPLING.equals(material) || ItemTypes.BEETROOT_SEEDS.equals(material) || ItemTypes.DRIED_KELP.equals(material) || ItemTypes.SHORT_GRASS.equals(material) || ItemTypes.KELP.equals(material) || ItemTypes.MELON_SEEDS.equals(material) || ItemTypes.PUMPKIN_SEEDS.equals(material) || ItemTypes.SEAGRASS.equals(material) || ItemTypes.SWEET_BERRIES.equals(material) || ItemTypes.GLOW_BERRIES.equals(material) || ItemTypes.WHEAT_SEEDS.equals(material) || ItemTypes.MOSS_CARPET.equals(material) || ItemTypes.SMALL_DRIPLEAF.equals(material) || ItemTypes.HANGING_ROOTS.equals(material) || ItemTypes.DRIED_KELP_BLOCK.equals(material) || ItemTypes.TALL_GRASS.equals(material) || ItemTypes.AZALEA.equals(material) || ItemTypes.CACTUS.equals(material) || ItemTypes.SUGAR_CANE.equals(material) || ItemTypes.VINE.equals(material) || ItemTypes.NETHER_SPROUTS.equals(material) || ItemTypes.WEEPING_VINES.equals(material) || ItemTypes.TWISTING_VINES.equals(material) || ItemTypes.MELON_SLICE.equals(material) || ItemTypes.GLOW_LICHEN.equals(material) || ItemTypes.SEA_PICKLE.equals(material) || ItemTypes.LILY_PAD.equals(material) || ItemTypes.PUMPKIN.equals(material) || ItemTypes.CARVED_PUMPKIN.equals(material) || ItemTypes.MELON.equals(material) || ItemTypes.APPLE.equals(material) || ItemTypes.BEETROOT.equals(material) || ItemTypes.CARROT.equals(material) || ItemTypes.COCOA_BEANS.equals(material) || ItemTypes.POTATO.equals(material) || ItemTypes.WHEAT.equals(material) || ItemTypes.BROWN_MUSHROOM.equals(material) || ItemTypes.RED_MUSHROOM.equals(material) || ItemTypes.MUSHROOM_STEM.equals(material) || ItemTypes.CRIMSON_FUNGUS.equals(material) || ItemTypes.WARPED_FUNGUS.equals(material) || ItemTypes.NETHER_WART.equals(material) || ItemTypes.CRIMSON_ROOTS.equals(material) || ItemTypes.WARPED_ROOTS.equals(material) || ItemTypes.SHROOMLIGHT.equals(material) || ItemTypes.DANDELION.equals(material) || ItemTypes.POPPY.equals(material) || ItemTypes.BLUE_ORCHID.equals(material) || ItemTypes.ALLIUM.equals(material) || ItemTypes.AZURE_BLUET.equals(material) || ItemTypes.RED_TULIP.equals(material) || ItemTypes.ORANGE_TULIP.equals(material) || ItemTypes.WHITE_TULIP.equals(material) || ItemTypes.PINK_TULIP.equals(material) || ItemTypes.OXEYE_DAISY.equals(material) || ItemTypes.CORNFLOWER.equals(material) || ItemTypes.LILY_OF_THE_VALLEY.equals(material) || ItemTypes.WITHER_ROSE.equals(material) || ItemTypes.FERN.equals(material) || ItemTypes.SUNFLOWER.equals(material) || ItemTypes.LILAC.equals(material) || ItemTypes.ROSE_BUSH.equals(material) || ItemTypes.PEONY.equals(material) || ItemTypes.LARGE_FERN.equals(material) || ItemTypes.SPORE_BLOSSOM.equals(material) || ItemTypes.MOSS_BLOCK.equals(material) || ItemTypes.BIG_DRIPLEAF.equals(material) || ItemTypes.HAY_BLOCK.equals(material) || ItemTypes.BROWN_MUSHROOM_BLOCK.equals(material) || ItemTypes.RED_MUSHROOM_BLOCK.equals(material) || ItemTypes.NETHER_WART_BLOCK.equals(material) || ItemTypes.WARPED_WART_BLOCK.equals(material) || ItemTypes.FLOWERING_AZALEA.equals(material) || ItemTypes.BREAD.equals(material) || ItemTypes.BAKED_POTATO.equals(material) || ItemTypes.COOKIE.equals(material) || ItemTypes.CAKE.equals(material) || ItemTypes.PUMPKIN_PIE.equals(material);
     }
 }

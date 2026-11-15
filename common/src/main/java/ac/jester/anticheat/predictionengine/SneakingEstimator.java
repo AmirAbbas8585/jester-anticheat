@@ -11,6 +11,26 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * ┌──────────────► 1.14 players leave sneaking two ticks
+ * │                after they jump off the ground
+ * │
+ * │
+ * ├──────────────► 1.8 players leave sneaking the tick after
+ * │                when they jump off of the ground
+ * │
+ * <p>
+ * Additionally, sneaking does NOT reset the amount of velocity a player gets from moving
+ * This means that they accumulate velocity when sneaking against the edge
+ * <p>
+ * 1.14 players have sneaking slowdown delayed by 2 (!)(?) ticks fucking up any uncertainty quite badly
+ * 1.8 players have sneaking slowdown applied immediately
+ * <p>
+ * Now 1.14 players having this delay isn't a big deal, although it makes god bridging painfully annoying
+ * But without the idle packet, this kills predictions.  Thanks for this stupidity, Mojang.
+ * <p>
+ * So, this is a value patch like 0.03 because it can be "close enough" that it's better just to not skip ticks
+ **/
 public class SneakingEstimator extends Check implements PostPredictionCheck {
     @Getter
     private SimpleCollisionBox sneakingPotentialHiddenVelocity = new SimpleCollisionBox();
@@ -28,18 +48,25 @@ public class SneakingEstimator extends Check implements PostPredictionCheck {
     public void onPredictionComplete(final PredictionComplete predictionComplete) {
         if (!predictionComplete.isChecked()) return;
 
-        double trueFriction = player.lastOnGround ? player.friction * 0.91 : 0.91;
+        // player.friction already includes air drag
+        double trueFriction = player.friction;
         if (player.wasTouchingLava) trueFriction = 0.5;
         if (player.wasTouchingWater) trueFriction = 0.96;
-        if (player.isGliding) trueFriction = 0.99;
+        // Gliding takes its drag before the move, so the speed the edge held back carries over as it is
+        if (player.isGliding) trueFriction = 1;
 
+        // START HACKERY
+
+        // Avoid calling the method if the player isn't sneaking
         if (!player.uncertaintyHandler.stuckOnEdge.hasOccurredSince(0)) {
             sneakingPotentialHiddenVelocity = new SimpleCollisionBox();
             return;
         }
 
         for (VectorData data : possible) {
+            // Don't let the player always get jumping bonus, for example
             if (data.isJump() == player.predictedVelocity.isJump() && data.isKnockback() == player.predictedVelocity.isKnockback() && data.isExplosion() == player.predictedVelocity.isExplosion()) {
+                // Fuck, we are compounding this which is very dangerous. After light testing seems fine... can we do better?
                 if (player.uncertaintyHandler.lastStuckWest.hasOccurredSince(0) || player.uncertaintyHandler.lastStuckNorth.hasOccurredSince(0)) {
                     sneakingPotentialHiddenVelocity.minX = Math.min(sneakingPotentialHiddenVelocity.minX, data.vector.getX());
                     sneakingPotentialHiddenVelocity.minZ = Math.min(sneakingPotentialHiddenVelocity.minZ, data.vector.getZ());
@@ -51,6 +78,8 @@ public class SneakingEstimator extends Check implements PostPredictionCheck {
                 }
             }
         }
+        // END HACKERY
+
 
         sneakingPotentialHiddenVelocity.minX *= trueFriction;
         sneakingPotentialHiddenVelocity.minZ *= trueFriction;
@@ -62,6 +91,7 @@ public class SneakingEstimator extends Check implements PostPredictionCheck {
         sneakingPotentialHiddenVelocity.maxX = Math.max(0.15, sneakingPotentialHiddenVelocity.maxX);
         sneakingPotentialHiddenVelocity.maxZ = Math.max(0.15, sneakingPotentialHiddenVelocity.maxZ);
 
+        // Now we just have to handle reducing this velocity over ticks so we know when it's being abused
         if (!player.uncertaintyHandler.lastStuckEast.hasOccurredSince(0)) {
             sneakingPotentialHiddenVelocity.maxX = 0;
         }

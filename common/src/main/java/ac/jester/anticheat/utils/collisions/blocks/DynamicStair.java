@@ -91,7 +91,7 @@ public class DynamicStair implements CollisionFactory {
     }
 
     private static CollisionBox makeStairShape(int p_199781_0_, SimpleCollisionBox p_199781_1_, SimpleCollisionBox p_199781_2_, SimpleCollisionBox p_199781_3_, SimpleCollisionBox p_199781_4_, SimpleCollisionBox p_199781_5_) {
-        ComplexCollisionBox voxelshape = new ComplexCollisionBox(5, p_199781_1_);
+        ComplexCollisionBox voxelshape = new ComplexCollisionBox(5, p_199781_1_); // can we do better than 5?
         if ((p_199781_0_ & 1) != 0) {
             voxelshape.add(p_199781_2_);
         }
@@ -113,7 +113,25 @@ public class DynamicStair implements CollisionFactory {
 
     @Override
     public CollisionBox fetch(GrimPlayer player, ClientVersion version, WrappedBlockState block, int x, int y, int z) {
+        return (block.getHalf() == Half.BOTTOM ? BOTTOM_SHAPES : TOP_SHAPES)[quarters(player, version, block, x, y, z)].copy();
+    }
+
+    // A side is a full square when both quarters on it are there, so an inner corner has two full sides and an outer corner has none
+    public static boolean isSideFull(GrimPlayer player, ClientVersion version, WrappedBlockState block, int x, int y, int z, BlockFace side) {
+        int needed = switch (side) {
+            case NORTH -> 1 | 2;
+            case SOUTH -> 4 | 8;
+            case WEST -> 1 | 4;
+            case EAST -> 2 | 8;
+            default -> 0;
+        };
+        return needed != 0 && (quarters(player, version, block, x, y, z) & needed) == needed;
+    }
+
+    // Which quarters the stair has next to its slab, 1 = -x -z, 2 = +x -z, 4 = -x +z, 8 = +x +z
+    private static int quarters(GrimPlayer player, ClientVersion version, WrappedBlockState block, int x, int y, int z) {
         int shapeOrdinal;
+        // If server is 1.13+ and client is also 1.13+, we can read the block's data directly
         if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)
                 && version.isNewerThanOrEquals(ClientVersion.V_1_13)) {
             shapeOrdinal = toEnumShape(block.getShape()).ordinal();
@@ -121,14 +139,14 @@ public class DynamicStair implements CollisionFactory {
             EnumShape shape = getStairsShape(player, block, x, y, z);
             shapeOrdinal = shape.ordinal();
         }
-        return (block.getHalf() == Half.BOTTOM ? BOTTOM_SHAPES : TOP_SHAPES)[SHAPE_BY_STATE[getShapeIndex(block, shapeOrdinal)]].copy();
+        return SHAPE_BY_STATE[getShapeIndex(block, shapeOrdinal)];
     }
 
-    private int getShapeIndex(WrappedBlockState state, int shapeOrdinal) {
+    private static int getShapeIndex(WrappedBlockState state, int shapeOrdinal) {
         return shapeOrdinal * 4 + directionToValue(state.getFacing());
     }
 
-    private int directionToValue(BlockFace face) {
+    private static int directionToValue(BlockFace face) {
         return switch (face) {
             case NORTH -> 2;
             case SOUTH -> 0;
@@ -138,7 +156,7 @@ public class DynamicStair implements CollisionFactory {
         };
     }
 
-    private EnumShape toEnumShape(Shape shape) {
+    private static EnumShape toEnumShape(Shape shape) {
         return switch (shape) {
             case INNER_LEFT -> EnumShape.INNER_LEFT;
             case INNER_RIGHT -> EnumShape.INNER_RIGHT;

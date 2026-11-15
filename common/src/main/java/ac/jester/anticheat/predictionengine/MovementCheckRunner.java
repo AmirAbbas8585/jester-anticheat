@@ -52,7 +52,9 @@ import com.github.retrooper.packetevents.protocol.world.states.defaulttags.Block
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 
 public class MovementCheckRunner extends Check implements PositionCheck {
+    // Averaged over 500 predictions (Defaults set slightly above my 3600x results)
     public static double predictionNanos = 0.3 * 1e6;
+    // Averaged over 20000 predictions
     public static double longPredictionNanos = 0.3 * 1e6;
     private boolean allowSprintJumpingWithElytra = true;
 
@@ -61,12 +63,19 @@ public class MovementCheckRunner extends Check implements PositionCheck {
     }
 
     public void processAndCheckMovementPacket(PositionUpdate data) {
+        // The player is in an unloaded chunk and didn't teleport
+        // OR
+        // This teleport wasn't valid as the player STILL hasn't loaded this damn chunk.
+        // Keep re-teleporting until they load the chunk!
         if (player.getSetbackTeleportUtil().insideUnloadedChunk()) {
+            // The player doesn't control this vehicle, we don't care
             final boolean invalidVehicle = player.inVehicle() &&
                     (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9) ||
                             player.getClientVersion().isOlderThan(ClientVersion.V_1_9));
 
             if (!invalidVehicle && !data.isTeleport()) {
+                // Teleport the player back to avoid players being able to simply ignore transactions
+                // We shouldn't simulate movement in unloaded chunks
                 player.getSetbackTeleportUtil().executeNonSimulatingForceResync();
             }
         }
@@ -86,18 +95,28 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         player.lastY = player.y;
         player.lastZ = player.z;
 
+        // Reset velocities
+        // Teleporting a vehicle does not reset its velocity
+        //
+        // In version 1.21.2+, the new teleport system can modify the player's velocity
+        // even while the player is in a vehicle
+        //
+        // However, for some reason, this behaviour does not work correctly in Grim
+        // to work around this, we remove the velocity data from the teleport packet
+        // in PacketServerTeleport#onPacketSend
         if (!player.inVehicle()) {
             if (update.getTeleportData() == null) {
                 player.clientVelocity.setX(0);
                 player.clientVelocity.setY(0);
                 player.clientVelocity.setZ(0);
-                player.lastWasClimbing = 0;
-                player.canSwimHop = false;
+                player.lastWasClimbing = 0; // Vertical movement reset
+                player.canSwimHop = false; // Vertical movement reset
             } else {
                 final SetBackData setback = update.getSetback();
                 if (setback == null || setback.getVelocity() == null) {
                     update.getTeleportData().modifyVector(player, player.clientVelocity);
                 } else {
+                    // Enforce setback velocity?
                     player.clientVelocity.setX(setback.getVelocity().getX());
                     player.clientVelocity.setY(setback.getVelocity().getY());
                     player.clientVelocity.setZ(setback.getVelocity().getZ());
@@ -107,11 +126,13 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         player.uncertaintyHandler.lastTeleportTicks.reset();
 
+        // Teleports OVERRIDE explosions and knockback
         player.checkManager.getExplosionHandler().forceExempt();
         player.checkManager.getKnockbackHandler().forceExempt();
 
         player.boundingBox = GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z);
 
+        // Manually call prediction complete to handle teleport
         PredictionComplete predictionComplete = new PredictionComplete(0, update, true);
         player.getSetbackTeleportUtil().onPredictionComplete(predictionComplete);
         player.checkManager.getPostPredictionCheck(Phase.class).onPredictionComplete(predictionComplete);
@@ -130,7 +151,14 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         player.onGround = update.isOnGround();
 
+        // This is here to prevent abuse of sneaking
+        // Without this, players could sneak on a flat plane to avoid velocity
+        // That would be bad so this prevents it
         if (!player.isFlying && player.isSneaking && Collisions.isAboveGround(player)) {
+            // 16 - Magic number to stop people from crashing the server
+            // 0.05 - Mojang's magic value that they use to calculate precision of sneaking
+            // They move the position back by 0.05 blocks repeatedly until they are above ground
+            // So by going forwards 0.05 blocks, we can determine if the player was influenced by this
             double posX = Math.max(0.05, GrimMath.clamp(player.actualMovement.getX(), -16, 16) + 0.05);
             double posZ = Math.max(0.05, GrimMath.clamp(player.actualMovement.getZ(), -16, 16) + 0.05);
             double negX = Math.min(-0.05, GrimMath.clamp(player.actualMovement.getX(), -16, 16) - 0.05);
@@ -159,12 +187,19 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         player.compensatedWorld.tickPlayerInPistonPushingArea();
         player.compensatedEntities.tick();
 
+        // The game's movement is glitchy when switching between vehicles
+        // This is due to mojang not telling us where the new vehicle's location is
+        // meaning the first move gets hidden... beautiful
+        //
+        // Exiting vehicles does not suffer the same issue
+        //
+        // It is also glitchy when switching between client vs server vehicle control
         if (player.vehicleData.wasVehicleSwitch || player.vehicleData.lastDummy) {
             player.uncertaintyHandler.lastVehicleSwitch.reset();
         }
 
         if (player.vehicleData.lastDummy) {
-            player.clientVelocity.multiply(0.98);
+            player.clientVelocity.multiply(0.98); // This is vanilla, do not touch
         }
 
         final PacketEntity riding = player.compensatedEntities.self.getRiding();
@@ -177,6 +212,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             if (riding != null) {
                 SimpleCollisionBox interTruePositions = riding.getPossibleCollisionBoxes();
 
+                // We shrink the expanded bounding box to what the packet positions can be, for a smaller box
                 final float scale = (float) riding.getAttributeValue(Attributes.SCALE);
                 float width = BoundingBoxSize.getWidth(player, riding) * scale;
                 float height = BoundingBoxSize.getHeight(player, riding) * scale;
@@ -185,21 +221,31 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
                 Vector3dm cutTo = VectorUtils.cutBoxToVector(player.x, player.y, player.z, interTruePositions);
 
+                // Now we need to simulate a tick starting at the most optimal position
+                // The start position is never sent, so we assume the most optimal start position
+                //
+                // Value patching this is not allowed.
+                // NoCheatPlus suffers from this type of exploit, so attacks against
+                // their similar code may also work on grim.
+                //
+                // This is the best I can do, but I think it might just work.
                 player.lastX = cutTo.getX();
                 player.lastY = cutTo.getY();
                 player.lastZ = cutTo.getZ();
 
                 player.boundingBox = GetBoundingBox.getCollisionBoxForPlayer(player, player.lastX, player.lastY, player.lastZ);
             } else {
+                // Server always teleports the player when they eject anyways,
+                // so just let the player control where they eject within reason, they get set back anyways
                 if (new Vector3dm(player.lastX, player.lastY, player.lastZ).distance(new Vector3dm(player.x, player.y, player.z)) > 3) {
-                    player.getSetbackTeleportUtil().executeForceResync();
+                    player.getSetbackTeleportUtil().executeForceResync(); // Too far! (I think this value is sane)
                 }
 
                 handleTeleport(update);
 
                 if (player.isClimbing) {
                     Vector3dm ladder = player.clientVelocity.clone().setY(0.2);
-                    PredictionEngineNormal.staticVectorEndOfTick(player, ladder);
+                    PredictionEngineNormal.staticVectorEndOfTick(player, ladder, player.clientVelocity.getY());
                     player.lastWasClimbing = ladder.getY();
                 }
                 return;
@@ -211,12 +257,15 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         }
         player.lastInBed = player.isInBed;
 
+        // Don't check sleeping players
         if (player.isInBed) return;
 
+        // Don't check players on the death screen (they're dead — movement packets are spurious)
         if (player.packetStateData.showsDeathScreen) return;
 
         if (!player.inVehicle()) {
             player.speed = player.compensatedEntities.self.getAttributeValue(Attributes.MOVEMENT_SPEED);
+            // If AuraSkills grants extra speed beyond what vanilla attributes report, expand tolerance
             double auraSpeedMult = ExemptionProvider.safe().getSpeedMultiplier(player);
             if (auraSpeedMult > 1.0) player.speed *= auraSpeedMult;
             if (player.hasGravity != player.playerEntityHasGravity) {
@@ -225,9 +274,19 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             player.hasGravity = player.playerEntityHasGravity;
         }
 
+        // Check if the player can control their horse, if they are on a horse
+        //
+        // Player cannot control entities if other players are doing so, although the server will just
+        // ignore these bad packets
+        // Players cannot control stacked vehicles
+        // Again, the server knows to ignore this
+        //
+        // Therefore, we just assume that the client and server are modded or whatever.
         if (player.inVehicle()) {
+            // Players are unable to take explosions in vehicles
             player.checkManager.getExplosionHandler().forceExempt();
 
+            // When in control of the entity, the player sets the entity position to their current position
             riding.setPositionRaw(player, new SimpleCollisionBox(player.x, player.y, player.z, player.x, player.y, player.z));
 
             if (riding instanceof PacketEntityTrackXRot boat) {
@@ -241,6 +300,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             }
             player.hasGravity = riding.hasGravity;
 
+            // For whatever reason the vehicle move packet occurs AFTER the player changes slots...
             if (riding instanceof PacketEntityRideable) {
                 VehicleC vehicleC = player.checkManager.getCheck(VehicleC.class);
 
@@ -252,6 +312,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
                 boolean correctOffhand = offHand.getType() == requiredItem;
 
                 if (!correctMainHand && !correctOffhand) {
+                    // Entity control cheats!  Set the player back
                     vehicleC.flagAndAlert();
                 } else {
                     vehicleC.reward();
@@ -268,6 +329,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         player.clientControlledVerticalCollision = Math.abs(player.y % (1 / 64D)) < 0.00001;
 
+        // This isn't the final velocity of the player in the tick, only the one applied to the player
         player.actualMovement = new Vector3dm(player.x - player.lastX, player.y - player.lastY, player.z - player.lastZ);
 
         if (player.isSprinting != player.lastSprinting) {
@@ -282,10 +344,14 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         boolean oldSprinting = player.isSprinting;
         boolean oldSneaking = player.isSneaking;
 
+        // Stop stuff like clients using elytra in a vehicle...
+        // Interesting, on a pig or strider, a player can climb a ladder
         if (player.inVehicle()) {
+            // Reset fall distance when riding
+            //player.fallDistance = 0;
             player.isFlying = false;
             player.isGliding = false;
-            player.isSprinting &= riding instanceof PacketEntityCamel;
+            player.isSprinting &= riding instanceof PacketEntityCamel; // camels can sprint
             player.isSneaking = false;
 
             if (riding.type != EntityTypes.PIG && riding.type != EntityTypes.STRIDER) {
@@ -293,6 +359,12 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             }
         }
 
+        // Multiplying by 1.3 or 1.3f results in precision loss, you must multiply by 0.3
+        // The player updates their attribute if it doesn't match the last value
+        // This last value can be changed by the server, however.
+        //
+        // Sprinting status itself does not desync, only the attribute as mojang forgot that the server
+        // can change the attribute
         if (!player.inVehicle()) {
             player.speed += player.compensatedEntities.hasSprintingAttributeEnabled ? player.speed * 0.3f : 0;
         }
@@ -312,6 +384,18 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         SimpleCollisionBox steppingOnBB = GetBoundingBox.getCollisionBoxForPlayer(player, player.x, player.y, player.z).expand(player.getMovementThreshold()).offset(0, -1, 0);
         Collisions.hasMaterial(player, steppingOnBB, (pair) -> {
             WrappedBlockState data = pair.first();
+            // Backported from upstream Grim (2.0 branch, "fix bouncy blocks" #2473).
+            // The bed case below was already gated on real contact; slime was not,
+            // and that was exploitable. The search box is the player's box expanded
+            // by the movement threshold and offset a FULL BLOCK downward, so an
+            // ungated test marks slime uncertainty whenever a slime block is
+            // anywhere in that volume — including beside or below the player. That
+            // matters because isSteppingOnSlime feeds thisTickSlimeBlockUncertainty
+            // straight into maxVector.setY() in PredictionEngine, i.e. it hands out
+            // extra VERTICAL prediction freedom. Standing near a slime block was
+            // therefore enough to widen the fly tolerance, which any player who can
+            // place one could do on purpose. Require the player to actually be
+            // resting on its top face (a slime block is full height, so +1.0).
             if (data.getType() == StateTypes.SLIME_BLOCK && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
                     && Math.abs((pair.second().getY() + 1.0D) - player.y) <= player.getMovementThreshold()) {
                 player.uncertaintyHandler.isSteppingOnSlime = true;
@@ -324,6 +408,13 @@ public class MovementCheckRunner extends Check implements PositionCheck {
                 }
                 player.uncertaintyHandler.isSteppingOnHoney = true;
             }
+            // Backported from upstream Grim (2.0 branch, "fix bouncy blocks" #2473):
+            // only count the bed as "stepping on" it if the player is actually
+            // resting on its top surface (0.5625 blocks up from its base) — the
+            // un-gated version could mark bouncy-block uncertainty just from the
+            // expanded search box brushing the side of an adjacent bed, which is
+            // exactly the kind of bed-collision mismatch our own bed-threshold
+            // workaround (MovementA.bed-threshold) was band-aiding around.
             if (BlockTags.BEDS.contains(data.getType()) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_12)
                     && Math.abs((pair.second().getY() + 0.5625D) - player.y) <= player.getMovementThreshold()) {
                 player.uncertaintyHandler.isSteppingOnBouncyBlock = true;
@@ -350,12 +441,16 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         SimpleCollisionBox expandedBB = GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.lastX, player.lastY, player.lastZ, 0.001f, 0.001f);
 
+        // Don't expand if the player moved more than 50 blocks this tick (stop netty crash exploit)
         if (player.actualMovement.lengthSquared() < 2500)
             expandedBB.expandToAbsoluteCoordinates(player.x, player.y, player.z);
 
         expandedBB.expand(Pose.STANDING.width / 2, 0, Pose.STANDING.width / 2);
         expandedBB.expandMax(0, Pose.STANDING.height, 0);
 
+        // if the player is using a version with glitched chest and anvil bounding boxes,
+        // and they are intersecting with these glitched bounding boxes
+        // give them a decent amount of uncertainty and don't ban them for mojang's stupid mistake
         boolean isGlitchy = player.uncertaintyHandler.isNearGlitchyBlock;
 
         player.uncertaintyHandler.isNearGlitchyBlock = player.getClientVersion().isOlderThan(ClientVersion.V_1_9)
@@ -389,10 +484,16 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         boolean wasChecked = false;
 
+        // Exempt if the player is dead or is riding a dead entity
         if (player.compensatedEntities.self.isDead || (riding != null && riding.isDead)) {
+            // Dead players can't cheat, if you find a way how they could, open an issue
             player.predictedVelocity = new VectorData(new Vector3dm(), VectorData.VectorType.Dead);
             player.clientVelocity = new Vector3dm();
         } else if (player.disableGrim || (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_8) && player.gamemode == GameMode.SPECTATOR) || player.isFlying || (player.isExemptElytra() && player.isGliding)) {
+            // We could technically check spectator but what's the point...
+            // Added complexity to analyze a gamemode used mainly by moderators
+            //
+            // TODO: Re-implement flying support, although LUNAR HAS FLYING CHEATS!!! HOW CAN I CHECK WHEN HALF THE PLAYER BASE IS USING CHEATS???
             player.predictedVelocity = new VectorData(player.actualMovement, VectorData.VectorType.Spectator);
             player.clientVelocity = player.actualMovement.clone();
             player.gravity = 0;
@@ -404,8 +505,11 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             player.depthStriderLevel = (float) player.compensatedEntities.self.getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY);
             player.sneakingSpeedMultiplier = (float) player.compensatedEntities.self.getAttributeValue(Attributes.SNEAKING_SPEED);
 
+            // This is wrong and the engine was not designed around stuff like this
             player.verticalCollision = false;
 
+            // Riptiding while on the ground moves the hitbox upwards before any movement code runs
+            // It's a pain to support and this is my best attempt
             if (player.lastOnGround && player.packetStateData.tryingToRiptide && !player.inVehicle()) {
                 Vector3dm pushingMovement = Collisions.collide(player, 0, 1.1999999F, 0);
                 player.verticalCollision = pushingMovement.getY() != 1.1999999F;
@@ -433,8 +537,12 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             PlayerBaseTick.updatePlayerPose(player);
         } else if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
             wasChecked = true;
+            // The player and server are both on a version with client controlled entities
+            // If either or both of the client server version has server controlled entities
+            // The player can't use entities (or the server just checks the entities)
             if (riding.isBoat) {
                 PlayerBaseTick.doBaseTick(player);
+                // Speed doesn't affect anything with boat movement
                 new PredictionEngineBoat(player).guessBestMovement(0.1f, player);
             } else if (riding instanceof PacketEntityNautilus) {
                 PlayerBaseTick.doBaseTick(player);
@@ -459,17 +567,26 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             } else {
                 wasChecked = false;
             }
-        }
+        } // If it isn't any of these cases, the player is on a mob they can't control and therefore is exempt
 
+        // No, don't comment about the sqrt call.  It doesn't matter unless you run sqrt thousands of times a second.
         double offset = player.predictedVelocity.vector.distance(player.actualMovement);
         offset = player.uncertaintyHandler.reduceOffset(offset);
 
         if (player.packetStateData.tryingToRiptide != clientClaimsRiptide) {
-            player.getSetbackTeleportUtil().executeForceResync();
+            player.getSetbackTeleportUtil().executeForceResync(); // Could technically be lag due to packet timings.
         }
 
+        // If the player is abusing a setback in order to gain the onGround status of true.
+        // and the player then jumps from this position in the air.
+        // Fixes LiquidBounce Jesus NCP, and theoretically AirJump bypass
+        //
+        // Checking for oldClientVel being too high fixes BleachHack vertical scaffold
         if (player.getSetbackTeleportUtil().getRequiredSetBack() != null && player.getSetbackTeleportUtil().getRequiredSetBack().getTicksComplete() == 1) {
             Vector3dm setbackVel = player.getSetbackTeleportUtil().getRequiredSetBack().getVelocity();
+            // A player must have velocity going INTO the ground to be able to jump
+            // Otherwise they could ignore upwards velocity that isn't useful into more useful upwards velocity (towering)
+            // So if they are supposed to be going upwards, or are supposed to be off the ground, resync
             if (player.predictedVelocity.isJump()
                     && !player.wasTouchingLava && !player.wasTouchingWater
                     && ((setbackVel != null && setbackVel.getY() >= 0) || !Collisions.slowCouldPointThreeHitGround(player, player.lastX, player.lastY, player.lastZ))) {
@@ -477,20 +594,25 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             }
             boolean lavaBugFix = player.wasTouchingLava && player.predictedVelocity.isJump() &&
                     player.predictedVelocity.vector.getY() < 0.06 && player.predictedVelocity.vector.getY() > -0.02;
+            // Player ignored the knockback or is delaying it a tick... bad!
             if (!player.predictedVelocity.isKnockback() && !lavaBugFix && player.getSetbackTeleportUtil().getRequiredSetBack().getVelocity() != null) {
+                // And then send it again!
                 player.getSetbackTeleportUtil().executeForceResync();
             }
         }
 
+        // Let's hope this doesn't desync :)
         if (player.getSetbackTeleportUtil().blockOffsets) offset = 0;
 
         if (player.skippedTickInActualMovement || !wasChecked)
             player.uncertaintyHandler.lastPointThree.reset();
 
+        // We shouldn't attempt to send this prediction analysis into checks if we didn't predict anything
         player.checkManager.onPredictionFinish(new PredictionComplete(offset, update, wasChecked));
 
         player.wasLastPredictionCompleteChecked = wasChecked;
 
+        // Patch sprint jumping with elytra exploit
         if (player.platformPlayer != null && player.isGliding && player.predictedVelocity.isJump() && player.isSprinting && !allowSprintJumpingWithElytra) {
             SetbackTeleportUtil.SetbackPosWithVector lastKnownGoodPosition = player.getSetbackTeleportUtil().lastKnownGoodPosition;
             lastKnownGoodPosition.setVector(lastKnownGoodPosition.getVector().multiply(0.6 * 0.91, 1, 0.6 * 0.91));
@@ -498,6 +620,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         }
 
         if (!wasChecked) {
+            // The player wasn't checked, explosion and knockback status unknown
             player.checkManager.getExplosionHandler().forceExempt();
             player.checkManager.getKnockbackHandler().forceExempt();
         }
@@ -511,6 +634,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         player.wasSneaking = player.isSneaking;
         player.packetStateData.tryingToRiptide = false;
 
+        // Don't overwrite packet values
         if (player.inVehicle()) {
             player.isFlying = oldFlying;
             player.isGliding = oldGliding;
@@ -525,9 +649,14 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         player.uncertaintyHandler.lastMovementWasZeroPointZeroThree = !player.inVehicle() && player.skippedTickInActualMovement;
         player.uncertaintyHandler.lastMovementWasUnknown003VectorReset = !player.inVehicle() && player.couldSkipTick
                 && player.predictedVelocity.isKnockback()
+                // Don't let setbacks count
                 && !player.predictedVelocity.isSetbackKb(player);
         player.couldSkipTick = false;
 
+        // Logic is if the player was directly 0.03 and the player could control vertical movement in 0.03
+        // Or some state of the player changed, so we can no longer predict this vertical movement
+        // Or gravity made the player enter 0.03 movement
+        // TODO: This needs to be secured better.  isWasAlwaysCertain() seems like a bit of a hack.
         player.uncertaintyHandler.wasZeroPointThreeVertically = !player.inVehicle() &&
                 ((player.uncertaintyHandler.lastMovementWasZeroPointZeroThree && player.pointThreeEstimator.controlsVerticalMovement())
                         || !player.pointThreeEstimator.canPredictNextVerticalMovement() || !player.pointThreeEstimator.isWasAlwaysCertain());
@@ -554,12 +683,28 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         player.pointThreeEstimator.endOfTickTick();
     }
 
+    /**
+     * Computes the movement from the riptide, and then uses it to determine whether the player
+     * was more likely to be on or off of the ground when they started to riptide
+     * <p>
+     * A player on ground when riptiding will move upwards by 1.2f
+     * We don't know whether the player was on the ground, however, which is why
+     * we must attempt to guess here
+     * <p>
+     * Very reliable.
+     *
+     * @param pushingMovement The collision result when trying to move the player upwards by 1.2f
+     * @return Whether it is more likely that this player was on the ground the tick they riptided
+     */
     private boolean likelyGroundRiptide(Vector3dm pushingMovement) {
+        // Y velocity gets reset if the player collides vertically
         double riptideYResult = Riptide.getRiptideVelocity(player).getY();
 
         double riptideDiffToBase = Math.abs(player.actualMovement.getY() - riptideYResult);
         double riptideDiffToGround = Math.abs(player.actualMovement.getY() - riptideYResult - pushingMovement.getY());
 
+        // If the player was very likely to have used riptide on the ground
+        // (Patches issues with slime and other desync's)
         return riptideDiffToGround < riptideDiffToBase;
     }
 
