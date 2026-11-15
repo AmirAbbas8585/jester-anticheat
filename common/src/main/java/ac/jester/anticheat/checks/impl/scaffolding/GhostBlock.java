@@ -14,9 +14,32 @@ import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 import com.github.retrooper.packetevents.util.Vector3i;
 
+/**
+ * GhostBlock — placing a block against a position that is AIR on the server.
+ *
+ * The classic ghost-block exploit: in a protected region a placement is denied
+ * (so the block stays air server-side) but the client keeps rendering it, then
+ * the player places ANOTHER block against that "ghost" to keep bridging/building
+ * where they shouldn't. Against a ghost the server sees the support as air.
+ *
+ * We deliberately read the LIVE platform world here, not player.compensatedWorld.
+ * A WorldGuard-style deny is only reflected in compensatedWorld once the
+ * corrective block-change packet round-trips back out to the client; a player
+ * spamming placements against the same denied spot can place the "supported"
+ * block before that correction lands, so compensatedWorld still reads solid and
+ * the check never fires. The real world updates the instant the placement is
+ * denied (same tick, main thread), so it can't be raced.
+ *
+ * A same-tick instant break / netty resync can legitimately leave the support
+ * momentarily air, so those are excused and a short streak is required. This is
+ * a focused, separately-configurable signal for ghost-block abuse (the
+ * scaffolding AirLiquidPlace check covers the same geometry more broadly).
+ * Experimental + alert-only by default.
+ */
 @CheckData(name = "GhostBlock", experimental = true,
         description = "Placing a block against a position that is air server-side (ghost block)")
 public class GhostBlock extends BlockPlaceCheck {
+
     private int minConsecutive = 2;
     private int consecutive = 0;
 
@@ -36,11 +59,13 @@ public class GhostBlock extends BlockPlaceCheck {
 
         Vector3i pos = place.position;
         PlatformWorld world = player.platformPlayer.getWorld();
-        if (!world.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) return;
+        if (world == null || !world.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) return;
 
         WrappedBlockState state = world.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
         StateType against = state.getType();
 
+        // Excuse a same-tick instant-break / netty resync that left the support
+        // block momentarily air — that's a legit desync, not a ghost block.
         int tick = GrimAPI.INSTANCE.getTickManager().currentTick;
         for (BlockModification mod : player.blockHistory.getRecentModifications(m ->
                 tick - m.tick() < 2 && pos.equals(m.location())

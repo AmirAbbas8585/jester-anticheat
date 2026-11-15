@@ -9,6 +9,7 @@ import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState
 import com.github.retrooper.packetevents.util.Vector3i;
 
 public class GhostBlockMitigation extends BlockPlaceCheck {
+
     private boolean allow;
     private int distance;
 
@@ -21,6 +22,7 @@ public class GhostBlockMitigation extends BlockPlaceCheck {
         if (allow || player.platformPlayer == null) return;
 
         PlatformWorld world = player.platformPlayer.getWorld();
+        if (world == null) return;
         Vector3i pos = place.getPlacedBlockPos();
         Vector3i posAgainst = place.position;
 
@@ -37,6 +39,10 @@ public class GhostBlockMitigation extends BlockPlaceCheck {
                 for (int j = y - distance; j <= y + distance; j++) {
                     for (int k = z - distance; k <= z + distance; k++) {
                         if (i == x && j == y && k == z) {
+                            continue;
+                        }
+
+                        if (i == xAgainst && j == yAgainst && k == zAgainst) {
                             continue;
                         }
 
