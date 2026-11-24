@@ -9,21 +9,20 @@ import java.util.List;
 
 @UtilityClass
 public class GrimMath {
-    public static final double MINIMUM_DIVISOR = ((Math.pow(0.2f, 3) * 8) * 0.15) - 1e-3; // 1e-3 for float imprecision
+    public static final double MINIMUM_DIVISOR = ((Math.pow(0.2f, 3) * 8) * 0.15) - 1e-3;
     private static final float DEGREES_TO_RADIANS = (float) Math.PI / 180f;
 
     @Contract(pure = true)
     public static double gcd(double a, double b) {
         if (a == 0) return 0;
 
-        // Make sure a is larger than b
         if (a < b) {
             double temp = a;
             a = b;
             b = temp;
         }
 
-        while (b > MINIMUM_DIVISOR) { // Minimum minecraft sensitivity
+        while (b > MINIMUM_DIVISOR) {
             double temp = a - (Math.floor(a / b) * b);
             a = b;
             b = temp;
@@ -60,8 +59,6 @@ public class GrimMath {
         return (int) Math.ceil(d);
     }
 
-    // Should produce the same output as Math.floor() and Math.ceil() but mojang do it differently
-    // Replicating what they do jussst in case
     @Contract(pure = true)
     public static int mojangFloor(double num) {
         final int floor = (int) num;
@@ -129,16 +126,6 @@ public class GrimMath {
         return (float)Math.sqrt(value);
     }
 
-    // Find the closest distance to (1 / 64)
-    // All poses horizontal length is 0.2 or 0.6 (0.1 or 0.3)
-    // and we call this from the player's position
-    //
-    // We must find the minimum of the three numbers:
-    // Distance to (1 / 64) when we are around -0.1
-    // Distance to (1 / 64) when we are around 0
-    // Distance to (1 / 64) when we are around 0.1
-    //
-    // Someone should likely just refactor this entire method, although it is cold being called twice every movement
     public static double distanceToHorizontalCollision(double position) {
         return Math.min(Math.abs(position % (1 / 640d)), Math.abs(Math.abs(position % (1 / 640d)) - (1 / 640d)));
     }
@@ -177,7 +164,6 @@ public class GrimMath {
 
     @Contract(pure = true)
     public static float movementInputYawRadians(float yaw, com.github.retrooper.packetevents.protocol.player.ClientVersion version) {
-        // Before 1.9, moveFlying rounds the multiplication by PI before dividing by 180.
         return version.isOlderThan(com.github.retrooper.packetevents.protocol.player.ClientVersion.V_1_9) ? yaw * (float) Math.PI / 180.0F : radians(yaw);
     }
 

@@ -12,18 +12,7 @@ import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Vanilla's {@code PistonStructureResolver}, run on the blocks Grim knows the client has.
- *
- * <p>The client works out which blocks a piston moves itself, from its own world, when it handles the block event: the
- * server only says which piston fired. Grim's compensated world is the client's world at that point, so resolving here
- * finds the same blocks, slime and honey branches included.
- *
- * <p>The algorithm is the same from 1.8 ({@code BlockPistonStructureHelper}) on. What changes is the blocks: an older
- * client sees some of the server's blocks as others, through ViaVersion.
- */
 final class PistonStructure {
-
     static final int MAX_PUSH_DEPTH = 12;
 
     record Pos(int x, int y, int z) {
@@ -40,12 +29,6 @@ final class PistonStructure {
             BlockFace.DOWN, BlockFace.UP, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST, BlockFace.EAST
     };
 
-    /**
-     * How the client's version treats the blocks Grim has.
-     *
-     * @param honeyIsSlime before 1.15 there is no honey block: ViaVersion shows it as slime, which sticks to slime
-     * @param pushOnly     before 1.12 nothing is push-only: glazed terracotta is shown as a block pistons pull
-     */
     record Rules(boolean honeyIsSlime, boolean pushOnly) {
         static Rules of(ClientVersion version) {
             return new Rules(version.isOlderThan(ClientVersion.V_1_15), version.isNewerThanOrEquals(ClientVersion.V_1_12));
@@ -59,7 +42,6 @@ final class PistonStructure {
     private final Pos startPos;
     private final BlockFace pushDirection;
     private final BlockFace pistonDirection;
-    /** Read as air: a pull takes the head away before working out what comes with it. */
     private final Pos removedHead;
     final List<Pos> toPush = new ArrayList<>();
     final List<Pos> toDestroy = new ArrayList<>();
@@ -116,7 +98,6 @@ final class PistonStructure {
         int length = 1;
         if (length + toPush.size() > MAX_PUSH_DEPTH) return false;
 
-        // Sticky blocks drag the line behind them along
         while (isSticky(state)) {
             Pos behind = origin.relative(pushDirection.getOppositeFace(), length);
             WrappedBlockState previous = state;
@@ -185,7 +166,6 @@ final class PistonStructure {
         return true;
     }
 
-    /** {@code PistonBaseBlock#isPushable}, without the world border. */
     boolean isPushable(WrappedBlockState state, Pos pos, BlockFace direction, boolean allowDestroy, BlockFace pistonDirection) {
         int minY = world.getMinHeight();
         int maxY = world.getMaxHeight() - 1;

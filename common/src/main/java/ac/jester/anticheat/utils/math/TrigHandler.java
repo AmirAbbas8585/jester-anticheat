@@ -19,9 +19,16 @@ public class TrigHandler {
     }
 
     public Vector3dm getVanillaMathMovement(Vector3dm wantedMovement, float f, float f2) {
+        float f3;
+        float f4;
         float radians = GrimMath.movementInputYawRadians(f2, player.getClientVersion());
-        float f3 = VanillaMath.sin(radians);
-        float f4 = VanillaMath.cos(radians);
+        if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_11)) {
+            f3 = ModernVanillaMath.sin(radians);
+            f4 = ModernVanillaMath.cos(radians);
+        } else {
+            f3 = VanillaMath.sin(radians);
+            f4 = VanillaMath.cos(radians);
+        }
 
         float bestTheoreticalX = (float) (f3 * wantedMovement.getZ() + f4 * wantedMovement.getX()) / (f3 * f3 + f4 * f4) / f;
         float bestTheoreticalZ = (float) (-f3 * wantedMovement.getX() + f4 * wantedMovement.getZ()) / (f3 * f3 + f4 * f4) / f;
@@ -42,10 +49,6 @@ public class TrigHandler {
     }
 
     public void setOffset(double offset) {
-        // Offset too high, this is an outlier, ignore
-        // We are checking in the range of 1e-3 to 5e-5, around what using the wrong trig system results in
-        //
-        // Ignore if 0 offset
         if (offset == 0 || offset > 1e-3) {
             return;
         }
@@ -59,14 +62,11 @@ public class TrigHandler {
             fastMath = new Vector3dm(Math.abs(fastMath.getX()), 0, Math.abs(fastMath.getZ()));
 
             double minCorrectHorizontal = Math.min(correctMath.getX(), correctMath.getZ());
-            // Support diagonal inputs
             minCorrectHorizontal = Math.min(minCorrectHorizontal, Math.abs(correctMath.getX() - correctMath.getZ()));
 
             double minFastMathHorizontal = Math.min(fastMath.getX(), fastMath.getZ());
-            // Support diagonal inputs
             minFastMathHorizontal = Math.min(minFastMathHorizontal, Math.abs(fastMath.getX() - fastMath.getZ()));
 
-            // Both tables give the exact same sin and cos at some yaws, so a tie says nothing about which one the client uses
             if (minCorrectHorizontal == minFastMathHorizontal) return;
 
             boolean newVanilla = minCorrectHorizontal < minFastMathHorizontal;
@@ -83,10 +83,26 @@ public class TrigHandler {
     }
 
     public float sin(float value) {
-        return isVanillaMath ? VanillaMath.sin(value) : (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) ? OptifineFastMath.sin(value) : LegacyFastMath.sin(value));
+        if (isVanillaMath) {
+            return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_11)
+                    ? ModernVanillaMath.sin(value)
+                    : VanillaMath.sin(value);
+        }
+
+        return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
+                ? OptifineFastMath.sin(value)
+                : LegacyFastMath.sin(value);
     }
 
     public float cos(float value) {
-        return isVanillaMath ? VanillaMath.cos(value) : (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) ? OptifineFastMath.cos(value) : LegacyFastMath.cos(value));
+        if (isVanillaMath) {
+            return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_11)
+                    ? ModernVanillaMath.cos(value)
+                    : VanillaMath.cos(value);
+        }
+
+        return player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
+                ? OptifineFastMath.cos(value)
+                : LegacyFastMath.cos(value);
     }
 }

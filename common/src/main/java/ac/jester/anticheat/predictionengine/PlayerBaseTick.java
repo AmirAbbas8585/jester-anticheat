@@ -4,7 +4,6 @@ import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.jester.anticheat.utils.data.attribute.ValuedAttribute;
 import ac.jester.anticheat.utils.data.packetentity.PacketEntity;
-import ac.jester.anticheat.utils.data.packetentity.PacketEntityNautilus;
 import ac.jester.anticheat.utils.enums.FluidTag;
 import ac.jester.anticheat.utils.enums.Pose;
 import ac.jester.anticheat.utils.latency.CompensatedEntities;
@@ -30,7 +29,6 @@ import java.util.Optional;
 
 @UtilityClass
 public final class PlayerBaseTick {
-
     public static boolean canEnterPose(GrimPlayer player, Pose pose, double x, double y, double z) {
         return Collisions.isEmpty(player, getBoundingBoxForPose(player, pose, x, y, z).expand(-1.0E-7D));
     }
@@ -44,7 +42,6 @@ public final class PlayerBaseTick {
     }
 
     public static void doBaseTick(GrimPlayer player) {
-        // Keep track of basetick stuff
         player.baseTickAddition = new Vector3dm();
         player.baseTickWaterPushing = new Vector3dm();
 
@@ -54,16 +51,18 @@ public final class PlayerBaseTick {
             player.trackBaseTickAddition(flyingShift);
         }
 
-        updateInWaterStateAndDoFluidPushing(player);
-        updateFluidOnEyes(player);
+        if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_21_11)) {
+            updateInWaterStateAndDoFluidPushing(player);
+            updateFluidOnEyes(player);
+        } else {
+            player.wasEyeInWater = player.fluidInteraction.isEyeInFluid(FluidTag.WATER);
+            updateFluidInteraction(player);
+        }
         updateSwimming(player);
 
-        // If in lava, fall distance is multiplied by 0.5
         if (player.wasTouchingLava)
             player.fallDistance *= 0.5;
 
-        // You cannot crouch while flying, only shift - could be specific to 1.14?
-        // pre-1.13 clients don't have this code
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13) && player.wasTouchingWater && player.isSneaking && !player.isFlying && !player.inVehicle()) {
             Vector3dm waterPushVector = new Vector3dm(0, -0.04f, 0);
             player.baseTickAddVector(waterPushVector);
@@ -73,18 +72,13 @@ public final class PlayerBaseTick {
         player.lastPose = player.pose;
 
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_13_2)) {
-            // 1.13.2 and below logic: If crouching, then slow movement, simple!
             player.isSlowMovement = player.isSneaking;
         } else {
             player.isSlowMovement =
                     !player.wasFlying && !player.isSwimming && canEnterPose(player, Pose.CROUCHING, player.lastX, player.lastY, player.lastZ)
                             && (player.wasSneaking || !player.isInBed && !canEnterPose(player, Pose.STANDING, player.lastX, player.lastY, player.lastZ)) ||
-                            // If the player is in the swimming pose
-                            // Or if the player is not gliding, and the player's pose is fall flying
-                            // and the player is not touching water (yes, this also can override the gliding slowness)
                             ((player.pose == Pose.SWIMMING || (!player.isGliding && player.pose == Pose.FALL_FLYING)) && !player.wasTouchingWater);
 
-            // Mojang also accidentally left this in with 1.14-1.14.4
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14) && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14_4)) {
                 player.isSlowMovement |= player.isSneaking;
             }
@@ -92,7 +86,6 @@ public final class PlayerBaseTick {
 
         if (player.inVehicle()) player.isSlowMovement = false;
 
-        // Players in boats don't care about being in blocks
         if (!player.inVehicle()) {
             moveTowardsClosestSpace(player, player.lastX - (player.boundingBox.maxX - player.boundingBox.minX) * 0.35, player.lastZ + (player.boundingBox.maxZ - player.boundingBox.minZ) * 0.35);
             moveTowardsClosestSpace(player, player.lastX - (player.boundingBox.maxX - player.boundingBox.minX) * 0.35, player.lastZ - (player.boundingBox.maxZ - player.boundingBox.minZ) * 0.35);
@@ -105,8 +98,6 @@ public final class PlayerBaseTick {
         }
     }
 
-    // 1.16 eye in water is a tick behind
-    // 1.15 eye in water is the most recent result
     private static void updateFluidOnEyes(GrimPlayer player) {
         player.wasEyeInWater = player.fluidOnEyes == FluidTag.WATER;
         player.fluidOnEyes = null;
@@ -145,10 +136,8 @@ public final class PlayerBaseTick {
                 : player.dimensionType.isUltraWarm();
 
         final double multiplier = fastLava ? 0.007 : 0.0023333333333333335;
-        // 1.15 and below clients use block collisions to check for being in lava
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16))
             player.wasTouchingLava = updateFluidHeightAndDoFluidPushing(player, FluidTag.LAVA, multiplier);
-            // 1.13 and below clients use this stupid method to check if in lava
         else if (player.getClientVersion().isOlderThan(ClientVersion.V_1_14)) {
             SimpleCollisionBox playerBox = player.boundingBox.copy().expand(-0.1F, -0.4F, -0.1F);
             player.wasTouchingLava = player.compensatedWorld.containsLava(playerBox);
@@ -156,30 +145,24 @@ public final class PlayerBaseTick {
     }
 
     public static void updatePowderSnow(GrimPlayer player) {
-        // Pre-1.17 clients don't have powder snow and therefore don't desync
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_4)) return;
 
-        // Since 1.21.5, clients use the frost speed modifier received from the server
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_5)) return;
 
         final ValuedAttribute playerSpeed = player.compensatedEntities.self.getAttribute(Attributes.MOVEMENT_SPEED).orElseThrow();
 
-        // Might be null after respawn?
         final Optional<WrapperPlayServerUpdateAttributes.Property> property = playerSpeed.property();
         if (property.isEmpty()) return;
 
-        // The client first desync's this attribute
         property.get().getModifiers().removeIf(modifier -> modifier.getUUID().equals(CompensatedEntities.SNOW_MODIFIER_UUID) || modifier.getName().getKey().equals("powder_snow"));
         playerSpeed.recalculate();
 
-        // And then re-adds it using purely what the server has sent it
         StateType type = BlockProperties.getOnPos(player, player.mainSupportingBlockData, new Vector3d(player.x, player.y, player.z));
 
         if (!type.isAir()) {
             int i = player.powderSnowFrozenTicks;
             if (i > 0) {
                 int ticksToFreeze = 140;
-                // Remember, floats are not commutative, we must do it in the client's specific order
                 float percentFrozen = (float) Math.min(i, ticksToFreeze) / (float) ticksToFreeze;
                 float percentFrozenReducedToSpeed = -0.05F * percentFrozen;
 
@@ -189,7 +172,6 @@ public final class PlayerBaseTick {
         }
     }
 
-    // 1.14
     public static void updatePlayerPose(GrimPlayer player) {
         if (canEnterPose(player, Pose.SWIMMING, player.x, player.y, player.z)) {
             Pose pose;
@@ -209,8 +191,6 @@ public final class PlayerBaseTick {
                 pose = Pose.STANDING;
             }
 
-            // I'm not too sure about this code, but it appears like this is only a 1.14+ feature
-            // In my testing this seems good but still don't have full confidence for versions like 1.13
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14) &&
                     !player.inVehicle() && !canEnterPose(player, pose, player.x, player.y, player.z)) {
                 if (canEnterPose(player, Pose.CROUCHING, player.x, player.y, player.z)) {
@@ -225,7 +205,6 @@ public final class PlayerBaseTick {
         }
     }
 
-    // 1.13 and below
     private static void updatePlayerSize(GrimPlayer player) {
         Pose pose;
         if (player.isGliding) {
@@ -242,7 +221,6 @@ public final class PlayerBaseTick {
             pose = Pose.SWIMMING;
         }
 
-        // 1.13 actually compares widths and heights etc. but this should also work.
         if (pose != player.pose) {
             Pose oldPose = player.pose;
             player.pose = pose;
@@ -251,7 +229,6 @@ public final class PlayerBaseTick {
             boolean collides = !Collisions.isEmpty(player, box);
 
             if (collides) {
-                // Revert, the player does not have room to enter this new pose
                 player.pose = oldPose;
                 return;
             }
@@ -261,7 +238,6 @@ public final class PlayerBaseTick {
     }
 
     private static void updateSwimming(GrimPlayer player) {
-        // This doesn't seem like the right place for determining swimming, but it's fine for now
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_12_2)) {
             player.isSwimming = false;
         } else if (player.isFlying) {
@@ -272,8 +248,6 @@ public final class PlayerBaseTick {
             } else if (player.isSwimming) {
                 player.isSwimming = player.lastSprinting && player.wasTouchingWater;
             } else {
-                // Requirement added in 1.17 to fix player glitching between two swimming states
-                // while swimming with feet in air and eyes in water
                 boolean feetInWater = player.getClientVersion().isOlderThan(ClientVersion.V_1_17)
                         || player.compensatedWorld.getWaterFluidLevelAt(player.lastX, player.lastY, player.lastZ) > 0;
                 player.isSwimming = player.lastSprinting && player.wasEyeInWater && player.wasTouchingWater && feetInWater;
@@ -283,7 +257,7 @@ public final class PlayerBaseTick {
 
     private static void moveTowardsClosestSpace(GrimPlayer player, double xPosition, double zPosition) {
         double movementThreshold = player.getMovementThreshold();
-        player.boundingBox = player.boundingBox.expand(movementThreshold, 0, movementThreshold); // 0.03... thanks mojang!
+        player.boundingBox = player.boundingBox.expand(movementThreshold, 0, movementThreshold);
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14)) {
             moveTowardsClosestSpaceModern(player, xPosition, zPosition);
         } else {
@@ -292,7 +266,6 @@ public final class PlayerBaseTick {
         player.boundingBox = player.boundingBox.expand(-movementThreshold, 0, -movementThreshold);
     }
 
-    // Mojang is incompetent and this will push the player out a lot when using elytras
     private static void moveTowardsClosestSpaceLegacy(GrimPlayer player, double x, double z) {
         int floorX = GrimMath.floor(x);
         int floorZ = GrimMath.floor(z);
@@ -332,25 +305,25 @@ public final class PlayerBaseTick {
                 i = 5;
             }
 
-            if (i == 0) { // Negative X
+            if (i == 0) {
                 player.uncertaintyHandler.xNegativeUncertainty -= 0.1;
                 player.uncertaintyHandler.xPositiveUncertainty += 0.1;
                 player.pointThreeEstimator.setPushing(true);
             }
 
-            if (i == 1) { // Positive X
+            if (i == 1) {
                 player.uncertaintyHandler.xNegativeUncertainty -= 0.1;
                 player.uncertaintyHandler.xPositiveUncertainty += 0.1;
                 player.pointThreeEstimator.setPushing(true);
             }
 
-            if (i == 4) { // Negative Z
+            if (i == 4) {
                 player.uncertaintyHandler.zNegativeUncertainty -= 0.1;
                 player.uncertaintyHandler.zPositiveUncertainty += 0.1;
                 player.pointThreeEstimator.setPushing(true);
             }
 
-            if (i == 5) { // Positive Z
+            if (i == 5) {
                 player.uncertaintyHandler.zNegativeUncertainty -= 0.1;
                 player.uncertaintyHandler.zPositiveUncertainty += 0.1;
                 player.pointThreeEstimator.setPushing(true);
@@ -358,7 +331,6 @@ public final class PlayerBaseTick {
         }
     }
 
-    // 1.14+
     private static void moveTowardsClosestSpaceModern(GrimPlayer player, double xPosition, double zPosition) {
         int blockX = (int) Math.floor(xPosition);
         int blockZ = (int) Math.floor(zPosition);
@@ -375,7 +347,6 @@ public final class PlayerBaseTick {
             double d6;
             double d7 = direction2 == BlockFace.WEST || direction2 == BlockFace.EAST ? relativeXMovement : relativeZMovement;
             d6 = direction2 == BlockFace.EAST || direction2 == BlockFace.SOUTH ? 1.0 - d7 : d7;
-            // d7 and d6 flip the movement direction based on desired movement direction
             boolean doesSuffocate = switch (direction2) {
                 case EAST -> suffocatesAt(player, blockX + 1, blockZ);
                 case WEST -> suffocatesAt(player, blockX - 1, blockZ);
@@ -455,7 +426,6 @@ public final class PlayerBaseTick {
             }
         }
 
-        // all clients using legacy fluid pushing are not pushed by lava
         if (tag == FluidTag.WATER && vec3.lengthSquared() > 0.0) {
             vec3.normalize();
             vec3.multiply(multiplier);
@@ -480,6 +450,7 @@ public final class PlayerBaseTick {
         }
         double d2 = 0.0;
         boolean hasTouched = false;
+        boolean pushedByFluid = player.isPushedByFluid();
         Vector3dm vec3 = new Vector3dm();
         int n7 = 0;
 
@@ -504,7 +475,7 @@ public final class PlayerBaseTick {
                     hasTouched = true;
                     d2 = Math.max(fluidHeightToWorld - aABB.minY, d2);
 
-                    if (!player.isFlying && !(player.getVehicle() instanceof PacketEntityNautilus)) {
+                    if (pushedByFluid) {
                         Vector3dm vec32 = FluidTypeFlowing.getFlow(player, x, y, z);
                         if (d2 < 0.4) {
                             vec32 = vec32.multiply(d2);
@@ -522,15 +493,11 @@ public final class PlayerBaseTick {
             }
 
             if (player.inVehicle()) {
-                // This is a riding entity, normalize it for some reason.
                 vec3 = vec3.normalize();
             }
 
-            // If the player is using 1.16+ - 1.15 and below don't have lava pushing
             if (tag != FluidTag.LAVA || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_16)) {
                 vec3 = vec3.multiply(multiplier);
-                // Store the vector before handling 0.003, so knockback can use it
-                // However, do this after the multiplier, so that we don't have to recompute it
                 player.baseTickAddWaterPushing(vec3);
                 if (Math.abs(player.clientVelocity.getX()) < 0.003 && Math.abs(player.clientVelocity.getZ()) < 0.003 && vec3.length() < 0.0045000000000000005D) {
                     vec3 = vec3.normalize().multiply(0.0045000000000000005);
@@ -540,16 +507,34 @@ public final class PlayerBaseTick {
             }
         }
 
-        if (tag == FluidTag.LAVA) {
-            player.slightlyTouchingLava = hasTouched && d2 <= 0.4D;
-        }
-
-        if (tag == FluidTag.WATER) {
-            player.slightlyTouchingWater = hasTouched && d2 <= 0.4D;
-        }
-
         player.fluidHeight.put(tag, d2);
         return hasTouched;
+    }
+
+    public static boolean updateFluidInteraction(GrimPlayer player) {
+        player.fluidInteraction.update(player, !player.isPushedByFluid());
+        boolean inWater = player.fluidInteraction.isInFluid(FluidTag.WATER);
+        boolean inLava = player.fluidInteraction.isInFluid(FluidTag.LAVA);
+
+        player.wasWasTouchingWater = player.wasTouchingWater;
+        player.wasTouchingWater = inWater;
+        player.wasTouchingLava = inLava;
+        if (player.isPushedByFluid()) {
+            if (inWater) {
+                player.fluidInteraction.applyCurrentTo(FluidTag.WATER, player, 0.014);
+            }
+
+            if (inLava) {
+                final boolean fastLava = SERVER_SUPPORT_ENVIRONMENT_ATTRIBUTES
+                        ? player.dimensionType.getAttributes().getOrDefault(EnvironmentAttributes.GAMEPLAY_FAST_LAVA)
+                        : player.dimensionType.isUltraWarm();
+
+                final double scale = fastLava ? 0.007 : 0.0023333333333333335;
+                player.fluidInteraction.applyCurrentTo(FluidTag.LAVA, player, scale);
+            }
+        }
+
+        return inWater || inLava;
     }
 
     private static boolean suffocatesAt(GrimPlayer player, int x, int z) {

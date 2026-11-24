@@ -18,7 +18,6 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
 import java.util.List;
 
 public class SimpleCollisionBox implements CollisionBox {
-
     public static final double COLLISION_EPSILON = 1.0E-7;
 
     public double minX, minY, minZ, maxX, maxY, maxZ;
@@ -29,18 +28,6 @@ public class SimpleCollisionBox implements CollisionBox {
         this(0, 0, 0, 0, 0, 0, false);
     }
 
-    /**
-     * Creates a box defined by two points in 3d space; used to represent hitboxes and collision boxes.
-     * If your min/max values are > 1 you should probably check out {@link HexCollisionBox}
-     *
-     * @param minX      x position of first corner
-     * @param minY      y position of first corner
-     * @param minZ      z position of first corner
-     * @param maxX      x position of second corner
-     * @param maxY      y position of second corner
-     * @param maxZ      z position of second corner
-     * @param fullBlock - whether on not the box is a perfect 1x1x1 sized block
-     */
     public SimpleCollisionBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ, boolean fullBlock) {
         this.minX = minX;
         this.maxX = maxX;
@@ -59,23 +46,10 @@ public class SimpleCollisionBox implements CollisionBox {
         this(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
     }
 
-    // If you want to set a full block from a point
     public SimpleCollisionBox(double minX, double minY, double minZ) {
         this(minX, minY, minZ, minX + 1, minY + 1, minZ + 1, true);
     }
 
-    /**
-     * Creates a box defined by two points in 3d space; used to represent hitboxes and collision boxes.
-     * If your min/max values are > 1 you should probably check out {@link HexCollisionBox}
-     * Use only if you don't know the fullBlock status, which is rare
-     *
-     * @param minX x position of first corner
-     * @param minY y position of first corner
-     * @param minZ z position of first corner
-     * @param maxX x position of second corner
-     * @param maxY y position of second corner
-     * @param maxZ z position of second corner
-     */
     public SimpleCollisionBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
         this.minX = minX;
         this.maxX = maxX;
@@ -250,7 +224,6 @@ public class SimpleCollisionBox implements CollisionBox {
     }
 
     public boolean isIntersected(CollisionBox other) {
-        // Optimization - don't allocate a list if this is just a SimpleCollisionBox
         if (other instanceof SimpleCollisionBox) {
             return isIntersected((SimpleCollisionBox) other);
         }
@@ -311,7 +284,6 @@ public class SimpleCollisionBox implements CollisionBox {
             return true;
         }
 
-        // Get the direction of block we are trying to connect to -> towards the block that is trying to connect
         final BlockFace faceToSourceConnector = axis.getOppositeFace();
         return switch (faceToSourceConnector) {
             case EAST, WEST -> this.minX == 0 && this.maxX == 1;
@@ -319,64 +291,48 @@ public class SimpleCollisionBox implements CollisionBox {
             case NORTH, SOUTH -> this.minZ == 0 && this.maxZ == 1;
             default -> false;
         };
-
     }
 
     public boolean isFullBlockNoCache() {
         return minX == 0 && minY == 0 && minZ == 0 && maxX == 1 && maxY == 1 && maxZ == 1;
     }
 
-    /**
-     * if {@code this} and {@code other} overlap in the Y and Z dimensions, calculate the offset between them
-     * in the X dimension. return {@code offsetX} if the bounding boxes do not overlap or if {@code offsetX}
-     * is closer to {@code 0} then the calculated offset. Otherwise return the calculated offset.
-     */
     public double collideX(SimpleCollisionBox other, double offsetX) {
         if (offsetX != 0 && (other.minY - maxY) < -COLLISION_EPSILON && (other.maxY - minY) > COLLISION_EPSILON &&
                 (other.minZ - maxZ) < -COLLISION_EPSILON && (other.maxZ - minZ) > COLLISION_EPSILON) {
             if (offsetX >= 0.0) {
-                double max_move = minX - other.maxX; // < 0.0 if no strict collision
+                double max_move = minX - other.maxX;
                 return max_move < -COLLISION_EPSILON ? offsetX : Math.min(max_move, offsetX);
             } else {
-                double max_move = maxX - other.minX; // > 0.0 if no strict collision
+                double max_move = maxX - other.minX;
                 return max_move > COLLISION_EPSILON ? offsetX : Math.max(max_move, offsetX);
             }
         }
         return offsetX;
     }
 
-    /**
-     * if {@code this} and {@code other} overlap in the X and Z dimensions, calculate the offset between them
-     * in the Y dimension. return {@code offsetY} if the bounding boxes do not overlap or if {@code offsetY}
-     * is closer to {@code 0} then the calculated offset. Otherwise return the calculated offset.
-     */
     public double collideY(SimpleCollisionBox other, double offsetY) {
         if (offsetY != 0 && (other.minX - maxX) < -COLLISION_EPSILON && (other.maxX - minX) > COLLISION_EPSILON &&
                 (other.minZ - maxZ) < -COLLISION_EPSILON && (other.maxZ - minZ) > COLLISION_EPSILON) {
             if (offsetY >= 0.0) {
-                double max_move = minY - other.maxY; // < 0.0 if no strict collision
+                double max_move = minY - other.maxY;
                 return max_move < -COLLISION_EPSILON ? offsetY : Math.min(max_move, offsetY);
             } else {
-                double max_move = maxY - other.minY; // > 0.0 if no strict collision
+                double max_move = maxY - other.minY;
                 return max_move > COLLISION_EPSILON ? offsetY : Math.max(max_move, offsetY);
             }
         }
         return offsetY;
     }
 
-    /**
-     * if {@code this} and {@code other} overlap in the Y and X dimensions, calculate the offset between them
-     * in the Z dimension. return {@code offsetZ} if the bounding boxes do not overlap or if {@code offsetZ}
-     * is closer to {@code 0} then the calculated offset. Otherwise return the calculated offset.
-     */
     public double collideZ(SimpleCollisionBox other, double offsetZ) {
         if (offsetZ != 0 && (other.minX - maxX) < -COLLISION_EPSILON && (other.maxX - minX) > COLLISION_EPSILON &&
                 (other.minY - maxY) < -COLLISION_EPSILON && (other.maxY - minY) > COLLISION_EPSILON) {
             if (offsetZ >= 0.0) {
-                double max_move = minZ - other.maxZ; // < 0.0 if no strict collision
+                double max_move = minZ - other.maxZ;
                 return max_move < -COLLISION_EPSILON ? offsetZ : Math.min(max_move, offsetZ);
             } else {
-                double max_move = maxZ - other.minZ; // > 0.0 if no strict collision
+                double max_move = maxZ - other.minZ;
                 return max_move > COLLISION_EPSILON ? offsetZ : Math.max(max_move, offsetZ);
             }
         }
@@ -403,24 +359,6 @@ public class SimpleCollisionBox implements CollisionBox {
         return z >= this.minZ && z <= this.maxZ ? 0.0 : Math.min(Math.abs(z - this.minZ), Math.abs(z - this.maxZ));
     }
 
-    /**
-     * Calculates intersection with the given ray between a certain distance
-     * interval.
-     * <p>
-     * Ray-box intersection is using IEEE numerical properties to ensure the
-     * test is both robust and efficient, as described in:
-     * <p>
-     * Amy Williams, Steve Barrus, R. Keith Morley, and Peter Shirley: "An
-     * Efficient and Robust Ray-Box Intersection Algorithm" Journal of graphics
-     * tools, 10(1):49-54, 2005
-     *
-     * @param ray     incident ray
-     * @param minDist minimum distance
-     * @param maxDist maximum distance
-     * @return intersection point on the bounding box (only the first is returned) or null if no intersection
-     */
-    // Copied from hawk lol
-    // I would like to point out that this is magic to me and I have not attempted to understand this code
     public Vector3dm intersectsRay(Ray ray, float minDist, float maxDist) {
         Vector3dm invDir = new Vector3dm(1f / ray.getDirection().getX(), 1f / ray.getDirection().getY(), 1f / ray.getDirection().getZ());
 

@@ -26,10 +26,12 @@ import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.util.Vector3d;
+import org.jetbrains.annotations.Nullable;
 
 // You may not copy the check unless you are licensed under GPL
 public class ReachInterpolationData {
     private final SimpleCollisionBox targetLocation;
+    private final Vector3d targetPosition;
     private final GrimPlayer player;
     private final PacketEntity entity;
     public SimpleCollisionBox startingLocation;
@@ -44,11 +46,10 @@ public class ReachInterpolationData {
         this.startingLocation = startingLocation;
         final Vector3d pos = position.getPos();
         this.targetLocation = new SimpleCollisionBox(pos.x, pos.y, pos.z, pos.x, pos.y, pos.z, false);
+        this.targetPosition = pos;
         this.player = player;
         this.entity = entity;
 
-        // 1.9 -> 1.8 precision loss in packets
-        // (ViaVersion is doing some stuff that makes this code difficult)
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9) && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9)) {
             targetLocation.expand(0.03125);
         }
@@ -65,14 +66,13 @@ public class ReachInterpolationData {
             interpolationSteps = 1;
         }
 
-        // If the player doesn't tick reliably, their interpolation is anywhere between min and max steps.
         if (unreliableTicking) interpolationStepsHighBound = getInterpolationSteps();
     }
 
-    // While riding entities, there is no interpolation.
     public ReachInterpolationData(GrimPlayer player, SimpleCollisionBox finishedLoc, PacketEntity entity) {
         this.startingLocation = finishedLoc;
         this.targetLocation = finishedLoc;
+        this.targetPosition = null;
         this.entity = entity;
         this.player = player;
     }
@@ -98,7 +98,6 @@ public class ReachInterpolationData {
         SimpleCollisionBox box1 = (SimpleCollisionBox) b1;
         SimpleCollisionBox box2 = (SimpleCollisionBox) b2;
 
-        // Calculate the potential overlap along each axis
         double overlapMinX = Math.max(box1.minX, box2.minX);
         double overlapMaxX = Math.min(box1.maxX, box2.maxX);
         double overlapMinY = Math.max(box1.minY, box2.minY);
@@ -106,12 +105,10 @@ public class ReachInterpolationData {
         double overlapMinZ = Math.max(box1.minZ, box2.minZ);
         double overlapMaxZ = Math.min(box1.maxZ, box2.maxZ);
 
-        // Check if there's actual overlap along each axis
         if (overlapMinX > overlapMaxX || overlapMinY > overlapMaxY || overlapMinZ > overlapMaxZ) {
-            return NoCollisionBox.INSTANCE; // No overlap, return null or an appropriate "empty" box representation
+            return NoCollisionBox.INSTANCE;
         }
 
-        // Return the overlapping hitbox
         return new SimpleCollisionBox(overlapMinX, overlapMinY, overlapMinZ, overlapMaxX, overlapMaxY, overlapMaxZ);
     }
 
@@ -119,29 +116,24 @@ public class ReachInterpolationData {
         return interpolationSteps;
     }
 
-    /**
-     * Calculates a bounding box that contains all possible positions where the entity could be located
-     * during interpolation. This takes into account:<p>
-     * • The starting position<br>
-     * • The target position<br>
-     * • The number of interpolation steps<br>
-     * • The current interpolation progress (low and high bounds)<p>
-     * <p>
-     * To avoid expensive branching when bruteforcing interpolation, this method combines
-     * the collision boxes for all possible steps into a single bounding box. This approach
-     * was specifically designed to handle the uncertainty of minimum interpolation,
-     * maximum interpolation, and target location on 1.9+ clients while still supporting 1.7-1.8.<p>
-     * <p>
-     * For each possible interpolation step between the bounds, it calculates the position
-     * and combines all these positions into a single bounding box that encompasses all of them.
-     *
-     * @return A SimpleCollisionBox containing all possible positions of the entity during interpolation
-     */
+    public boolean hasActiveInterpolation() {
+        return interpolationStepsLowBound < getInterpolationSteps();
+    }
+
+    public boolean restatesTarget(Vector3d pos, @Nullable Float xRot, @Nullable Float yRot,
+                                  float targetXRot, float targetYRot) {
+        if (targetPosition == null || !hasActiveInterpolation()) return false;
+        if (targetPosition.x != pos.x
+                || targetPosition.y != pos.y
+                || targetPosition.z != pos.z) {
+            return false;
+        }
+
+        return xRot == null || yRot == null || (targetXRot == xRot && targetYRot == yRot);
+    }
+
     public SimpleCollisionBox getPossibleLocationCombined() {
         int interpSteps = getInterpolationSteps();
-
-//        int interpolationStepsLowBound = Math.min(this.interpolationStepsLowBound, this.cancelledLerpInterpolationStepsLowBound); // Temp test
-
 
         double stepMinX = (targetLocation.minX - startingLocation.minX) / (double) interpSteps;
         double stepMaxX = (targetLocation.maxX - startingLocation.maxX) / (double) interpSteps;
@@ -171,24 +163,6 @@ public class ReachInterpolationData {
         return minimumInterpLocation;
     }
 
-    /**
-     * Builds upon getPossibleLocationCombined() to create a larger bounding box that contains
-     * not just where the entity could be located, but where any part of its hitbox could be.
-     * This is done by:<p>
-     * <p>
-     * 1. Getting the possible locations using getPossibleLocationCombined()<br>
-     * 2. If needed expand appropriately due to a recent teleport that moved the entity by:<br>
-     * • X: 0.03125D<br>
-     * • Y: 0.015625D<br>
-     * • Z: 0.03125D<br>
-     * 3. Expanding by the entity's bounding box dimensions, but only expanding:<br>
-     * • Minimum coordinates by negative bounding box values<br>
-     * • Maximum coordinates by positive bounding box values<p>
-     * <p>
-     * This ensures we have a box containing all possible hitbox positions during interpolation.
-     *
-     * @return A SimpleCollisionBox containing all possible hitbox positions during interpolation
-     */
     public SimpleCollisionBox getPossibleHitboxCombined() {
         SimpleCollisionBox minimumInterpLocation = getPossibleLocationCombined();
 
@@ -201,9 +175,7 @@ public class ReachInterpolationData {
     }
 
     public void updatePossibleStartingLocation(SimpleCollisionBox possibleLocationCombined) {
-        //JesterAntiCheatPlugin.staticGetLogger().info(ChatColor.BLUE + "Updated new starting location as second trans hasn't arrived " + startingLocation);
         this.startingLocation = combineCollisionBox(startingLocation, possibleLocationCombined);
-        //JesterAntiCheatPlugin.staticGetLogger().info(ChatColor.BLUE + "Finished updating new starting location as second trans hasn't arrived " + startingLocation);
     }
 
     public void tickMovement(boolean incrementLowBound, boolean tickingReliably) {

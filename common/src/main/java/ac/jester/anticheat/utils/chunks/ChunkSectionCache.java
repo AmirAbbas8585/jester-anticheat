@@ -21,9 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class ChunkSectionCache {
-
-    // Optimization n.4: PacketEvents does not expose Chunk_v1_9's DataPalette.
-    // A MethodHandle getter compiles down to a plain field load after JIT warmup.
     private static final MethodHandle V1_9_DATA = resolveV19DataPalette();
 
     private static MethodHandle resolveV19DataPalette() {
@@ -51,9 +48,7 @@ public final class ChunkSectionCache {
 
     private static final ConcurrentHashMap<Long, Entry> entries = new ConcurrentHashMap<>();
 
-    // Optimization n.1: most chunk sections are all-air, so we can hash once and reuse.
     public static final long AIR_HASH = airHash();
-    // Two types of chunks exist, so cache both types.
     private static final AtomicReference<Entry> AIR_V1_18 = new AtomicReference<>();
     private static final AtomicReference<Entry> AIR_V1_9 = new AtomicReference<>();
     private static final AtomicReference<Entry> AIR_V1_8 = new AtomicReference<>();
@@ -67,7 +62,6 @@ public final class ChunkSectionCache {
             return GrimAPI.INSTANCE.getConfigManager().getConfig()
                     .getBooleanElse("experimental-chunk-sharing", false);
         } catch (Exception e) {
-            // Config not ready (early startup, unit tests): behave as today
             return false;
         }
     }
@@ -82,9 +76,6 @@ public final class ChunkSectionCache {
         return hash;
     }
 
-    // Experimental encoding-based hash: mixes palette size + mapping + storage bits
-    // + raw storage longs instead of decoding 4096 cells. 20-80x faster with modern chunks.
-    // This needs further testing before making it the default implementation.
     public static long optimizedHashSection(BaseChunk section) {
         long hash = 0xcbf29ce484222325L;
 
@@ -93,7 +84,6 @@ public final class ChunkSectionCache {
             return rawHashDataPalette(chunk.getChunkData());
         }
 
-        // Optimization n.3: dedicated methods for each chunk version (inline)
         if (section instanceof Chunk_v1_8 chunk) {
             for (short block : chunk.getBlocks().getData()) {
                 hash ^= (block & 0xFFFFL);
@@ -127,13 +117,10 @@ public final class ChunkSectionCache {
         if (section instanceof Chunk_v1_9 chunk) {
             DataPalette data = v19Data(chunk);
 
-            // Fast path may not be available; fallback.
             if (data != null) {
                 return rawHashDataPalette(data);
             }
 
-            // MethodHandle unavailable (newer PacketEvents moved the field):
-            // fall back to decoding 4096 cells.
             for (int y = 0; y < 16; y++) {
                 for (int z = 0; z < 16; z++) {
                     for (int x = 0; x < 16; x++) {
@@ -149,15 +136,10 @@ public final class ChunkSectionCache {
         throw new IllegalArgumentException("Unsupported chunk version");
     }
 
-    // Shared raw hash over palette mapping + storage bits. Bit-identical to the
-    // former inline v1_18 body for indirect palettes.
     private static long rawHashDataPalette(DataPalette data) {
         long hash = 0xcbf29ce484222325L;
 
         if (data.palette instanceof GlobalPalette) {
-            // Direct encoding: the mapping is the identity, storage longs alone
-            // identify the content. (GlobalPalette.size() is Integer.MAX_VALUE,
-            // so the palette loop below must be skipped, not just slow.)
             hash ^= 0x165667b19e3779f9L;
             hash *= 0x100000001b3L;
         } else {
@@ -173,7 +155,6 @@ public final class ChunkSectionCache {
 
         BaseStorage storage = data.storage;
 
-        // SingletonPalette (single-block-type sections) has no storage
         if (storage != null) {
             hash ^= (storage.getBitsPerEntry() & 0xFFFFFFFFL);
             hash *= 0x100000001b3L;
@@ -183,7 +164,6 @@ public final class ChunkSectionCache {
                 hash *= 0x100000001b3L;
             }
         } else {
-            // Palette size + single mapping already hashed above uniquely identifies content
             hash ^= 0x9e3779b97f4a7c15L;
             hash *= 0x100000001b3L;
         }
@@ -198,8 +178,6 @@ public final class ChunkSectionCache {
             return a.isEmpty() && b.isEmpty();
         }
 
-        // Optimization n.2: Same encoding => identical raw storage + palette mapping proves equal
-        // content without decoding 4096 cells. Different encodings fall through to the content scan.
         if (a instanceof Chunk_v1_18 aChunk && b instanceof Chunk_v1_18 bChunk
                 && rawPalettesEqual(aChunk.getChunkData(), bChunk.getChunkData())) {
             return true;
@@ -228,8 +206,6 @@ public final class ChunkSectionCache {
     private static boolean rawPalettesEqual(DataPalette da, DataPalette db) {
         if (da == db) return true;
 
-        // Direct encoding uses the identity mapping: storage alone decides.
-        // (GlobalPalette.size() is Integer.MAX_VALUE; looping it would hang.)
         boolean globalA = da.palette instanceof GlobalPalette;
         boolean globalB = db.palette instanceof GlobalPalette;
 
@@ -237,22 +213,18 @@ public final class ChunkSectionCache {
             return globalA & globalB && storagesEqual(da.storage, db.storage);
         }
 
-        // Same sections must have same palette size
         if (da.palette.size() != db.palette.size()) return false;
 
         if (!storagesEqual(da.storage, db.storage)) return false;
 
-        // Fallback in case that the two sections have the same storage but different palettes
         return paletteMappingsEqual(da.palette, db.palette);
     }
 
     private static boolean storagesEqual(BaseStorage sa, BaseStorage sb) {
         if (sa == sb) return true;
 
-        // SingletonPalette doesn't hold a storage
         if (sa == null || sb == null) return false;
 
-        // Same sections must have same bits per entry
         if (sa.getBitsPerEntry() != sb.getBitsPerEntry()) return false;
 
         return Arrays.equals(sa.getData(), sb.getData());
@@ -296,18 +268,10 @@ public final class ChunkSectionCache {
         throw new IllegalArgumentException("Unsupported section type: " + source.getClass());
     }
 
-    // Merges a partial (non ground-up) section update into an existing column.
-    // Incoming sections are interned when chunk sharing is enabled, and any
-    // shared section they replace is released.
     public static void mergeIncomingSections(CompensatedWorld world, int chunkX, int chunkZ, BaseChunk[] incoming) {
         Column existing = world.getChunk(chunkX, chunkZ);
 
         if (existing == null) {
-            // Corrupting the player's empty chunk is actually quite meaningless
-            // You are able to set blocks inside it, and they do apply, it just always returns air despite what its data says
-            // So go ahead, corrupt the player's empty chunk and make it no longer all air, it doesn't matter
-            //
-            // LogUtil.warn("Invalid non-ground up continuous sent for empty chunk " + chunkX + " " + chunkZ + " for " + player.user.getProfile().getName() + "! This corrupts the player's empty chunk!");
             return;
         }
 
@@ -327,7 +291,6 @@ public final class ChunkSectionCache {
                     interned[i] = ref.section();
                     internedKeys[i] = ref.key();
                 } catch (RuntimeException e) {
-                    // Roll back refs acquired so far so a hashing bug can't leak entries
                     for (int j = 0; j < i; j++) {
                         if (internedKeys[j] != 0L) release(internedKeys[j], interned[j]);
                     }
@@ -355,14 +318,11 @@ public final class ChunkSectionCache {
         for (int i = 0; i < sections.length; i++) {
             if (sections[i] == null) continue;
 
-            // Checks if there is already a shared reference
             try {
                 ChunkSectionCache.SharedRef ref = internRef(sections[i]);
                 sections[i] = ref.section();
                 keys[i] = ref.key();
             } catch (RuntimeException e) {
-                // Fresh columns start with keys[i] == 0, so only the refs acquired
-                // in this loop can leak: release them and zero the keys.
                 for (int j = 0; j < i; j++) {
                     if (keys[j] != 0L) {
                         release(keys[j], sections[j]);
@@ -412,7 +372,6 @@ public final class ChunkSectionCache {
 
     public static SharedRef internRef(BaseChunk fresh) {
         if (fresh.isEmpty()) {
-            // Fast-path for all-air chunks
             return internAir(fresh);
         }
 
@@ -429,7 +388,6 @@ public final class ChunkSectionCache {
                 return new Entry(fresh, new AtomicInteger(1));
             }
 
-            // Genuine hash collision: keep the stored entry, newcomer stays private
             result[0] = new SharedRef(fresh, 0L);
             return existing;
         });
@@ -468,20 +426,20 @@ public final class ChunkSectionCache {
     }
 
     public static void release(long key, BaseChunk section) {
-        if (key == 0L) return; // private section, never entered the cache
+        if (key == 0L) return;
 
         if (section instanceof Chunk_v1_18 || section instanceof Chunk_v1_9
                 || section instanceof Chunk_v1_8 || section instanceof Chunk_v1_7) {
             Entry air = airSlotFor(section).get();
 
             if (air != null && air.section == section) {
-                air.refs.decrementAndGet(); // canonical air is never evicted
+                air.refs.decrementAndGet();
                 return;
             }
         }
 
         entries.computeIfPresent(key, (hash, existing) -> {
-            if (existing.section != section) return existing; // not ours, leave it
+            if (existing.section != section) return existing;
             return existing.refs.decrementAndGet() <= 0 ? null : existing;
         });
     }

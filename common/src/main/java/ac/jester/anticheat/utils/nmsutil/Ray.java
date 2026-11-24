@@ -5,10 +5,8 @@ import ac.jester.anticheat.utils.data.Pair;
 import ac.jester.anticheat.utils.math.Vector3dm;
 import lombok.Getter;
 
-// Copied directly from Hawk
 @Getter
 public class Ray implements Cloneable {
-
     private final Vector3dm origin;
     private final Vector3dm direction;
 
@@ -42,7 +40,6 @@ public class Ray implements Cloneable {
         return orig.add(dir.multiply(distance));
     }
 
-    // https://en.wikipedia.org/wiki/Skew_lines#Nearest_Points
     public Pair<Vector3dm, Vector3dm> closestPointsBetweenLines(Ray other) {
         Vector3dm n1 = direction.clone().crossProduct(other.direction.clone().crossProduct(direction));
         Vector3dm n2 = other.direction.clone().crossProduct(direction.clone().crossProduct(other.direction));

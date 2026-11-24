@@ -14,12 +14,6 @@ import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState
 import com.github.retrooper.packetevents.util.Vector3i;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockAction;
 
-// If a player doesn't get this packet, then they don't know the shulker box is currently opened
-// Meaning if a player enters a chunk with an opened shulker box, they see the shulker box as closed.
-//
-// Exempting the player on shulker boxes is an option... but then you have people creating PvP arenas
-// on shulker boxes to get high lenience.
-//
 public class PacketBlockAction extends PacketListenerAbstract {
     public PacketBlockAction() {
         super(PacketListenerPriority.HIGH);

@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
 
 @UtilityClass
 public class ReachUtils {
-    // Copied from 1.8... I couldn't figure out 1.14+. "Enterprise" java code is unreadable!
     @Contract("_, _, _ -> new")
     public static @NotNull Pair<@Nullable Vector3dm, @Nullable BlockFace> calculateIntercept(@NotNull SimpleCollisionBox self, @NotNull Vector3dm origin, @NotNull Vector3dm end) {
         Vector3dm minX = getIntermediateWithXValue(origin, end, self.minX);
@@ -68,10 +67,6 @@ public class ReachUtils {
         return new Pair<>(best, bestFace);
     }
 
-    /**
-     * Returns a new vector with x value equal to the second parameter, along the line between this vector and the
-     * passed in vector, or null if not possible.
-     */
     public static @Nullable Vector3dm getIntermediateWithXValue(@NotNull Vector3dm self, @NotNull Vector3dm other, double x) {
         double deltaX = other.getX() - self.getX();
         double deltaY = other.getY() - self.getY();
@@ -85,10 +80,6 @@ public class ReachUtils {
         }
     }
 
-    /**
-     * Returns a new vector with y value equal to the second parameter, along the line between this vector and the
-     * passed in vector, or null if not possible.
-     */
     public static @Nullable Vector3dm getIntermediateWithYValue(@NotNull Vector3dm self, @NotNull Vector3dm other, double y) {
         double deltaX = other.getX() - self.getX();
         double deltaY = other.getY() - self.getY();
@@ -102,10 +93,6 @@ public class ReachUtils {
         }
     }
 
-    /**
-     * Returns a new vector with z value equal to the second parameter, along the line between this vector and the
-     * passed in vector, or null if not possible.
-     */
     public static @Nullable Vector3dm getIntermediateWithZValue(@NotNull Vector3dm self, @NotNull Vector3dm other, double z) {
         double deltaX = other.getX() - self.getX();
         double deltaY = other.getY() - self.getY();
@@ -119,31 +106,21 @@ public class ReachUtils {
         }
     }
 
-    /**
-     * Checks if the specified vector is within the YZ dimensions of the bounding box. Args: Vec3D
-     */
     @Contract("_, null -> false")
     private static boolean isVecInYZ(@NotNull SimpleCollisionBox self, @Nullable Vector3dm vec) {
         return vec != null && vec.getY() >= self.minY && vec.getY() <= self.maxY && vec.getZ() >= self.minZ && vec.getZ() <= self.maxZ;
     }
 
-    /**
-     * Checks if the specified vector is within the XZ dimensions of the bounding box. Args: Vec3D
-     */
     @Contract("_, null -> false")
     private static boolean isVecInXZ(@NotNull SimpleCollisionBox self, @Nullable Vector3dm vec) {
         return vec != null && vec.getX() >= self.minX && vec.getX() <= self.maxX && vec.getZ() >= self.minZ && vec.getZ() <= self.maxZ;
     }
 
-    /**
-     * Checks if the specified vector is within the XY dimensions of the bounding box. Args: Vec3D
-     */
     @Contract("_, null -> false")
     private static boolean isVecInXY(@NotNull SimpleCollisionBox self, @Nullable Vector3dm vec) {
         return vec != null && vec.getX() >= self.minX && vec.getX() <= self.maxX && vec.getY() >= self.minY && vec.getY() <= self.maxY;
     }
 
-    // Look vector accounting for optifine FastMath, and client version differences
     @Contract("_, _, _ -> new")
     public static @NotNull Vector3dm getLook(@NotNull GrimPlayer player, float yaw, float pitch) {
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_12_2)) {

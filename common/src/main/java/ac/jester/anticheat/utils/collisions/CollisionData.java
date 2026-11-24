@@ -51,14 +51,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-// Warning for major game updates!
-// Do not use an enum for stuff like Axis and other data types not in 1.7
-// Meaning only stuff like getDirection() should have enums
-//
-// An enum will break support for all previous versions which is very bad
-// An if statement for new data types is perfectly safe and should be used instead
-//
-// This is actually meant to be put into PacketEvents, but I don't like proprietary plugins stealing my code...
 public enum CollisionData implements CollisionFactory {
     LAVA((player, version, block, x, y, z) -> {
         if (MovementTickerStrider.isAbove(player) && player.compensatedEntities.self.getRiding() instanceof PacketEntityStrider) {
@@ -72,13 +64,8 @@ public enum CollisionData implements CollisionFactory {
 
     BREWING_STAND((player, version, block, x, y, z) -> {
         int base = 0;
-        // maxIndex is 3 instead of 2 for legacy clients because for 1.8 players there is a very rare bug
-        // That we handle later in the code requiring us to add a box https://bugs.mojang.com/browse/MC-85109 For 1.8 PLAYERS
-        // 1.8 Brewing Stand hitbox is a fullblock until it is hit sometimes, can be caused be restarting client and joining server
         int maxIndex = 3;
 
-        // Yes I know we only need maxIndex = 3 for 1.8 specifically
-        // No I'm not adding a special clause for which would require another if check, I'll take compute > memory any day
         if (version.isNewerThanOrEquals(ClientVersion.V_1_13)) {
             maxIndex = 2;
             base = 1;
@@ -87,11 +74,9 @@ public enum CollisionData implements CollisionFactory {
         return new ComplexCollisionBox(maxIndex,
                 new HexCollisionBox(base, 0, base, 16 - base, 2, 16 - base),
                 new SimpleCollisionBox(0.4375, 0.0, 0.4375, 0.5625, 0.875, 0.5625, false));
-
     }, StateTypes.BREWING_STAND),
 
     BAMBOO((player, version, block, x, y, z) -> {
-        // ViaVersion replacement, sugarcane
         if (version.isOlderThan(ClientVersion.V_1_14)) {
             return NoCollisionBox.INSTANCE;
         }
@@ -121,13 +106,8 @@ public enum CollisionData implements CollisionFactory {
 
     ANVIL((player, version, data, x, y, z) -> {
         BlockFace face = data.getFacing();
-        // Anvil collision box was changed in 1.13 to be more accurate
-        // https://www.mcpk.wiki/wiki/Version_Differences
-        // The base is 0.75×0.75, and its floor is 0.25b high.
-        // The top is 1×0.625, and its ceiling is 0.375b low.
         if (version.isNewerThanOrEquals(ClientVersion.V_1_13)) {
             ComplexCollisionBox complexAnvil = new ComplexCollisionBox(4);
-            // Base of the anvil
             complexAnvil.add(new HexCollisionBox(2, 0, 2, 14, 4, 14));
             if (face == BlockFace.NORTH || face == BlockFace.SOUTH) {
                 complexAnvil.add(new HexCollisionBox(4.0D, 4.0D, 3.0D, 12.0D, 5.0D, 13.0D));
@@ -141,7 +121,6 @@ public enum CollisionData implements CollisionFactory {
 
             return complexAnvil;
         } else {
-            // Just a single solid collision box with 1.12
             if (face == BlockFace.NORTH || face == BlockFace.SOUTH) {
                 return new SimpleCollisionBox(0.125F, 0.0F, 0.0F, 0.875F, 1.0F, 1.0F, false);
             } else {
@@ -161,8 +140,6 @@ public enum CollisionData implements CollisionFactory {
         }
 
         return new SimpleCollisionBox(0, 0.5, 0, 1, 1, 1, false);
-        // 1.13 can handle double slabs as it's in the block data
-        // 1.12 has double slabs as a separate block, no block data to differentiate it
     }, BlockTags.SLABS.getStates().toArray(new StateType[0])),
 
     SKULL(new SimpleCollisionBox(0.25F, 0.0F, 0.25F, 0.75F, 0.5F, 0.75F, false),
@@ -171,7 +148,6 @@ public enum CollisionData implements CollisionFactory {
 
     PIGLIN_HEAD(new HexCollisionBox(3.0D, 0.0D, 3.0D, 13.0D, 8.0D, 13.0D), StateTypes.PIGLIN_HEAD),
 
-    // Overwrite previous SKULL enum for legacy, where head and wall skull isn't separate
     WALL_SKULL((player, version, data, x, y, z) -> switch (data.getFacing()) {
         case SOUTH -> new SimpleCollisionBox(0.25F, 0.25F, 0.0F, 0.75F, 0.75F, 0.5F, false);
         case WEST -> new SimpleCollisionBox(0.5F, 0.25F, 0.25F, 1.0F, 0.75F, 0.75F, false);
@@ -229,7 +205,6 @@ public enum CollisionData implements CollisionFactory {
                     new SimpleCollisionBox(0, height, 0, 1, 1, 0.125, false),
                     new SimpleCollisionBox(0, height, 1 - 0.125, 1, 1, 1, false));
         }
-
     }, StateTypes.HOPPER),
 
     CAKE((player, version, data, x, y, z) -> {
@@ -263,7 +238,6 @@ public enum CollisionData implements CollisionFactory {
 
     BUTTON(NoCollisionBox.INSTANCE, BlockTags.BUTTONS.getStates().toArray(new StateType[0])),
 
-    // All states that unconditionally have no collision and are not in a group where every member also has no collision.
     NO_COLLISION(NoCollisionBox.INSTANCE, StateTypes.TWISTING_VINES_PLANT, StateTypes.WEEPING_VINES_PLANT,
             StateTypes.TWISTING_VINES, StateTypes.WEEPING_VINES, StateTypes.CAVE_VINES, StateTypes.CAVE_VINES_PLANT,
             StateTypes.TALL_SEAGRASS, StateTypes.SEAGRASS, StateTypes.SHORT_GRASS, StateTypes.FERN, StateTypes.NETHER_SPROUTS,
@@ -276,7 +250,6 @@ public enum CollisionData implements CollisionFactory {
             StateTypes.VOID_AIR, StateTypes.LIGHT, StateTypes.WATER, StateTypes.BUBBLE_COLUMN, StateTypes.FIRE, StateTypes.SOUL_FIRE),
 
     KELP(new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 9.0D, 16.0D), StateTypes.KELP),
-    // Kelp block is a full block, so it by default is correct
 
     BELL((player, version, data, x, y, z) -> {
         if (version.isOlderThanOrEquals(ClientVersion.V_1_13_2))
@@ -288,7 +261,6 @@ public enum CollisionData implements CollisionFactory {
             return direction != BlockFace.NORTH && direction != BlockFace.SOUTH ?
                     new HexCollisionBox(4.0D, 0.0D, 0.0D, 12.0D, 16.0D, 16.0D) :
                     new HexCollisionBox(0.0D, 0.0D, 4.0D, 16.0D, 16.0D, 12.0D);
-
         }
 
         ComplexCollisionBox complex = new ComplexCollisionBox(3,
@@ -316,11 +288,9 @@ public enum CollisionData implements CollisionFactory {
         }
 
         return complex;
-
     }, StateTypes.BELL),
 
     SCAFFOLDING((player, version, data, x, y, z) -> {
-        // ViaVersion replacement block - hay block
         if (version.isOlderThanOrEquals(ClientVersion.V_1_13_2))
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
 
@@ -352,9 +322,7 @@ public enum CollisionData implements CollisionFactory {
     }, StateTypes.LADDER),
 
     CAMPFIRE((player, version, data, x, y, z) -> {
-        // ViaVersion replacement block - slab if not lit or fire if lit
         if (version.isOlderThanOrEquals(ClientVersion.V_1_13_2)) {
-
             if (data.isLit()) {
                 return NoCollisionBox.INSTANCE;
             }
@@ -378,25 +346,22 @@ public enum CollisionData implements CollisionFactory {
         return new ComplexCollisionBox(2,
                 new HexCollisionBox(5.0D, 0.0D, 5.0D, 11.0D, 7.0D, 11.0D),
                 new HexCollisionBox(6.0D, 7.0D, 6.0D, 10.0D, 9.0D, 10.0D));
-
     }, BlockTags.LANTERNS.getStates().toArray(new StateType[0])),
-
 
     LECTERN((player, version, data, x, y, z) -> {
         if (version.isOlderThanOrEquals(ClientVersion.V_1_13_2))
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
 
         return new ComplexCollisionBox(2,
-                new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 2.0D, 16.0D), // base
-                new HexCollisionBox(4.0D, 2.0D, 4.0D, 12.0D, 14.0D, 12.0D)); // post
+                new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 2.0D, 16.0D),
+                new HexCollisionBox(4.0D, 2.0D, 4.0D, 12.0D, 14.0D, 12.0D));
     }, StateTypes.LECTERN),
-
 
     HONEY_BLOCK((player, version, data, x, y, z) -> {
         if (version.isOlderThanOrEquals(ClientVersion.V_1_14_4))
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
 
-        return new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 15.0D, 15.0D); // post
+        return new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 15.0D, 15.0D);
     }, StateTypes.HONEY_BLOCK),
 
     DRAGON_EGG_BLOCK(new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 16.0D, 15.0D), StateTypes.DRAGON_EGG),
@@ -404,9 +369,7 @@ public enum CollisionData implements CollisionFactory {
     GRINDSTONE((player, version, data, x, y, z) -> {
         BlockFace facing = data.getFacing();
 
-        // ViaVersion replacement block - Anvil
         if (version.isOlderThanOrEquals(ClientVersion.V_1_12_2)) {
-            // Just a single solid collision box with 1.12
             if (facing == BlockFace.NORTH || facing == BlockFace.SOUTH) {
                 return new SimpleCollisionBox(0.125F, 0.0F, 0.0F, 0.875F, 1.0F, 1.0F, false);
             } else {
@@ -416,7 +379,6 @@ public enum CollisionData implements CollisionFactory {
 
         if (version.isOlderThanOrEquals(ClientVersion.V_1_13_2)) {
             ComplexCollisionBox complexAnvil = new ComplexCollisionBox(4);
-            // Base of the anvil
             complexAnvil.add(new HexCollisionBox(2, 0, 2, 14, 4, 14));
 
             if (facing == BlockFace.NORTH || facing == BlockFace.SOUTH) {
@@ -499,14 +461,12 @@ public enum CollisionData implements CollisionFactory {
         }
 
         return NoCollisionBox.INSTANCE;
-
     }, StateTypes.GRINDSTONE),
 
     PANE(new DynamicCollisionPane(), Materials.getPanes().toArray(new StateType[0])),
 
     CHAIN_BLOCK((player, version, data, x, y, z) -> {
         if (version.isOlderThan(ClientVersion.V_1_16)) {
-            // viaversion replacement - iron bars
             return PANE.fetch(player, version, data, x, y, z);
         }
 
@@ -530,7 +490,7 @@ public enum CollisionData implements CollisionFactory {
                     new SimpleCollisionBox(0.0F, 0.0F, 0.375F, 1.0F, 1.5F, 0.625F, false);
             case WEST, EAST ->
                     new SimpleCollisionBox(0.375F, 0.0F, 0.0F, 0.625F, 1.5F, 1.0F, false);
-            default -> // This code is unreachable but the compiler does not know this
+            default ->
                     NoCollisionBox.INSTANCE;
         };
     }, BlockTags.FENCE_GATES.getStates().toArray(new StateType[0])),
@@ -566,15 +526,14 @@ public enum CollisionData implements CollisionFactory {
         ComplexCollisionBox complexCollisionBox = new ComplexCollisionBox(2, new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 13.0D, 16.0D));
 
         if (data.isEye()) {
-            if (version.isNewerThanOrEquals(ClientVersion.V_1_13)) {  // 1.13 players have a 0.5x0.5 eye
+            if (version.isNewerThanOrEquals(ClientVersion.V_1_13)) {
                 complexCollisionBox.add(new HexCollisionBox(4.0D, 13.0D, 4.0D, 12.0D, 16.0D, 12.0D));
-            } else { // 1.12 and below players have a 0.375x0.375 eye
+            } else {
                 complexCollisionBox.add(new HexCollisionBox(5.0D, 13.0D, 5.0D, 11.0D, 16.0D, 11.0D));
             }
         }
 
         return complexCollisionBox;
-
     }, StateTypes.END_PORTAL_FRAME),
 
     CARPET((player, version, data, x, y, z) -> {
@@ -602,8 +561,6 @@ public enum CollisionData implements CollisionFactory {
             StateTypes.DAYLIGHT_DETECTOR),
 
     FARMLAND((player, version, data, x, y, z) -> {
-        // Thanks Mojang for changing block collisions without changing protocol version!
-        // Anyways, let a 1.10/1.10.1/1.10.2 client decide what farmland collision box it uses
         if (version == ClientVersion.V_1_10) {
             if (Math.abs(player.y % 1.0) < 0.001) {
                 return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
@@ -615,7 +572,6 @@ public enum CollisionData implements CollisionFactory {
             return new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 15.0D, 16.0D);
 
         return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
-
     }, StateTypes.FARMLAND),
 
     GRASS_PATH((player, version, data, x, y, z) -> {
@@ -623,12 +579,9 @@ public enum CollisionData implements CollisionFactory {
             return new HexCollisionBox(0.0D, 0.0D, 0.0D, 16.0D, 15.0D, 16.0D);
 
         return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
-
-        // TODO, replace this hacky patch for 1.16.5 with versioned state types later. DIRT_PATH is new name for GRASS_PATH
     }, StateTypes.DIRT_PATH, StateTypes.GRASS_PATH),
 
     LILYPAD((player, version, data, x, y, z) -> {
-        // Boats break lilypads client sided on 1.12- clients.
         if (player.inVehicle() && player.compensatedEntities.self.getRiding().isBoat && version.isOlderThanOrEquals(ClientVersion.V_1_12_2))
             return NoCollisionBox.INSTANCE;
 
@@ -638,7 +591,6 @@ public enum CollisionData implements CollisionFactory {
     }, StateTypes.LILY_PAD),
 
     BED((player, version, data, x, y, z) -> {
-        // It's all the same box on 1.14 clients
         if (version.isOlderThan(ClientVersion.V_1_14))
             return new SimpleCollisionBox(0.0F, 0.0F, 0.0F, 1.0F, 0.5625, 1.0F, false);
 
@@ -669,7 +621,6 @@ public enum CollisionData implements CollisionFactory {
     }, BlockTags.BEDS.getStates().toArray(new StateType[0])),
 
     STRAW_BED((player, version, data, x, y, z) -> {
-        // viabackwards replacement block - bed
         if (version.isOlderThan(ClientVersion.V_26_3)) {
             return BED.fetch(player, version, data, x, y, z);
         }
@@ -699,7 +650,6 @@ public enum CollisionData implements CollisionFactory {
     }, StateTypes.STRAW_BED),
 
     SHELF_MUSHROOM((player, version, data, x, y, z) -> {
-        // viabackwards replacement block - cocoa
         if (version.isOlderThan(ClientVersion.V_26_3)) {
             return getCocoa(version, data.getAge(), data.getFacing().getOppositeFace());
         }
@@ -750,7 +700,6 @@ public enum CollisionData implements CollisionFactory {
 
     TRAPDOOR(new TrapDoorHandler(), BlockTags.TRAPDOORS.getStates().toArray(new StateType[0])),
 
-
     DIODES(new SimpleCollisionBox(0.0F, 0.0F, 0.0F, 1.0F, 0.125F, 1.0F, false),
             StateTypes.REPEATER, StateTypes.COMPARATOR),
 
@@ -761,7 +710,7 @@ public enum CollisionData implements CollisionFactory {
     END_ROD((player, version, data, x, y, z) -> getEndRod(version, data.getFacing()), Materials.getRods().toArray(new StateType[0])),
 
     CAULDRON((player, version, data, x, y, z) -> {
-        if (version.isNewerThan(ClientVersion.V_1_13_2)) { // changed in 19w13a, 1.14 Snapshot
+        if (version.isNewerThan(ClientVersion.V_1_13_2)) {
             return new ComplexCollisionBox(15,
                     new SimpleCollisionBox(0.0, 0.0, 0.0, 0.125, 1.0, 0.25, false),
                     new SimpleCollisionBox(0.0, 0.0, 0.75, 0.125, 1.0, 1.0, false),
@@ -796,7 +745,6 @@ public enum CollisionData implements CollisionFactory {
     CACTUS(new SimpleCollisionBox(0.0625, 0, 0.0625,
             1 - 0.0625, 1 - 0.0625, 1 - 0.0625, false), StateTypes.CACTUS),
 
-
     PISTON_BASE(new PistonBaseCollision(), StateTypes.PISTON, StateTypes.STICKY_PISTON),
 
     PISTON_HEAD(new PistonHeadCollision(), StateTypes.PISTON_HEAD),
@@ -807,7 +755,6 @@ public enum CollisionData implements CollisionFactory {
     PICKLE((player, version, data, x, y, z) -> getPicklesBox(version, data.getPickles()), StateTypes.SEA_PICKLE),
 
     TURTLEEGG((player, version, data, x, y, z) -> {
-        // ViaVersion replacement block (West facing cocoa beans)
         if (version.isOlderThanOrEquals(ClientVersion.V_1_12_2)) {
             return getCocoa(version, data.getEggs(), BlockFace.WEST);
         }
@@ -820,7 +767,6 @@ public enum CollisionData implements CollisionFactory {
     }, StateTypes.TURTLE_EGG),
 
     CONDUIT((player, version, data, x, y, z) -> {
-        // ViaVersion replacement block - Beacon
         if (version.isOlderThanOrEquals(ClientVersion.V_1_12_2))
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
 
@@ -850,7 +796,7 @@ public enum CollisionData implements CollisionFactory {
                     Stream.of(StateTypes.DEAD_HORN_CORAL, StateTypes.DEAD_TUBE_CORAL, StateTypes.DEAD_BRAIN_CORAL,
                             StateTypes.DEAD_BUBBLE_CORAL, StateTypes.DEAD_FIRE_CORAL)
             )
-            .distinct()  // This will remove duplicates
+            .distinct()
             .toArray(StateType[]::new)
     ),
 
@@ -858,7 +804,7 @@ public enum CollisionData implements CollisionFactory {
             BlockTags.STANDING_SIGNS.getStates().toArray(new StateType[0])),
 
     STONE_PRESSURE_PLATE((player, version, data, x, y, z) -> {
-        if (data.isPowered()) { // Pressed
+        if (data.isPowered()) {
             return new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 0.5D, 15.0D);
         }
 
@@ -866,7 +812,7 @@ public enum CollisionData implements CollisionFactory {
     }, BlockTags.STONE_PRESSURE_PLATES.getStates().toArray(new StateType[0])),
 
     WOOD_PRESSURE_PLATE((player, version, data, x, y, z) -> {
-        if (data.isPowered()) { // Pressed
+        if (data.isPowered()) {
             return new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 0.5D, 15.0D);
         }
 
@@ -874,7 +820,7 @@ public enum CollisionData implements CollisionFactory {
     }, BlockTags.WOODEN_PRESSURE_PLATES.getStates().toArray(new StateType[0])),
 
     OTHER_PRESSURE_PLATE((player, version, data, x, y, z) -> {
-        if (data.getPower() > 0) { // Pressed
+        if (data.getPower() > 0) {
             return new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 0.5D, 15.0D);
         }
 
@@ -903,11 +849,9 @@ public enum CollisionData implements CollisionFactory {
         case SOUTH -> new HexCollisionBox(5.5D, 3.0D, 0.0D, 10.5D, 13.0D, 5.0D);
         case WEST -> new HexCollisionBox(11.0D, 3.0D, 5.5D, 16.0D, 13.0D, 10.5D);
         case EAST -> new HexCollisionBox(0.0D, 3.0D, 5.5D, 5.0D, 13.0D, 10.5D);
-        // 1.13 separates wall and normal torches, 1.12 does not
         default -> new HexCollisionBox(6.0D, 0.0D, 6.0D, 10.0D, 10.0D, 10.0D);
     }, StateTypes.WALL_TORCH, StateTypes.REDSTONE_WALL_TORCH, StateTypes.COPPER_WALL_TORCH, StateTypes.SOUL_WALL_TORCH),
 
-    // 1.17 blocks
     CANDLE((player, version, data, x, y, z) -> {
         if (version.isNewerThanOrEquals(ClientVersion.V_1_17)) {
             return switch (data.getCandles()) {
@@ -937,7 +881,7 @@ public enum CollisionData implements CollisionFactory {
     DECORATED_POT((player, version, data, x, y, z) -> {
         if (version.isNewerThan(ClientVersion.V_1_19_3)) {
             return new HexCollisionBox(1.0D, 0.0D, 1.0D, 15.0D, 16.0D, 15.0);
-        } else { // ViaVersion replacement is a Brick
+        } else {
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
         }
     }, StateTypes.DECORATED_POT),
@@ -990,9 +934,7 @@ public enum CollisionData implements CollisionFactory {
         if (version.isOlderThanOrEquals(ClientVersion.V_1_16_4))
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
 
-        // If fall distance greater than 2.5, 0.899999 box
         if (player.fallDistance > 2.5) {
-            // TODO: this is technically incorrect (1.21.4)
             return player.getClientVersion() == ClientVersion.V_1_21_4 ?
                     new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true)
                     : new SimpleCollisionBox(0.0, 0.0, 0.0, 1.0, 0.9, 1.0, false);
@@ -1003,7 +945,6 @@ public enum CollisionData implements CollisionFactory {
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
 
         return NoCollisionBox.INSTANCE;
-
     }, StateTypes.POWDER_SNOW),
 
     NETHER_PORTAL((player, version, data, x, y, z) -> {
@@ -1085,10 +1026,7 @@ public enum CollisionData implements CollisionFactory {
     DRIED_GHAST((player, version, data, x, y, z) -> {
         if (player.getClientVersion().isNewerThan(ClientVersion.V_1_21_5)) {
             return new HexCollisionBox(3.0, 0.0, 3.0, 13.0, 10.0, 13.0);
-        // ViaVersion replacement block - chorus plant (down: true, up: false, east: false, south: false, west: false)
         } else if (player.getClientVersion().isNewerThan(ClientVersion.V_1_12_2)) {
-            // While the 2nd SimpleCollisionBox clearly encompasses the first, it's unclear if Mojang's collision code on any version
-            // May give a different result if the vanilla boxes aren't replicated perfectly, even the inefficiencies like the code below
             return new ComplexCollisionBox(2,
                     new SimpleCollisionBox(0.1875, 0.1875, 0.1875, 0.8125, 0.8125, 0.8125),
                     new SimpleCollisionBox(0.1875, 0, 0.1875, 0.8125, 0.8125, 0.8125)
@@ -1096,14 +1034,12 @@ public enum CollisionData implements CollisionFactory {
         } else if (player.getClientVersion().isNewerThan(ClientVersion.V_1_8)) {
             return new SimpleCollisionBox(0.1875F, 0.0F, 0.1875F, 0.8125F, 0.8125F, 0.8125F);
         } else {
-            // ViaVersion replacement block (Purple wool)
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
         }
     }, StateTypes.DRIED_GHAST),
 
     SHELF((player, version, data, x, y, z) -> {
         if (version.isOlderThan(ClientVersion.V_1_21_9)) {
-            // ViaVersion replacement block (planks)
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
         }
 
@@ -1118,7 +1054,6 @@ public enum CollisionData implements CollisionFactory {
 
     COPPER_GOLEM_STATUE((player, version, data, x, y, z) -> {
         if (version.isOlderThan(ClientVersion.V_1_21_9)) {
-            // ViaVersion replacement block (copper block)
             return new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true);
         }
 
@@ -1127,7 +1062,6 @@ public enum CollisionData implements CollisionFactory {
 
     DEFAULT(new SimpleCollisionBox(0, 0, 0, 1, 1, 1, true), StateTypes.STONE);
 
-    // This should be an array... but a hashmap will do for now...
     private static final Map<StateType, CollisionData> rawLookupMap = new IdentityHashMap<>();
 
     static {
@@ -1145,14 +1079,14 @@ public enum CollisionData implements CollisionFactory {
     CollisionData(CollisionBox box, StateType... states) {
         this.box = box;
         Set<StateType> mList = new HashSet<>(Arrays.asList(states));
-        mList.remove(null); // Sets can contain one null
+        mList.remove(null);
         this.materials = mList.toArray(new StateType[0]);
     }
 
     CollisionData(CollisionFactory dynamic, StateType... states) {
         this.dynamic = dynamic;
         Set<StateType> mList = new HashSet<>(Arrays.asList(states));
-        mList.remove(null); // Sets can contain one null
+        mList.remove(null);
         this.materials = mList.toArray(new StateType[0]);
     }
 
@@ -1177,7 +1111,6 @@ public enum CollisionData implements CollisionFactory {
     }
 
     private static CollisionBox getPicklesBox(ClientVersion version, int pickles) {
-        // ViaVersion replacement block (West facing cocoa beans)
         if (version.isOlderThanOrEquals(ClientVersion.V_1_12_2)) {
             return getCocoa(version, pickles, BlockFace.WEST);
         }
@@ -1192,8 +1125,6 @@ public enum CollisionData implements CollisionFactory {
     }
 
     public static CollisionBox getCocoa(ClientVersion version, int age, BlockFace direction) {
-        // From 1.9 - 1.10, the large cocoa block is the same as the medium one
-        // https://bugs.mojang.com/browse/MC-94274
         if (version.isNewerThanOrEquals(ClientVersion.V_1_9_1) && version.isOlderThan(ClientVersion.V_1_11))
             age = Math.min(age, 1);
 
@@ -1239,7 +1170,6 @@ public enum CollisionData implements CollisionFactory {
     }
 
     private static CollisionBox getEndRod(ClientVersion version, BlockFace face) {
-        // ViaVersion replacement block - torch
         if (version.isOlderThan(ClientVersion.V_1_9))
             return NoCollisionBox.INSTANCE;
 
@@ -1250,9 +1180,7 @@ public enum CollisionData implements CollisionFactory {
         };
     }
 
-    // Would pre-computing all states be worth the memory cost? I doubt it
-    public static CollisionData getData(StateType state) { // TODO: Find a better hack for lava and scaffolding
-        // What the fuck mojang, why put noCollision() and then give PITCHER_CROP collision?
+    public static CollisionData getData(StateType state) {
         return state.isSolid() || state == StateTypes.LAVA || state == StateTypes.SCAFFOLDING
                 || state == StateTypes.PITCHER_CROP || state == StateTypes.HEAVY_CORE || state == StateTypes.POTTED_GOLDEN_DANDELION
                 || state == StateTypes.PALE_MOSS_CARPET || BlockTags.WALL_HANGING_SIGNS.contains(state)
@@ -1260,7 +1188,6 @@ public enum CollisionData implements CollisionFactory {
                 ? rawLookupMap.getOrDefault(state, DEFAULT) : NO_COLLISION;
     }
 
-    // TODO: This is wrong if a block doesn't have any hitbox and isn't specified, light block?
     public static CollisionData getRawData(StateType state) {
         return rawLookupMap.getOrDefault(state, DEFAULT);
     }

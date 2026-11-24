@@ -15,14 +15,10 @@ import java.util.Set;
  * widens the area Grim allows a push in.
  */
 public final class PistonPushReaction {
-
     public enum Reaction {
         NORMAL,
-        /** Broken by a piston pushing it, and never pulled. */
         DESTROY,
-        /** Never moved, and stops a push. */
         BLOCK,
-        /** Pushed, never pulled: glazed terracotta. */
         PUSH_ONLY
     }
 
@@ -100,12 +96,10 @@ public final class PistonPushReaction {
             purple_glazed_terracotta red_glazed_terracotta white_glazed_terracotta yellow_glazed_terracotta
             """);
 
-    // PistonBaseBlock#isPushable refuses these by name, whatever their reaction; 26.3 made it their reaction instead
     private static final Set<StateType> IMMOVABLE = of("""
             obsidian crying_obsidian respawn_anchor reinforced_deepslate
             """);
 
-    // Only those that would otherwise be pushed: a block entity is never moved, whatever its reaction
     private static final Set<StateType> BLOCK_ENTITIES = of("""
             acacia_hanging_sign acacia_shelf acacia_sign acacia_wall_hanging_sign acacia_wall_sign
             bamboo_hanging_sign bamboo_shelf bamboo_sign bamboo_wall_hanging_sign bamboo_wall_sign barrel beacon

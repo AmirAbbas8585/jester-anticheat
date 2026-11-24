@@ -27,17 +27,13 @@ import com.github.retrooper.packetevents.util.Vector3i;
 import java.util.*;
 
 public enum BlockPlaceResult {
-
-    // If the block only has directional data
     ANVIL((player, place) -> {
         WrappedBlockState data = place.material.createBlockState(CompensatedWorld.blockVersion);
         data.setFacing(BlockFaceHelper.getClockWise(place.getPlayerFacing()));
         place.set(data);
     }, ItemTags.ANVIL),
 
-    // The client only predicts one of the individual bed blocks, interestingly
     BED((player, place) -> {
-        // 1.12- players don't predict bed places for some reason
         if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_12_2)) return;
 
         BlockFace facing = place.getPlayerFacing();
@@ -51,7 +47,7 @@ public enum BlockPlaceResult {
         WrappedBlockState blockState = place.getExistingBlockData();
         int layers = 0;
         if (blockState.getType() == StateTypes.SNOW) {
-            layers = blockState.getLayers(); // Indexed at 1
+            layers = blockState.getLayers();
         }
 
         WrappedBlockState below = place.getBelowState();
@@ -59,10 +55,10 @@ public enum BlockPlaceResult {
         if (!BlockTags.ICE.contains(below.getType()) && below.getType() != StateTypes.BARRIER) {
             boolean set = false;
             if (below.getType() != StateTypes.HONEY_BLOCK && below.getType() != StateTypes.SOUL_SAND) {
-                if (place.isFullFace(BlockFace.DOWN)) { // Vanilla also checks for 8 layers of snow but that's redundant...
+                if (place.isFullFace(BlockFace.DOWN)) {
                     set = true;
                 }
-            } else { // Honey and soul sand are exempt from this full face check
+            } else {
                 set = true;
             }
 
@@ -76,7 +72,6 @@ public enum BlockPlaceResult {
                 }
             }
         }
-
     }, ItemTypes.SNOW),
 
     SLAB((player, place) -> {
@@ -93,7 +88,6 @@ public enum BlockPlaceResult {
             slabData.setTypeData(clickedTop ? Type.BOTTOM : Type.TOP);
             place.set(slabData);
         }
-
     }, ItemTags.SLABS),
 
     STAIRS((player, place) -> {
@@ -113,7 +107,6 @@ public enum BlockPlaceResult {
     }, ItemTypes.END_ROD, ItemTypes.LIGHTNING_ROD),
 
     LADDER((player, place) -> {
-        //  No placing a ladder against another ladder
         if (!place.replaceClicked) {
             WrappedBlockState existing = player.compensatedWorld.getBlock(place.position);
             if (existing.getType() == StateTypes.LADDER && existing.getFacing() == place.getFace()) {
@@ -122,9 +115,6 @@ public enum BlockPlaceResult {
         }
 
         for (BlockFace face : place.getNearestPlacingDirections()) {
-            // Torches need solid faces
-            // Heads have no special preferences - place them anywhere
-            // Signs need solid - exempts chorus flowers and a few other strange cases
             if (BlockFaceHelper.isFaceHorizontal(face) && place.isFullFace(face)) {
                 WrappedBlockState ladder = place.material.createBlockState(CompensatedWorld.blockVersion);
                 ladder.setFacing(face.getOppositeFace());
@@ -146,14 +136,12 @@ public enum BlockPlaceResult {
     }, ItemTypes.SHELF_MUSHROOM),
 
     FARM_BLOCK((player, place) -> {
-        // What we also need to check:
         WrappedBlockState above = place.getAboveState();
         if (!above.getType().isBlocking() && !BlockTags.FENCE_GATES.contains(above.getType()) && above.getType() != StateTypes.MOVING_PISTON) {
             place.set(place.material);
         }
     }, ItemTypes.FARMLAND),
 
-    // 1.13+ only blocks from here below!  No need to write everything twice
     AMETHYST_CLUSTER((player, place) -> {
         WrappedBlockState amethyst = place.material.createBlockState(CompensatedWorld.blockVersion);
         amethyst.setFacing(place.getFace());
@@ -185,7 +173,6 @@ public enum BlockPlaceResult {
         WrappedBlockState bell = place.material.createBlockState(CompensatedWorld.blockVersion);
 
         boolean canSurvive = !BlockTags.FENCE_GATES.contains(place.getPlacedAgainstMaterial());
-        // This is exempt from being able to place on
         if (!canSurvive) return;
 
         if (place.isFaceVertical()) {
@@ -228,7 +215,6 @@ public enum BlockPlaceResult {
         WrappedBlockState candle = place.material.createBlockState(CompensatedWorld.blockVersion);
 
         if (BlockTags.CANDLES.contains(existing.getType())) {
-            // Max candles already exists
             if (existing.getCandles() == 4) return;
             candle.setCandles(existing.getCandles() + 1);
         }
@@ -238,14 +224,12 @@ public enum BlockPlaceResult {
         }
     }, ItemTags.CANDLES),
 
-    // Sea pickles refuse to overwrite any collision... but... that's already checked.  Unsure what Mojang is doing.
     SEA_PICKLE((player, place) -> {
         WrappedBlockState existing = place.getExistingBlockData();
 
         if (!place.isFullFace(BlockFace.DOWN) && !place.isFaceEmpty(BlockFace.DOWN)) return;
 
         if (existing.getType() == StateTypes.SEA_PICKLE) {
-            // Max pickels already exist
             if (existing.getPickles() == 4) return;
             existing.setPickles(existing.getPickles() + 1);
         } else {
@@ -292,7 +276,6 @@ public enum BlockPlaceResult {
 
     DIRT_PATH((player, place) -> {
         WrappedBlockState state = place.getDirectionalState(BlockFace.UP);
-        // If there is a solid block above the dirt path, it turns to air.  This does not include fence gates
         if (!state.getType().isBlocking() || BlockTags.FENCE_GATES.contains(state.getType())) {
             place.set(place.material);
         } else {
@@ -324,45 +307,31 @@ public enum BlockPlaceResult {
     }, ItemTypes.LANTERN, ItemTypes.SOUL_LANTERN),
 
     POINTED_DRIPSTONE((player, place) -> {
-        // To explain what Mojang is doing, take the example of placing on top face
-        BlockFace primaryDir = place.getNearestVerticalDirection().getOppositeFace(); // The player clicked downwards, so use upwards
-        WrappedBlockState typePlacingOn = place.getDirectionalState(primaryDir.getOppositeFace()); // Block we are placing on
+        BlockFace primaryDir = place.getNearestVerticalDirection().getOppositeFace();
+        WrappedBlockState typePlacingOn = place.getDirectionalState(primaryDir.getOppositeFace());
 
-        // Check to see if we can place on the block or there is dripstone on the block that we are placing on also pointing upwards
         boolean primarySameType = typePlacingOn.hasProperty(StateValue.VERTICAL_DIRECTION) && typePlacingOn.getVerticalDirection().name().equals(primaryDir.name());
         boolean primaryValid = place.isFullFace(primaryDir.getOppositeFace()) || primarySameType;
 
-        // Try to use the opposite direction, just to see if switching directions makes it valid.
         if (!primaryValid) {
-            BlockFace secondaryDirection = primaryDir.getOppositeFace(); // See if placing it DOWNWARDS is valid
-            WrappedBlockState secondaryType = place.getDirectionalState(secondaryDirection.getOppositeFace()); // Get the block above us
-            // Check if the dripstone above us is also facing downwards
+            BlockFace secondaryDirection = primaryDir.getOppositeFace();
+            WrappedBlockState secondaryType = place.getDirectionalState(secondaryDirection.getOppositeFace());
             boolean secondarySameType = secondaryType.hasProperty(StateValue.VERTICAL_DIRECTION) && secondaryType.getVerticalDirection().name().equals(primaryDir.name());
 
             primaryDir = secondaryDirection;
-            // Update block survivability
             primaryValid = place.isFullFace(secondaryDirection.getOppositeFace()) || secondarySameType;
         }
 
-        // No valid locations
         if (!primaryValid) return;
 
-        WrappedBlockState toPlace = StateTypes.POINTED_DRIPSTONE.createBlockState(CompensatedWorld.blockVersion);
-        toPlace.setVerticalDirection(VerticalDirection.valueOf(primaryDir.name())); // This block is facing UPWARDS as placed on the top face
+        WrappedBlockState toPlace = place.getMaterial().createBlockState(CompensatedWorld.blockVersion);
+        toPlace.setVerticalDirection(VerticalDirection.valueOf(primaryDir.name()));
 
-        // We then have to calculate the thickness of the dripstone
-        //
-        // PrimaryDirection should be the direction that the current dripstone being placed will face
-        // oppositeType should be the opposite to the direction the dripstone is facing, what it is pointing into
-        //
-        // If the dripstone is -> <- pointed at one another
-
-        // If check the blockstate that is above now with the direction of DOWN
         Vector3i placedPos = place.getPlacedBlockPos();
         Dripstone.update(player, toPlace, placedPos.getX(), placedPos.getY(), placedPos.getZ(), place.isSecondaryUse());
 
         place.set(toPlace);
-    }, ItemTypes.POINTED_DRIPSTONE),
+    }, ItemTypes.POINTED_DRIPSTONE, ItemTypes.SULFUR_SPIKE),
 
     CACTUS((player, place) -> {
         for (BlockFace face : BlockPlace.BY_2D) {
@@ -405,7 +374,6 @@ public enum BlockPlaceResult {
     CROP((player, place) -> {
         WrappedBlockState below = place.getBelowState();
         if (below.getType() == StateTypes.FARMLAND) {
-            // This is wrong and depends on lighting, but the server resyncs anyways plus this isn't a solid block so I don't care.
             place.set();
         }
     }, ItemTypes.CARROT, ItemTypes.BEETROOT, ItemTypes.POTATO,
@@ -441,7 +409,6 @@ public enum BlockPlaceResult {
         }
     }, ItemTags.WOOL_CARPETS),
 
-    // Moss carpet is a carpet not under the carpets tag
     MOSS_CARPET(CARPET.data, ItemTypes.MOSS_CARPET, ItemTypes.PALE_MOSS_CARPET),
 
     CHORUS_FLOWER((player, place) -> {
@@ -543,18 +510,14 @@ public enum BlockPlaceResult {
         }
     }, ItemTypes.WITHER_ROSE),
 
-    // Blocks that have both wall and standing states
     TORCH_OR_HEAD((player, place) -> {
-        // type doesn't matter to grim, same hitbox.
-        // If it's a torch, create a wall torch
-        // Otherwise, it's going to be a head.  The type of this head also doesn't matter
         WrappedBlockState dir;
         boolean isTorch = place.material.getName().contains("torch");
         boolean isHead = place.material.getName().contains("head") || place.material.getName().contains("skull");
         boolean isWallSign = !isTorch && !isHead;
 
         if (isHead && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_12_2))
-            return; // 1.12- players don't predict head places
+            return;
 
         if (isTorch) {
             dir = StateTypes.WALL_TORCH.createBlockState(CompensatedWorld.blockVersion);
@@ -565,13 +528,10 @@ public enum BlockPlaceResult {
         }
 
         for (BlockFace face : place.getNearestPlacingDirections()) {
-            // Torches need solid faces
-            // Heads have no special preferences - place them anywhere
-            // Signs need solid - exempts chorus flowers and a few other strange cases
             if (face != BlockFace.UP) {
                 if (BlockFaceHelper.isFaceHorizontal(face)) {
                     boolean canPlace = isHead || ((isWallSign || place.isFullFace(face)) && (isTorch || place.isSolidBlocking(face)));
-                    if (canPlace && face != BlockFace.UP) { // center requires nothing (head), full face (torch), or solid (sign)
+                    if (canPlace && face != BlockFace.UP) {
                         dir.setFacing(face.getOppositeFace());
                         place.set(dir);
                         return;
@@ -586,9 +546,9 @@ public enum BlockPlaceResult {
             }
         }
     }, ItemTypes.values().stream().filter(mat ->
-                    mat.getName().getKey().contains("torch") // Find all torches
-                            || (mat.getName().getKey().contains("head") || mat.getName().getKey().contains("skull")) && !mat.getName().getKey().contains("piston") // Skulls
-                            || mat.getName().getKey().contains("sign")) // And signs
+                    mat.getName().getKey().contains("torch")
+                            || (mat.getName().getKey().contains("head") || mat.getName().getKey().contains("skull")) && !mat.getName().getKey().contains("piston")
+                            || mat.getName().getKey().contains("sign"))
             .toArray(ItemType[]::new)),
 
     MULTI_FACE_BLOCK((player, place) -> {
@@ -655,11 +615,11 @@ public enum BlockPlaceResult {
                 return;
             }
         }
-    }, ItemTypes.values().stream().filter(mat -> mat.getName().getKey().contains("button") // Find all buttons
-                    || mat.getName().getKey().contains("lever")) // And levers
+    }, ItemTypes.values().stream().filter(mat -> mat.getName().getKey().contains("button")
+                    || mat.getName().getKey().contains("lever"))
             .toArray(ItemType[]::new)),
 
-    GRINDSTONE((player, place) -> { // Grindstones do not have special survivability requirements
+    GRINDSTONE((player, place) -> {
         WrappedBlockState stone = place.material.createBlockState(CompensatedWorld.blockVersion);
         if (place.isFaceVertical()) {
             stone.setFace(place.getPlayerFacing() == BlockFace.UP ? Face.CEILING : Face.FLOOR);
@@ -670,15 +630,10 @@ public enum BlockPlaceResult {
         place.set(stone);
     }, ItemTypes.GRINDSTONE),
 
-    // Blocks that have both wall and standing states
-    // Banners
     BANNER((player, place) -> {
         for (BlockFace face : place.getNearestPlacingDirections()) {
             if (place.isSolidBlocking(face) && face != BlockFace.UP) {
                 if (BlockFaceHelper.isFaceHorizontal(face)) {
-                    // type doesn't matter to grim, same hitbox.
-                    // If it's a torch, create a wall torch
-                    // Otherwise, it's going to be a head.  The type of this head also doesn't matter.
                     WrappedBlockState dir = StateTypes.BLACK_WALL_BANNER.createBlockState(CompensatedWorld.blockVersion);
                     dir.setFacing(face.getOppositeFace());
                     place.set(dir);
@@ -728,14 +683,13 @@ public enum BlockPlaceResult {
 
         boolean byFlammable = false;
         for (BlockFace face : BlockFace.values()) {
-            // Do we care about this enuogh to fix? // TODO: Check flmmable
             byFlammable = true;
         }
 
         if (byFlammable || place.isFullFace(BlockFace.DOWN)) {
             place.set(place.material);
         }
-    }, ItemTypes.FLINT_AND_STEEL, ItemTypes.FIRE_CHARGE), // soul fire isn't directly placeable
+    }, ItemTypes.FLINT_AND_STEEL, ItemTypes.FIRE_CHARGE),
 
     TRIPWIRE_HOOK((player, place) -> {
         if (place.isFaceHorizontal() && place.isFullFace(place.getFace().getOppositeFace())) {
@@ -753,13 +707,10 @@ public enum BlockPlaceResult {
 
     CORAL_FAN((player, place) -> {
         for (BlockFace face : place.getNearestPlacingDirections()) {
-            // Torches need solid faces
-            // Heads have no special preferences - place them anywhere
-            // Signs need solid - exempts chorus flowers and a few other strange cases
             if (face != BlockFace.UP) {
                 boolean canPlace = place.isFullFace(face);
                 if (BlockFaceHelper.isFaceHorizontal(face)) {
-                    if (canPlace) { // center requires nothing (head), full face (torch), or solid (sign)
+                    if (canPlace) {
                         WrappedBlockState coralFan = StateTypes.FIRE_CORAL_WALL_FAN.createBlockState(CompensatedWorld.blockVersion);
                         coralFan.setFacing(face);
                         place.set(coralFan);
@@ -796,9 +747,8 @@ public enum BlockPlaceResult {
         if (Materials.isWater(player.getClientVersion(), existing)) {
             if (existing.getType() == StateTypes.WATER) {
                 int level = existing.getLevel();
-                // Falling water has a level of 8
                 fluidLevel = ((level & 0x8) == 8) ? (8.0 / 9.0f) : (8 - level) / 9.0f;
-            } else { // Water source block such as bubble columns
+            } else {
                 fluidLevel = 1.0;
             }
         }
@@ -829,12 +779,6 @@ public enum BlockPlaceResult {
         }
     }, ItemTypes.TWISTING_VINES),
 
-    // Vine logic
-    // If facing up, then there is a face facing up.
-    // Checks for solid faces in the direction that it is in
-    // Also checks for vines with the same directional above itself
-    // However, as all vines have the same hitbox (to collisions and climbing)
-    // As long as one of these properties is met, it is good enough for grim!
     VINE((player, place) -> {
         if (place.getAboveState().getType() == StateTypes.VINE) {
             place.set();
@@ -859,7 +803,6 @@ public enum BlockPlaceResult {
         WrappedBlockState gate = place.material.createBlockState(CompensatedWorld.blockVersion);
         gate.setFacing(place.getPlayerFacing());
 
-        // Check for redstone signal!
         if (place.isBlockPlacedPowered()) {
             gate.setOpen(true);
         }
@@ -876,18 +819,16 @@ public enum BlockPlaceResult {
             boolean clickedTop = place.getClickedLocation().getY() > 0.5;
             Half half = clickedTop ? Half.TOP : Half.BOTTOM;
             door.setHalf(half);
-        } else if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) { // 1.9 logic only
+        } else if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_9)) {
             door.setFacing(place.getPlayerFacing().getOppositeFace());
             Half half = direction == BlockFace.UP ? Half.BOTTOM : Half.TOP;
             door.setHalf(half);
         }
 
-        // Check for redstone signal!
         if (place.isBlockPlacedPowered()) {
             door.setOpen(true);
         }
 
-        // 1.8 has special placing requirements
         if (player.getClientVersion().isOlderThan(ClientVersion.V_1_9)) {
             WrappedBlockState dirState = place.getDirectionalState(door.getFacing().getOppositeFace());
             boolean fullFace = CollisionData.getData(dirState.getType()).getMovementCollisionBox(player, player.getClientVersion(), dirState).isFullBlock();
@@ -897,12 +838,10 @@ public enum BlockPlaceResult {
             boolean whitelisted = dirState.getType() == StateTypes.GLOWSTONE || BlockTags.SLABS.contains(dirState.getType()) ||
                     BlockTags.STAIRS.contains(dirState.getType());
 
-            // Need a solid block to place a trapdoor on
             if (!((dirState.getType().isBlocking() && !blacklisted && fullFace) || whitelisted)) {
                 return;
             }
         }
-
 
         place.set(door);
     }, ItemTags.TRAPDOORS),
@@ -912,7 +851,6 @@ public enum BlockPlaceResult {
             WrappedBlockState door = place.material.createBlockState(CompensatedWorld.blockVersion);
             door.setFacing(place.getPlayerFacing());
 
-            // Get the hinge
             BlockFace playerFacing = place.getPlayerFacing();
 
             BlockFace ccw = BlockFaceHelper.getCounterClockwise(playerFacing);
@@ -957,25 +895,21 @@ public enum BlockPlaceResult {
                 hinge = Hinge.RIGHT;
             }
 
-            // Check for redstone signal!
             if (place.isBlockPlacedPowered()) {
                 door.setOpen(true);
             }
 
-            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) { // Only works on 1.13+
+            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) {
                 door.setHinge(hinge);
             }
 
             door.setHalf(Half.LOWER);
             place.set(door);
 
-            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) { // Only works on 1.13+
+            if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_13)) {
                 door.setHalf(Half.UPPER);
                 place.setAbove(door);
             } else {
-                // We have to create a new door just for upper... due to neither door having complete info
-                // Lol, I have to use strings as PacketEvents wasn't designed around one material having two sets of data
-                // This is 1.12 only, but the server is also 1.12
                 WrappedBlockState above = WrappedBlockState.getByString(CompensatedWorld.blockVersion, "minecraft:" + place.material.getName().toLowerCase(Locale.ROOT) + "[half=upper,hinge=" + hinge.toString().toLowerCase(Locale.ROOT) + "]");
                 place.setAbove(above);
             }
@@ -983,13 +917,9 @@ public enum BlockPlaceResult {
     }, ItemTags.DOORS),
 
     SCAFFOLDING((player, place) -> {
-        place.replaceClicked = false; // scaffolding is sometimes replace clicked
+        place.replaceClicked = false;
 
-        // The client lies about block place location and face to not false vanilla ac
-        // However, this causes TWO desync's!
         if (place.getPlacedAgainstMaterial() == StateTypes.SCAFFOLDING) {
-            // This can desync due to look being a tick behind, pls fix mojang
-            // Convert the packet to the real direction
             BlockFace direction;
             if (place.isSecondaryUse()) {
                 direction = place.isInside ? place.getFace().getOppositeFace() : place.getFace();
@@ -999,9 +929,6 @@ public enum BlockPlaceResult {
 
             place.setFace(direction);
 
-            // Mojang also lies about the location causing another GOD DAMN DESYNC
-            // Jesus christ, two desync's in a single block... should I be disappointed or concerned?
-            // Ghost blocks won't be fixed because of how it depends on the world state
             int i = 0;
 
             Vector3i starting = new Vector3i(place.position.x + direction.getModX(), place.position.y + direction.getModY(), place.position.z + direction.getModZ());
@@ -1010,9 +937,9 @@ public enum BlockPlaceResult {
                     if (player.compensatedWorld.getBlock(starting).getType().isReplaceable()) {
                         place.position = starting;
                         place.replaceClicked = true;
-                        break; // We found it!
+                        break;
                     }
-                    return; // Cancel block place
+                    return;
                 }
 
                 starting = new Vector3i(starting.x + direction.getModX(), starting.y + direction.getModY(), starting.z + direction.getModZ());
@@ -1020,12 +947,9 @@ public enum BlockPlaceResult {
                     i++;
                 }
             }
-            if (i == 7) return; // Cancel block place
-        } // else, cancel if the scaffolding is exactly 7 away, grim doesn't handle this edge case yet.
+            if (i == 7) return;
+        }
 
-
-        // A scaffolding has a distance of 0 IFF it is placed above a sturdy face
-        // Else it has a distance greater than 0
         boolean sturdyBelow = place.isFullFace(BlockFace.DOWN);
         boolean isBelowScaffolding = place.getBelowMaterial() == StateTypes.SCAFFOLDING;
         boolean isBottom = !sturdyBelow && !isBelowScaffolding;
@@ -1039,7 +963,7 @@ public enum BlockPlaceResult {
     DOUBLE_PLANT((player, place) -> {
         if (place.isBlockFaceOpen(BlockFace.UP) && place.isOnDirt() || place.isOn(StateTypes.FARMLAND)) {
             place.set();
-            place.setAbove(); // Client predicts block above
+            place.setAbove();
         }
     }, ItemTypes.TALL_GRASS, ItemTypes.LARGE_FERN, ItemTypes.SUNFLOWER,
             ItemTypes.LILAC, ItemTypes.ROSE_BUSH, ItemTypes.PEONY),
@@ -1047,17 +971,14 @@ public enum BlockPlaceResult {
     MUSHROOM((player, place) -> {
         if (BlockTags.MUSHROOM_GROW_BLOCK.contains(place.getBelowMaterial())) {
             place.set();
-        } else if (place.isFullFace(BlockFace.DOWN)) { // TODO: Check occluding
+        } else if (place.isFullFace(BlockFace.DOWN)) {
             Vector3i placedPos = place.getPlacedBlockPos();
-            // This is wrong and depends on lighting, but the server resyncs anyways plus this isn't a solid block. so I don't care.
             place.set();
         }
     }, ItemTypes.BROWN_MUSHROOM, ItemTypes.RED_MUSHROOM),
 
     MANGROVE_PROPAGULE((player, place) -> {
-        // Must be hanging below mangrove leaves
         if (place.getAboveState().getType() != StateTypes.MANGROVE_LEAVES) return;
-        // Fall back to BUSH_BLOCK_TYPE
         if (place.isOnDirt() || place.isOn(StateTypes.FARMLAND)) {
             place.set();
         }
@@ -1107,7 +1028,6 @@ public enum BlockPlaceResult {
         boolean hardens = Materials.isWater(version, place.getExistingBlockData());
         if (!hardens) {
             for (BlockFace face : BlockFace.values()) {
-                // Water below the block alone does not harden placed powder.
                 if (face == BlockFace.DOWN || face == BlockFace.OTHER) continue;
 
                 WrappedBlockState neighbor = place.getDirectionalState(face);
@@ -1130,7 +1050,6 @@ public enum BlockPlaceResult {
 
     NO_DATA((player, place) -> place.set(place.material), ItemTypes.AIR);
 
-    // This should be an array... but a hashmap will do for now...
     private static final Map<ItemType, BlockPlaceResult> lookupMap = new HashMap<>();
 
     static {
@@ -1147,7 +1066,7 @@ public enum BlockPlaceResult {
     BlockPlaceResult(BlockPlaceFactory data, ItemType... materials) {
         this.data = data;
         Set<ItemType> mList = new HashSet<>(Arrays.asList(materials));
-        mList.remove(null); // Sets can contain one null
+        mList.remove(null);
         this.materials = mList.toArray(new ItemType[0]);
     }
 
