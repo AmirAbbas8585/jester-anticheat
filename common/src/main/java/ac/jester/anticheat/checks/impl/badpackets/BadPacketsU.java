@@ -24,15 +24,10 @@ public class BadPacketsU extends Check implements PacketCheck {
     public void onPacketReceive(final PacketReceiveEvent event) {
         if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
             final WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement(event);
-            // BlockFace.OTHER is USE_ITEM for pre 1.9
             if (packet.getFace() == BlockFace.OTHER) {
-
-                // This packet is always sent at (-1, -1, -1) at (0, 0, 0) on the block
-                // except y gets wrapped on 1.7
                 final int expectedY = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8) ? -1 : 255;
 
                 final boolean failedItemCheck = packet.getItemStack().isPresent() && isEmpty(packet.getItemStack().get())
-                        // ViaVersion can sometimes cause this part of the check to false
                         && player.getClientVersion().isOlderThan(ClientVersion.V_1_9);
 
                 final Vector3i pos = packet.getBlockPosition();

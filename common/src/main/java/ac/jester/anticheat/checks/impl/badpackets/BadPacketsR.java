@@ -39,7 +39,6 @@ public class BadPacketsR extends Check implements PacketCheck {
                 oldTransId = player.lastTransactionSent.get();
             }
         }
-        //
         if ((event.getPacketType() == PacketType.Play.Client.PLAYER_POSITION_AND_ROTATION ||
                 event.getPacketType() == PacketType.Play.Client.PLAYER_POSITION) && !player.inVehicle()) {
             positions++;
@@ -48,10 +47,7 @@ public class BadPacketsR extends Check implements PacketCheck {
             positions++;
         } else if (event.getPacketType() == PacketType.Play.Client.PLAYER_ROTATION && player.inVehicle()
                 && PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_2)) {
-            // 1.21.2 replaced steer vehicle with player input, which is only sent when the input changes
-            // The rotation is the only packet a passenger still sends every tick
             positions++;
         }
     }
-
 }
