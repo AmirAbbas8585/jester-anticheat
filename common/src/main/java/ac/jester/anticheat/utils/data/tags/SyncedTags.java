@@ -5,6 +5,8 @@ import ac.jester.anticheat.utils.viaversion.ViaVersionUtil;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
+import com.github.retrooper.packetevents.protocol.world.generation.fluids.Fluid;
+import com.github.retrooper.packetevents.protocol.world.generation.fluids.Fluids;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.protocol.world.states.defaulttags.BlockTags;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
@@ -17,13 +19,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.IntFunction;
 
-/**
- * This class stores tags that the client is aware of.
- */
 public final class SyncedTags {
-
     public static final ResourceLocation CLIMBABLE = ResourceLocation.minecraft("climbable");
     public static final ResourceLocation MINEABLE_AXE = ResourceLocation.minecraft("mineable/axe");
     public static final ResourceLocation MINEABLE_PICKAXE = ResourceLocation.minecraft("mineable/pickaxe");
@@ -33,8 +32,12 @@ public final class SyncedTags {
     public static final ResourceLocation NEEDS_IRON_TOOL = ResourceLocation.minecraft("needs_iron_tool");
     public static final ResourceLocation NEEDS_STONE_TOOL = ResourceLocation.minecraft("needs_stone_tool");
     public static final ResourceLocation SWORD_EFFICIENT = ResourceLocation.minecraft("sword_efficient");
+    public static final ResourceLocation ENTITY_FLOATABLE = ResourceLocation.minecraft("entity_floatable");
+    public static final ResourceLocation WATER = ResourceLocation.minecraft("water");
+    public static final ResourceLocation LAVA = ResourceLocation.minecraft("lava");
     private static final ServerVersion VERSION = PacketEvents.getAPI().getServerManager().getVersion();
     private static final ResourceLocation BLOCK = VERSION.isNewerThanOrEquals(ServerVersion.V_1_21) ? ResourceLocation.minecraft("block") : ResourceLocation.minecraft("blocks");
+    private static final ResourceLocation FLUID = ResourceLocation.minecraft("fluid");
     private final GrimPlayer player;
     private final Map<ResourceLocation, Map<ResourceLocation, SyncedTag<?>>> synced;
 
@@ -53,6 +56,14 @@ public final class SyncedTags {
                 SyncedTag.<StateType>builder(NEEDS_STONE_TOOL).defaults(BlockTags.NEEDS_STONE_TOOL.getStates()).supported(version.isNewerThanOrEquals(ClientVersion.V_1_17)),
                 SyncedTag.<StateType>builder(SWORD_EFFICIENT).defaults(BlockTags.SWORD_EFFICIENT.getStates()).supported(version.isNewerThanOrEquals(ClientVersion.V_1_20))
         );
+        trackTags(FLUID, id -> Collections.singletonList(Fluids.getRegistry().getById(VERSION.toClientVersion(), id)),
+                SyncedTag.<Fluid>builder(WATER).defaults(Set.of(Fluids.WATER, Fluids.FLOWING_WATER))
+                        .supported(version.isNewerThanOrEquals(ClientVersion.V_26_3)),
+                SyncedTag.<Fluid>builder(LAVA).defaults(Set.of(Fluids.LAVA, Fluids.FLOWING_LAVA))
+                        .supported(version.isNewerThanOrEquals(ClientVersion.V_26_3)),
+                SyncedTag.<Fluid>builder(ENTITY_FLOATABLE).defaults(Set.of(Fluids.WATER, Fluids.FLOWING_WATER))
+                        .supported(version.isNewerThanOrEquals(ClientVersion.V_26_3))
+        );
     }
 
     @SafeVarargs
@@ -66,8 +77,6 @@ public final class SyncedTags {
         synced.put(location, tags);
     }
 
-    // The servers block, plus the block Via shows a client older than the server in its place if that's a different one
-    // (copper chests are chests on 1.21.8). FastBreak checks the block the client sees, climbable gets checked with the servers
     private Collection<StateType> getBlocks(int id) {
         final StateType serverType = StateTypes.getById(VERSION.toClientVersion(), id);
         if (serverType == null || !ViaVersionUtil.isAvailable || player.getClientVersion().isNewerThanOrEquals(VERSION.toClientVersion())
@@ -95,5 +104,10 @@ public final class SyncedTags {
                 syncedTags.get(tag.getKey()).readTagValues(tag);
             });
         });
+    }
+
+    public SyncedTag<Fluid> fluid(ResourceLocation tag) {
+        Map<ResourceLocation, SyncedTag<?>> fluidTags = synced.get(FLUID);
+        return (SyncedTag<Fluid>) fluidTags.get(tag);
     }
 }

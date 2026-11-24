@@ -5,6 +5,7 @@ import ac.grim.grimac.api.GrimUser;
 import ac.grim.grimac.api.alerts.AlertManager;
 import ac.grim.grimac.api.config.ConfigManager;
 import ac.grim.grimac.api.event.EventBus;
+import ac.grim.grimac.api.storage.backend.BackendRegistry;
 import ac.grim.grimac.api.event.events.GrimReloadEvent;
 import ac.grim.grimac.api.plugin.GrimPlugin;
 import ac.grim.grimac.api.storage.backend.BackendRegistry;
@@ -26,17 +27,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-//This is used for grim's external API. It has its own class just for organization.
-
 public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, StartableInitable {
-
     private final GrimAPI api;
     @Getter
     private final Map<String, Function<GrimUser, String>> variableReplacements = new ConcurrentHashMap<>();
     @Getter
     private final Map<String, String> staticReplacements = new ConcurrentHashMap<>();
     private final Map<String, Function<Object, Object>> functions = new ConcurrentHashMap<>();
-    private final BackendRegistry backendRegistry = new BackendRegistryImpl();
     private final ConfigManagerFileImpl configManagerFile = new ConfigManagerFileImpl();
     private ConfigManager configManager = null;
     private boolean started = false;
@@ -48,11 +45,6 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
     @Override
     public @NotNull EventBus getEventBus() {
         return api.getEventBus();
-    }
-
-    @Override
-    public @NotNull BackendRegistry getBackendRegistry() {
-        return backendRegistry;
     }
 
     @Override
@@ -127,13 +119,16 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
         return this.api.getExtensionManager().getPlugin(o);
     }
 
-    // on load, load the config & register the service
+    @Override
+    public @NotNull BackendRegistry getBackendRegistry() {
+        return api.getBackendRegistry();
+    }
+
     public void load() {
         reload(configManagerFile);
         api.getLoader().registerAPIService();
     }
 
-    // handles any config loading that's needed to be done after load
     @Override
     public void start() {
         started = true;
@@ -192,27 +187,14 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
         } else {
             configManager = newConfig;
         }
-        // Update variables
         updateVariables();
-        // JesterAC per-check settings (max-violations, punishable, punishment-commands,
-        // enabled, ...) are cached in JesterCheckConfig and were previously only ever
-        // loaded once at plugin start — /jester reload silently did nothing for any
-        // of them (only raw threshold fields read directly by each Check.onReload
-        // were live). Clear that cache here so every reload actually takes effect.
         ac.jester.anticheat.manager.JesterCheckConfig.reloadGlobals(configManager);
-        // Database connection (type/host/credentials) was previously only ever
-        // read once at plugin start — changing database.type in config.yml and
-        // reloading silently kept writing to the OLD database until a full
-        // restart. init() now detects when the connection settings actually
-        // changed and reconnects only then.
         ac.jester.anticheat.database.DatabaseManager.init(configManager);
-        // Restart
         GrimAPI.INSTANCE.getAlertManager().reload(configManager);
         GrimAPI.INSTANCE.getSpectateManager().reload();
+        GrimAPI.INSTANCE.getDiscordManager().reload();
         GrimAPI.INSTANCE.getViolationDatabaseManager().reload();
-        // Don't reload players if the plugin hasn't started yet
         if (!started) return;
-        // Reload checks for all players
         for (GrimPlayer player : GrimAPI.INSTANCE.getPlayerDataManager().getEntries()) {
             player.runSafely(() -> player.reload(configManager));
         }
@@ -228,7 +210,6 @@ public class GrimExternalAPI implements GrimAbstractAPI, ConfigReloadObserver, S
         variableReplacements.putIfAbsent("%fast_math%", user -> !user.isVanillaMath() + "");
         variableReplacements.putIfAbsent("%tps%", user -> String.format("%.2f", GrimAPI.INSTANCE.getPlatformServer().getTPS()));
         variableReplacements.putIfAbsent("%version%", GrimUser::getVersionName);
-        // static variables
         staticReplacements.put("%prefix%", MessageUtil.translateAlternateColorCodes('&', GrimAPI.INSTANCE.getConfigManager().getPrefix()));
         staticReplacements.putIfAbsent("%jester_version%", getGrimVersion());
     }

@@ -52,9 +52,7 @@ import org.incendo.cloud.bukkit.CloudBukkitCapabilities;
 import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.paper.LegacyPaperCommandManager;
 
-
 public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformLoader {
-
     public static JesterAntiCheatPlugin LOADER;
 
     private final LazyHolder<PlatformScheduler> scheduler = LazyHolder.simple(this::createScheduler);
@@ -80,8 +78,6 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
     @Override
     public void onLoad() {
         LOADER = this;
-        // WorldGuard custom flags MUST be registered here (before WorldGuard
-        // finishes enabling) — used by the AFK system's jester-afk-blocked flag.
         ac.jester.anticheat.hooks.impl.WorldGuardHook.registerCustomFlags();
         GrimAPI.INSTANCE.load(this, this.getBukkitInitTasks());
     }
@@ -105,9 +101,6 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
 
     @Override
     public void onEnable() {
-        // Startup-only remote kill switch. Runs before anything else and is
-        // fail-closed: if the version is killed/too old, OR the gate server is
-        // unreachable, the plugin refuses to enable. (Hardcoded endpoint.)
         if (ac.jester.anticheat.platform.bukkit.update.VersionGate.isBlocked(this)) {
             getServer().getPluginManager().disablePlugin(this);
             return;
@@ -121,9 +114,6 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
         Bukkit.getPluginManager().registerEvents(
                 new ac.jester.anticheat.platform.bukkit.listeners.SpectateListener(), this);
 
-        // Region-scoped AFK enforcement (own-server build only). This feature is
-        // stripped from the obfuscated public jar, so its class may be absent —
-        // tolerate that and run without it instead of crashing on enable.
         try {
             afkManager = new ac.jester.anticheat.platform.bukkit.afk.AfkManager(this);
             afkManager.start();
@@ -131,11 +121,9 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
             afkManager = null;
         }
 
-        // Update notifier (own + obf builds). Off unless update-checker.url is set.
         updateChecker = new ac.jester.anticheat.platform.bukkit.update.UpdateChecker(this);
         updateChecker.start();
 
-        // Violation log GUI (/jester logs <player>)
         ac.jester.anticheat.platform.bukkit.gui.ViolationLogGui logGui =
                 new ac.jester.anticheat.platform.bukkit.gui.ViolationLogGui();
         Bukkit.getPluginManager().registerEvents(logGui, this);
@@ -153,7 +141,6 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
     public void onDisable() {
         if (afkManager != null) afkManager.stop();
         if (updateChecker != null) updateChecker.stop();
-        // If the version gate refused enable, nothing below was initialised.
         if (!started) return;
         HookManager.disable();
         GrimAPI.INSTANCE.stop();
@@ -210,8 +197,6 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
 
             Bukkit.getPluginManager().callEvent(bukkitEvent);
 
-            // Re-read the AFK settings (now in the main config's `afk:` section)
-            // into the manager's cached fields on a successful reload.
             if (event.isSuccess() && afkManager != null) {
                 GrimAPI.INSTANCE.getScheduler().getGlobalRegionScheduler()
                         .run(GrimAPI.INSTANCE.getGrimPlugin(), afkManager::reload);
@@ -250,7 +235,6 @@ public final class JesterAntiCheatPlugin extends JavaPlugin implements PlatformL
         });
 
         eventBus.subscribe(context, ac.grim.grimac.api.event.events.CompletePredictionEvent.class, (event) -> {
-            // Note: New event doesn't have verbose, passing null or check name is standard fallback
             ac.grim.grimac.api.events.CompletePredictionEvent bukkitEvent =
                     new ac.grim.grimac.api.events.CompletePredictionEvent(
                             event.getUser(),

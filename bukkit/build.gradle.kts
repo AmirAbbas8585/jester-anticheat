@@ -10,10 +10,8 @@ plugins {
 }
 
 repositories {
-    // 1. Fallback for non-exclusive deps (e.g. Maven Central deps)
     if (BuildConfig.mavenLocalOverride) mavenLocal()
 
-    // 2. Exclusive Repositories (One HTTP request per dep)
     exclusive("https://repo.papermc.io/repository/maven-public/", { name = "papermc" }) {
         includeGroup("io.papermc.paper")
         includeGroup("net.md-5")
@@ -27,7 +25,6 @@ repositories {
         includeGroup("me.clip")
     }
 
-    // Grim artifacts & PacketEvents
     exclusiveContent {
         if (BuildConfig.mavenLocalOverride) {
             forRepositories(
@@ -58,7 +55,6 @@ repositories {
     mavenCentral()
 }
 
-
 dependencies {
     compileOnly(libs.paper.api)
     compileOnly(libs.placeholderapi)
@@ -81,11 +77,6 @@ bukkit {
     author = "Jester"
     main = "ac.jester.anticheat.platform.bukkit.JesterAntiCheatPlugin"
     website = "https://modrinth.com/plugin/jester-anticheat"
-    // Minimum server version. Bukkit has no "max" field â€” the plugin loads on
-    // this version and every newer one automatically. Matches upstream Grim
-    // (1.13), so the load range is the same as the Grim engine itself; servers
-    // older than 1.13 don't enforce this field and load it in legacy mode, and
-    // pre-1.13 clients are covered via ViaVersion on a modern server.
     apiVersion = "1.13"
     foliaSupported = true
 
@@ -125,9 +116,6 @@ bukkit {
             default = Permission.Default.OP
         }
 
-        // Staff-notification permissions are LuckPerms-driven, NOT op-based:
-        // default FALSE so ONLY players explicitly granted the node (e.g. via
-        // LuckPerms) receive alerts. Ops without the node get nothing.
         register("jester.alerts") {
             description = "Receive violation alerts (auto-enabled on join)"
             default = Permission.Default.FALSE
@@ -138,10 +126,34 @@ bukkit {
             default = Permission.Default.FALSE
         }
 
-        // Verbose is spammy (every flag), so it stays opt-in: needs this node too
         register("jester.verbose.enable-on-join") {
             description = "Enable verbose alerts on join"
             default = Permission.Default.FALSE
+        }
+
+        register("jester.alerts.silent") {
+            description = "Auto-enable alerts on join without a message"
+            default = Permission.Default.FALSE
+        }
+
+        register("jester.verbose.silent") {
+            description = "Auto-enable verbose on join without a message"
+            default = Permission.Default.FALSE
+        }
+
+        register("jester.brand.silent") {
+            description = "Auto-enable brand alerts on join without a message"
+            default = Permission.Default.FALSE
+        }
+
+        register("jester.consoledebug") {
+            description = "Use the console debug command"
+            default = Permission.Default.OP
+        }
+
+        register("jester.afk.bypass") {
+            description = "Exempt from AFK kicks"
+            default = Permission.Default.OP
         }
 
         register("jester.brand") {
@@ -219,6 +231,11 @@ bukkit {
             default = Permission.Default.OP
         }
 
+        register("jester.testwebhook") {
+            description = "Send a test message to the Discord webhook"
+            default = Permission.Default.OP
+        }
+
         register("jester.version") {
             description = "View plugin version"
             default = Permission.Default.OP
@@ -273,7 +290,6 @@ bukkit {
             description = "Disable packet modification"
             default = Permission.Default.FALSE
         }
-
     }
 }
 

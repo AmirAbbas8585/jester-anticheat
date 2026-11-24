@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.function.IntFunction;
 
 public final class SyncedTag<T> {
-
     private final ResourceLocation location;
     private final Set<T> values;
     private final IntFunction<Collection<T>> remapper;
@@ -39,7 +38,6 @@ public final class SyncedTag<T> {
     public void readTagValues(WrapperPlayServerTags.Tag tag) {
         if (!supported) return;
 
-        // Server is sending tag replacement, clear default values.
         values.clear();
         for (int id : tag.getValues()) {
             values.addAll(remapper.apply(id));
