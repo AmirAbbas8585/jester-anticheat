@@ -3,7 +3,7 @@ import versioning.VersionUtil
 
 BuildConfig.init(project)
 
-val baseVersion = "0.0.7"
+val baseVersion = "0.0.8"
 group = "ac.jester.anticheat"
 version = "$baseVersion-beta"
 description = "Jester Anti Cheat - Advanced Minecraft Anti-Cheat."
