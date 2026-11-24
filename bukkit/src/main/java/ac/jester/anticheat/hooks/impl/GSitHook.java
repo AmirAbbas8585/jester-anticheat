@@ -1,6 +1,8 @@
 package ac.jester.anticheat.hooks.impl;
 
+import ac.jester.anticheat.GrimAPI;
 import ac.jester.anticheat.hooks.PluginHook;
+import ac.jester.anticheat.platform.api.scheduler.TaskHandle;
 import ac.jester.anticheat.utils.anticheat.LogUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -21,7 +23,7 @@ public final class GSitHook implements PluginHook, Listener {
     private boolean available = false;
 
     private final Set<String> sitting = ConcurrentHashMap.newKeySet();
-    private int taskId = -1;
+    private TaskHandle refreshTask;
 
     private final List<Method> stateMethods = new ArrayList<>();
 
@@ -41,7 +43,8 @@ public final class GSitHook implements PluginHook, Listener {
         registerMountEvent(self, "org.bukkit.event.entity.EntityMountEvent");
         registerMountEvent(self, "org.spigotmc.event.entity.EntityMountEvent");
 
-        taskId = Bukkit.getScheduler().runTaskTimer(self, this::refresh, 1L, 1L).getTaskId();
+        refreshTask = GrimAPI.INSTANCE.getScheduler().getGlobalRegionScheduler()
+                .runAtFixedRate(GrimAPI.INSTANCE.getGrimPlugin(), this::refresh, 1L, 1L);
     }
 
     private void discoverApi() {
@@ -89,9 +92,9 @@ public final class GSitHook implements PluginHook, Listener {
 
     @Override
     public void onDisable() {
-        if (taskId != -1) {
-            Bukkit.getScheduler().cancelTask(taskId);
-            taskId = -1;
+        if (refreshTask != null) {
+            refreshTask.cancel();
+            refreshTask = null;
         }
         sitting.clear();
     }

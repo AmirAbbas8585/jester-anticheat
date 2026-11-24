@@ -6,8 +6,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.Plugin;
 
@@ -15,7 +17,7 @@ import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ItemsAdderHook implements PluginHook {
+public final class ItemsAdderHook implements PluginHook, Listener {
     private boolean available = false;
 
     private Method byAlreadyPlaced;
@@ -71,6 +73,19 @@ public final class ItemsAdderHook implements PluginHook {
             LogUtil.warn("ItemsAdder hook: CustomBlockBreakEvent not found (" + e.getMessage()
                     + ") — recent-custom-break tracking is inactive; isCustomBlock still works.");
         }
+
+        Bukkit.getPluginManager().registerEvents(this, self);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        recentCustomBreak.remove(event.getPlayer().getUniqueId());
+    }
+
+    @Override
+    public void onDisable() {
+        recentCustomBreak.clear();
+        available = false;
     }
 
     public boolean isCustomBlock(Block block) {

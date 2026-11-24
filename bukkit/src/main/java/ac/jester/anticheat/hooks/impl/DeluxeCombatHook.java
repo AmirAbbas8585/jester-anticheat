@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.Bukkit;
 
@@ -34,6 +35,17 @@ public final class DeluxeCombatHook implements PluginHook, Listener {
         if (event.getEntity() instanceof Player player) {
             markKnockbackApplied(player.getUniqueId());
         }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        pendingKnockback.remove(event.getPlayer().getUniqueId());
+    }
+
+    @Override
+    public void onDisable() {
+        pendingKnockback.clear();
+        available = false;
     }
 
     public void markKnockbackApplied(UUID player) {
