@@ -103,6 +103,7 @@ bukkit {
         "Slimefun",
         "PremiumVanish",
         "AxiomPaper",
+        "CheckHacks",
     )
 
     permissions {

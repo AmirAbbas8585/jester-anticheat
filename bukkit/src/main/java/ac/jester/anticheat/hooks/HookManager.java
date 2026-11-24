@@ -16,6 +16,7 @@ public final class HookManager {
     private static WorldGuardHook worldGuardHook;
     private static ItemsAdderHook itemsAdderHook;
     private static LPXHook lpxHook;
+    private static CheckHacksHook checkHacksHook;
 
     public static void init() {
         register(gsitHook = new GSitHook());
@@ -24,6 +25,7 @@ public final class HookManager {
         register(worldGuardHook = new WorldGuardHook());
         register(itemsAdderHook = new ItemsAdderHook());
         register(lpxHook = new LPXHook());
+        register(checkHacksHook = new CheckHacksHook());
 
         ExemptionProvider.register(new BukkitExemptionProvider(gsitHook, worldGuardHook, auraSkillsHook, itemsAdderHook, deluxeCombatHook));
 
@@ -72,4 +74,5 @@ public final class HookManager {
     public static WorldGuardHook getWorldGuard() { return worldGuardHook; }
     public static ItemsAdderHook getItemsAdder() { return itemsAdderHook; }
     public static LPXHook getLPX() { return lpxHook; }
+    public static CheckHacksHook getCheckHacks() { return checkHacksHook; }
 }
