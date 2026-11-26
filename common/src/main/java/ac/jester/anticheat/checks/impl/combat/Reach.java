@@ -39,6 +39,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.player.InteractionHand;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAttack;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -70,81 +71,88 @@ public class Reach extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(final PacketReceiveEvent event) {
+        if (!player.disableGrim && event.getPacketType() == PacketType.Play.Client.ATTACK) {
+            WrapperPlayClientAttack packet = new WrapperPlayClientAttack(event);
+            onInteract(event, packet.getEntityId(), InteractionHand.MAIN_HAND);
+        }
+
         if (!player.disableGrim && event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
             WrapperPlayClientInteractEntity action = new WrapperPlayClientInteractEntity(event);
-
-            if (player.getSetbackTeleportUtil().shouldBlockMovement()) {
-                event.setCancelled(true);
-                player.onPacketCancel();
-                return;
-            }
-
-            PacketEntity entity = player.compensatedEntities.entityMap.get(action.getEntityId());
-            if (entity == null || entity instanceof PacketEntityEnderDragonPart) {
-                if (shouldModifyPackets() && player.compensatedEntities.serverPositionsMap.containsKey(action.getEntityId())) {
-                    event.setCancelled(true);
-                    player.onPacketCancel();
-                }
-                return;
-            }
-
-            if (entity.isDead) return;
-
-            if (entity.type == EntityTypes.ARMOR_STAND && player.getClientVersion().isOlderThan(ClientVersion.V_1_8))
-                return;
-            if (entity.type == EntityTypes.HAPPY_GHAST && player.getClientVersion().isOlderThan(ClientVersion.V_1_21_6)) {
-                return;
-            }
-            if (player.gamemode == GameMode.CREATIVE || player.gamemode == GameMode.SPECTATOR)
-                return;
-            if (player.inVehicle()) return;
-            if (entity.riding != null) return;
-
-            InteractionHand hand = action.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK ?
-                    InteractionHand.MAIN_HAND : action.getHand();
-
-            ItemStack currentStack = player.inventory.getItemInHand(hand);
-            ItemStack startStack = player.inventory.getStartOfTickStack();
-
-            boolean hasRange = false;
-            float maxReach = 0f;
-            float hitboxMargin = 0f;
-
-            if (ATTACK_RANGE_COMPONENT_EXISTS) {
-                ItemAttackRange startRange = startStack.getComponentOr(ComponentTypes.ATTACK_RANGE, null);
-
-                if (startRange != null) {
-                    ItemAttackRange currentRange = currentStack.getComponentOr(ComponentTypes.ATTACK_RANGE, null);
-                    if (currentRange == null) {
-                        hasRange = true;
-                        maxReach = startRange.getMaxRange();
-                        hitboxMargin = startRange.getHitboxMargin();
-                    } else {
-                        hasRange = true;
-                        maxReach = Math.min(startRange.getMaxRange(), currentRange.getMaxRange());
-                        hitboxMargin = Math.min(startRange.getHitboxMargin(), currentRange.getHitboxMargin());
-                    }
-                }
-            }
-
-            boolean tooManyAttacks = playerAttackQueue.size() > 10;
-            if (!tooManyAttacks) {
-                playerAttackQueue.put(action.getEntityId(), new InteractionData(
-                        player.x, player.y, player.z,
-                        hasRange, maxReach, hitboxMargin
-                ));
-            }
-
-            boolean knownInvalid = isKnownInvalid(entity, hasRange, maxReach, hitboxMargin);
-
-            if ((shouldModifyPackets() && cancelImpossibleHits && knownInvalid) || tooManyAttacks) {
-                event.setCancelled(true);
-                player.onPacketCancel();
-            }
+            InteractionHand hand = action.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK
+                    ? InteractionHand.MAIN_HAND : action.getHand();
+            onInteract(event, action.getEntityId(), hand);
         }
 
         if (isUpdate(event.getPacketType())) {
             tickBetterReachCheckWithAngle();
+        }
+    }
+
+    private void onInteract(PacketReceiveEvent event, int entityId, InteractionHand hand) {
+        if (player.getSetbackTeleportUtil().shouldBlockMovement()) {
+            event.setCancelled(true);
+            player.onPacketCancel();
+            return;
+        }
+
+        PacketEntity entity = player.compensatedEntities.entityMap.get(entityId);
+        if (entity == null || entity instanceof PacketEntityEnderDragonPart) {
+            if (shouldModifyPackets() && player.compensatedEntities.serverPositionsMap.containsKey(entityId)) {
+                event.setCancelled(true);
+                player.onPacketCancel();
+            }
+            return;
+        }
+
+        if (entity.isDead) return;
+
+        if (entity.type == EntityTypes.ARMOR_STAND && player.getClientVersion().isOlderThan(ClientVersion.V_1_8))
+            return;
+        if (entity.type == EntityTypes.HAPPY_GHAST && player.getClientVersion().isOlderThan(ClientVersion.V_1_21_6)) {
+            return;
+        }
+        if (player.gamemode == GameMode.CREATIVE || player.gamemode == GameMode.SPECTATOR)
+            return;
+        if (player.inVehicle()) return;
+        if (entity.riding != null) return;
+
+        ItemStack currentStack = player.inventory.getItemInHand(hand);
+        ItemStack startStack = player.inventory.getStartOfTickStack();
+
+        boolean hasRange = false;
+        float maxReach = 0f;
+        float hitboxMargin = 0f;
+
+        if (ATTACK_RANGE_COMPONENT_EXISTS) {
+            ItemAttackRange startRange = startStack.getComponentOr(ComponentTypes.ATTACK_RANGE, null);
+
+            if (startRange != null) {
+                ItemAttackRange currentRange = currentStack.getComponentOr(ComponentTypes.ATTACK_RANGE, null);
+                if (currentRange == null) {
+                    hasRange = true;
+                    maxReach = startRange.getMaxRange();
+                    hitboxMargin = startRange.getHitboxMargin();
+                } else {
+                    hasRange = true;
+                    maxReach = Math.min(startRange.getMaxRange(), currentRange.getMaxRange());
+                    hitboxMargin = Math.min(startRange.getHitboxMargin(), currentRange.getHitboxMargin());
+                }
+            }
+        }
+
+        boolean tooManyAttacks = playerAttackQueue.size() > 10;
+        if (!tooManyAttacks) {
+            playerAttackQueue.put(entityId, new InteractionData(
+                    player.x, player.y, player.z,
+                    hasRange, maxReach, hitboxMargin
+            ));
+        }
+
+        boolean knownInvalid = isKnownInvalid(entity, hasRange, maxReach, hitboxMargin);
+
+        if ((shouldModifyPackets() && cancelImpossibleHits && knownInvalid) || tooManyAttacks) {
+            event.setCancelled(true);
+            player.onPacketCancel();
         }
     }
 
