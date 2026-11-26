@@ -6,7 +6,7 @@
 # Run /jester reload after editing.
 
 # Used by the plugin to update this file after an upgrade. Don't change it.
-config-version: 5
+config-version: 6
 
 # ----------------------------------------------------------------------------
 #  Alerts
@@ -2399,6 +2399,10 @@ FastBreak:
     # fast. Raise it if custom enchants still get flagged; lower it towards 1.0
     # on a vanilla server.
     speed-tolerance: 3.0
+    # How many milliseconds of advantage from breaking blocks too quickly before flagging.
+    break-threshold: 1000
+    # How many milliseconds of advantage from starting to break a block too soon after the last one before flagging.
+    delay-threshold: 1000
 
 # Raise these if you use area-breaking enchants (CrazyEnchantments Blast and
 # the like). Their extra breaks don't show in the packets and look like nuking.
