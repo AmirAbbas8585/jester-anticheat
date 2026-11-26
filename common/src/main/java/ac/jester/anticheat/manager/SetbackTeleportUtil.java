@@ -284,17 +284,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
             double yRoundingTolerance = player.getClientVersion().isOlderThan(ClientVersion.V_1_8) ? 1e-7 : 0;
             boolean closeEnoughY = Math.abs(clamped.getY() - y) <= yRoundingTolerance + threshold;
 
-            boolean rotationMatches = true;
-            if (!teleportPos.isRelativeYaw()) {
-                float expectedYaw = teleportPos.getYaw() % 360f;
-                float clientYaw = yaw % 360f;
-                rotationMatches = Math.abs(expectedYaw - clientYaw) < 1f
-                        || Math.abs(Math.abs(expectedYaw - clientYaw) - 360f) < 1f;
-            }
-            if (rotationMatches && !teleportPos.isRelativePitch()) {
-                float expectedPitch = teleportPos.getPitch();
-                rotationMatches = Math.abs(expectedPitch - pitch) < 1f;
-            }
+            boolean rotationMatches = teleportPos.isValidRotation(player.getClientVersion(), yaw, pitch);
 
             if ((teleportId == null || teleportId.equals(teleportPos.getTeleportId())) && player.lastTransactionReceived.get() == teleportPos.getTransaction() && Math.abs(clamped.getX() - x) <= threshold && closeEnoughY && Math.abs(clamped.getZ() - z) <= threshold && rotationMatches) {
                 pendingTeleports.poll();

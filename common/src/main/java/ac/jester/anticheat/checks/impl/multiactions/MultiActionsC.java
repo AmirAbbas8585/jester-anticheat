@@ -25,7 +25,7 @@ public class MultiActionsC extends Check implements PacketCheck {
             verbose.add("sprinting");
         }
 
-        if (player.isSneaking && player.getClientVersion().isOlderThan(ClientVersion.V_1_15)) {
+        if (player.isSneaking && (player.getClientVersion().isOlderThan(ClientVersion.V_1_15) || player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_9))) {
             verbose.add("sneaking");
         }
 

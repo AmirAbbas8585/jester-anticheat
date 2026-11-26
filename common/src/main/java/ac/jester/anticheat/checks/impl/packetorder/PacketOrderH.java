@@ -20,6 +20,8 @@ public class PacketOrderH extends Check implements PostPredictionCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
+        if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_6)) return;
+
         if (event.getPacketType() == PacketType.Play.Client.ENTITY_ACTION) {
             switch (new WrapperPlayClientEntityAction(event).getAction()) {
                 case START_SPRINTING, STOP_SPRINTING -> {

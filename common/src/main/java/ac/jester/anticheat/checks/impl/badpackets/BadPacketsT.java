@@ -28,6 +28,8 @@ public class BadPacketsT extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(final PacketReceiveEvent event) {
+        if (player.getClientVersion().isOlderThan(ClientVersion.V_1_8)) return;
+
         if (player.compensatedEntities.self.getRiding() != null) return;
 
         if (event.getPacketType().equals(PacketType.Play.Client.INTERACT_ENTITY)) {

@@ -139,9 +139,10 @@ public class PacketServerTeleport extends PacketListenerAbstract {
             }
 
             player.sendTransaction();
-            player.pendingRotations.add(new RotationData(
+            player.pendingRotations.add(RotationData.fromServer(
+                    player.getClientVersion(),
                     packet.getYaw(),
-                    packet.isRelativePitch() ? packet.getPitch() : GrimMath.clamp(packet.getPitch() % 360F, -90F, 90F),
+                    packet.getPitch(),
                     packet.isRelativeYaw(),
                     packet.isRelativePitch(),
                     player.getLastTransactionSent()

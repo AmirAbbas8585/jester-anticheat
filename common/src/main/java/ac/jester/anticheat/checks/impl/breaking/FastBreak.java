@@ -27,6 +27,8 @@ public class FastBreak extends Check implements BlockBreakCheck {
     private final boolean clientOlderThanServer = PacketEvents.getAPI().getServerManager().getVersion().getProtocolVersion() > player.getClientVersion().getProtocolVersion();
 
     private double speedTolerance = 2.0;
+    private double breakThreshold = 1000;
+    private double delayThreshold = 1000;
 
     public FastBreak(GrimPlayer playerData) {
         super(playerData);
@@ -35,6 +37,8 @@ public class FastBreak extends Check implements BlockBreakCheck {
     @Override
     public void onReload(ConfigManager config) {
         speedTolerance = Math.max(1.0, config.getDoubleElse(getConfigName() + ".speed-tolerance", 2.0));
+        breakThreshold = config.getDoubleElse(getConfigName() + ".break-threshold", 1000);
+        delayThreshold = config.getDoubleElse(getConfigName() + ".delay-threshold", 1000);
     }
 
     Vector3i targetBlockPosition = null;
@@ -75,7 +79,7 @@ public class FastBreak extends Check implements BlockBreakCheck {
                 blockDelayBalance += 300 - breakDelay;
             }
 
-            if (blockDelayBalance > 1000) {
+            if (blockDelayBalance > delayThreshold) {
                 if (flagAndAlert("delay=" + breakDelay + "ms, type=" + blockBreak.block.getType()) && shouldModifyPackets()) {
                     blockBreak.cancel();
                 }
@@ -99,7 +103,7 @@ public class FastBreak extends Check implements BlockBreakCheck {
                 blockBreakBalance += diff;
             }
 
-            if (blockBreakBalance > 1000) {
+            if (blockBreakBalance > breakThreshold) {
                 if (flagAndAlert("diff=" + diff + "ms, balance=" + blockBreakBalance + "ms, type=" + blockBreak.block.getType()) && shouldModifyPackets()) {
                     blockBreak.cancel();
                 }
@@ -120,8 +124,9 @@ public class FastBreak extends Check implements BlockBreakCheck {
     }
 
     private void clampBalance() {
-        double balance = Math.max(1000, (player.getTransactionPing()));
-        blockBreakBalance = GrimMath.clamp(blockBreakBalance, -balance, balance);
-        blockDelayBalance = GrimMath.clamp(blockDelayBalance, -balance, balance);
+        double breakBalance = Math.max(breakThreshold, player.getTransactionPing());
+        double delayBalance = Math.max(delayThreshold, player.getTransactionPing());
+        blockBreakBalance = GrimMath.clamp(blockBreakBalance, -breakBalance, breakBalance);
+        blockDelayBalance = GrimMath.clamp(blockDelayBalance, -delayBalance, delayBalance);
     }
 }

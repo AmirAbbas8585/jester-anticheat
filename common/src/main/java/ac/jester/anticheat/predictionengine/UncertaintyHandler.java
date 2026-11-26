@@ -284,14 +284,13 @@ public class UncertaintyHandler {
 
     private boolean hasHardCollision() {
         SimpleCollisionBox expandedBB = player.boundingBox.copy().expand(1);
-        return isSteppingNearShulker || regularHardCollision(expandedBB) || striderCollision(expandedBB) || boatCollision(expandedBB);
+        PacketEntity root = player.compensatedEntities.self.getRootVehicle();
+        return isSteppingNearShulker || regularHardCollision(expandedBB, root) || striderCollision(expandedBB, root) || boatCollision(expandedBB, root);
     }
 
-    private boolean regularHardCollision(SimpleCollisionBox expandedBB) {
-        final PacketEntity riding = player.compensatedEntities.self.getRiding();
+    private boolean regularHardCollision(SimpleCollisionBox expandedBB, PacketEntity root) {
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-            if ((entity.isBoat || entity.type == EntityTypes.SHULKER || entity.isHappyGhast) && entity != riding
-                    && (riding == null || !riding.hasPassenger(entity))
+            if ((entity.isBoat || entity.type == EntityTypes.SHULKER || entity.isHappyGhast) && entity.getRootVehicle() != root
                     && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
                 return true;
             }
@@ -300,25 +299,25 @@ public class UncertaintyHandler {
         return false;
     }
 
-    private boolean striderCollision(SimpleCollisionBox expandedBB) {
-        if (player.compensatedEntities.self.getRiding() instanceof PacketEntityStrider) {
-            for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-                if (entity.type == EntityTypes.STRIDER && entity != player.compensatedEntities.self.getRiding()
-                        && !entity.hasPassenger(entity) && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
-                    return true;
-                }
+    private boolean striderCollision(SimpleCollisionBox expandedBB, PacketEntity root) {
+        if (!(player.compensatedEntities.self.getRiding() instanceof PacketEntityStrider)) return false;
+
+        for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
+            if (entity.type == EntityTypes.STRIDER && entity.getRootVehicle() != root
+                    && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
+                return true;
             }
         }
 
         return false;
     }
 
-    private boolean boatCollision(SimpleCollisionBox expandedBB) {
+    private boolean boatCollision(SimpleCollisionBox expandedBB, PacketEntity root) {
         final PacketEntity riding = player.compensatedEntities.self.getRiding();
         if (riding == null || !riding.isBoat) return false;
 
         for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
-            if (entity != riding && entity.isPushable() && !riding.hasPassenger(entity)
+            if (entity.isPushable() && entity.getRootVehicle() != root
                     && entity.getPossibleCollisionBoxes().isIntersected(expandedBB)) {
                 return true;
             }

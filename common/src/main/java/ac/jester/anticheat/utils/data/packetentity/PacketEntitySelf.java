@@ -48,7 +48,7 @@ public class PacketEntitySelf extends PacketEntity {
         }
 
         getAttribute(Attributes.SCALE).orElseThrow().withSetRewriter((oldValue, newValue) -> {
-            if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_20_5) || (newValue).equals(oldValue)) {
+            if (player.getClientVersion().isOlderThan(ClientVersion.V_1_20_5) || (newValue).equals(oldValue)) {
                 return oldValue;
             } else {
                 player.possibleEyeHeights[2][0] = 0.4 * newValue;

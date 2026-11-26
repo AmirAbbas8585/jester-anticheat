@@ -55,20 +55,19 @@ public class RotationBreak extends Check implements BlockBreakCheck {
         if (player.inVehicle()) return;
         if (blockBreak.action == DiggingAction.CANCELLED_DIGGING) return;
 
-        if (ignorePost) {
-            ignorePost = false;
-            return;
-        }
-
         if (didRayTraceHit(blockBreak)) {
             flagBuffer = Math.max(0, flagBuffer - 0.1);
             consecutiveMisses = 0;
         } else {
             flagBuffer = 1;
             consecutiveMisses++;
-            if (consecutiveMisses >= MIN_CONSECUTIVE) {
+            if (!ignorePost && consecutiveMisses >= MIN_CONSECUTIVE) {
                 flagAndAlert("post-flying, action=" + blockBreak.action + " consecutive=" + consecutiveMisses);
             }
+        }
+
+        if (ignorePost) {
+            ignorePost = false;
         }
     }
 

@@ -85,7 +85,7 @@ public class PointThreeEstimator {
             isNearFluid = true;
         }
 
-        if (pointThreeBox.isIntersected(new SimpleCollisionBox(x, y, z))) {
+        if (pointThreeBox.isIntersected(new SimpleCollisionBox(x, y, z)) && !data.isNull()) {
             int controllingEntityId = player.inVehicle() ? player.getRidingVehicleId() : player.entityID;
 
             final VelocityData oldFirstBreadKB = player.firstBreadKB;

@@ -1,7 +1,9 @@
 package ac.jester.anticheat.utils.data;
 
 import ac.jester.anticheat.player.GrimPlayer;
+import ac.jester.anticheat.utils.math.GrimMath;
 import ac.jester.anticheat.utils.math.Vector3dm;
+import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.teleport.RelativeFlag;
 import com.github.retrooper.packetevents.util.Vector3d;
 import lombok.AllArgsConstructor;
@@ -23,6 +25,20 @@ public class TeleportData {
     private int teleportId;
     private final float yaw;
     private final float pitch;
+
+    public boolean isValidRotation(ClientVersion version, float receivedYaw, float receivedPitch) {
+        float expectedYaw = version.isOlderThan(ClientVersion.V_1_19_3) ? yaw % 360.0F : yaw;
+        float expectedPitch = pitch;
+        if (version.isOlderThanOrEquals(ClientVersion.V_1_8)) {
+            expectedPitch %= 360.0F;
+        } else if (version.isOlderThan(ClientVersion.V_1_19_3) || version.isNewerThanOrEquals(ClientVersion.V_1_21_5)) {
+            expectedPitch = GrimMath.clamp(expectedPitch, -90.0F, 90.0F);
+        } else if (version.isNewerThanOrEquals(ClientVersion.V_1_21_2)) {
+            expectedPitch = GrimMath.clamp(expectedPitch % 360.0F, -90.0F, 90.0F);
+        }
+
+        return (isRelativeYaw() || receivedYaw == expectedYaw) && (isRelativePitch() || receivedPitch == expectedPitch);
+    }
 
     public void modifyVector(@NotNull GrimPlayer player, Vector3dm vector) {
         final boolean isStupidTeleportSystem = player.supportsEndTick();

@@ -26,6 +26,8 @@ public class Check extends GrimProcessor implements AbstractCheck {
     private double baseDecay;
     private boolean timeDecay;
     private double setbackVL;
+    private double defaultSetbackVL;
+    private String defaultDescription;
 
     private String checkName;
     private String configName;
@@ -51,10 +53,12 @@ public class Check extends GrimProcessor implements AbstractCheck {
             if (this.configName.equals("DEFAULT")) this.configName = this.checkName;
             this.decay = checkData.decay();
             this.baseDecay = this.decay;
-            this.setbackVL = checkData.setback();
+            this.defaultSetbackVL = checkData.setback();
+            this.setbackVL = this.defaultSetbackVL;
             this.alternativeName = checkData.alternativeName();
             this.experimental = checkData.experimental();
-            this.description = checkData.description();
+            this.defaultDescription = checkData.description();
+            this.description = this.defaultDescription;
             this.displayName = this.checkName;
         }
 
@@ -182,9 +186,9 @@ public class Check extends GrimProcessor implements AbstractCheck {
         double configured = configuration.getDoubleElse(configName + ".clear-per-second", Double.NaN);
         timeDecay = !Double.isNaN(configured);
         decay = timeDecay ? configured : baseDecay;
-        setbackVL = configuration.getDoubleElse(configName + ".rubberband-at", setbackVL);
+        setbackVL = configuration.getDoubleElse(configName + ".rubberband-at", defaultSetbackVL);
         displayName = configuration.getStringElse(configName + ".displayname", checkName);
-        description = configuration.getStringElse(configName + ".description", description);
+        description = configuration.getStringElse(configName + ".description", defaultDescription);
 
         if (setbackVL == -1) setbackVL = Double.MAX_VALUE;
         onReload(configuration);

@@ -51,19 +51,18 @@ public class RotationPlace extends BlockPlaceCheck {
             return;
         if (player.inVehicle()) return;
 
-        if (ignorePost) {
-            ignorePost = false;
-            return;
-        }
-
         boolean hit = didRayTraceHit(place);
         if (!hit) {
             flagBuffer = Math.min(4, flagBuffer + 1);
-            if (flagBuffer >= 2) {
+            if (!ignorePost && flagBuffer >= 2) {
                 flagAndAlert("post-flying");
             }
         } else {
             flagBuffer = Math.max(0, flagBuffer - 0.5);
+        }
+
+        if (ignorePost) {
+            ignorePost = false;
         }
     }
 

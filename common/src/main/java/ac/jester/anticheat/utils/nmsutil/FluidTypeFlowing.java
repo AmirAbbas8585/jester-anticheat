@@ -15,8 +15,21 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class FluidTypeFlowing {
+    private static float ownHeight(GrimPlayer player, int x, int y, int z) {
+        WrappedBlockState state = player.compensatedWorld.getBlock(x, y, z);
+        if (state.getType() == StateTypes.LAVA) {
+            return state.getLevel() >= 8 ? 8 / 9f : (8 - state.getLevel()) / 9f;
+        }
+        if (!Materials.isWater(player.getClientVersion(), state)) return 0f;
+        if (state.getType() == StateTypes.WATER) {
+            int level = state.getLevel();
+            return (level & 0x8) == 8 ? 8 / 9f : (8 - level) / 9f;
+        }
+        return 8 / 9f;
+    }
+
     public static Vector3dm getFlow(GrimPlayer player, int originalX, int originalY, int originalZ) {
-        float fluidLevel = (float) Math.min(player.compensatedWorld.getFluidLevelAt(originalX, originalY, originalZ), 8 / 9D);
+        float fluidLevel = ownHeight(player, originalX, originalY, originalZ);
         ClientVersion version = player.getClientVersion();
 
         if (fluidLevel == 0) return new Vector3dm();
@@ -28,14 +41,14 @@ public class FluidTypeFlowing {
             int modifiedZ = originalZ + enumdirection.getModZ();
 
             if (affectsFlow(player, originalX, originalY, originalZ, modifiedX, originalY, modifiedZ)) {
-                float f = (float) Math.min(player.compensatedWorld.getFluidLevelAt(modifiedX, originalY, modifiedZ), 8 / 9D);
+                float f = ownHeight(player, modifiedX, originalY, modifiedZ);
                 float f1 = 0.0F;
                 if (f == 0.0F) {
                     StateType mat = player.compensatedWorld.getBlockType(modifiedX, originalY, modifiedZ);
 
                     if (Materials.isSolidBlockingBlacklist(mat, version)) {
                         if (affectsFlow(player, originalX, originalY, originalZ, modifiedX, originalY - 1, modifiedZ)) {
-                            f = (float) Math.min(player.compensatedWorld.getFluidLevelAt(modifiedX, originalY - 1, modifiedZ), 8 / 9D);
+                            f = ownHeight(player, modifiedX, originalY - 1, modifiedZ);
                             if (f > 0.0F) {
                                 f1 = fluidLevel - (f - 0.8888889F);
                             }

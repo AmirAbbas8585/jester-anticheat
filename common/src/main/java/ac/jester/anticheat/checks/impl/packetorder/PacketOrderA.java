@@ -7,6 +7,7 @@ import ac.jester.anticheat.player.GrimPlayer;
 import ac.jester.anticheat.utils.anticheat.update.PredictionComplete;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClickWindow;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClickWindow.WindowClickType;
 
@@ -20,6 +21,8 @@ public class PacketOrderA extends Check implements PostPredictionCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
+        if (player.getClientVersion().isNewerThan(ClientVersion.V_1_12_2)) return;
+
         if (event.getPacketType() == PacketType.Play.Client.CLICK_WINDOW) {
             final WindowClickType clickType = new WrapperPlayClientClickWindow(event).getWindowClickType();
 
