@@ -104,6 +104,8 @@ bukkit {
         "PremiumVanish",
         "AxiomPaper",
         "CheckHacks",
+        "Geyser-Spigot",
+        "floodgate",
     )
 
     permissions {

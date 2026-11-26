@@ -256,7 +256,7 @@ public class GrimPlayer implements GrimUser {
     public GrimPlayer(@NotNull User user) {
         this.user = user;
         this.uuid = user.getUUID();
-        this.bedrock = uuid != null && uuid.getMostSignificantBits() == 0L;
+        this.bedrock = ac.jester.anticheat.manager.BedrockPolicy.detectBedrock(uuid);
         fireworks = new CompensatedFireworks(this);
         inventory = new CompensatedInventory(this);
 
