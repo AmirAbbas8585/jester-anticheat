@@ -6,7 +6,7 @@
 # Run /jester reload after editing.
 
 # Used by the plugin to update this file after an upgrade. Don't change it.
-config-version: 4
+config-version: 5
 
 # ----------------------------------------------------------------------------
 #  Alerts
@@ -56,9 +56,6 @@ beta-checks: true
 # on your own server and trust it.
 beta-checks-punishable: false
 
-# Shares identical chunk sections between players to save memory (copy-on-write on edit).
-experimental-chunk-sharing: false
-
 # Above this ping (ms) checks still alert but won't punish, so nobody gets
 # kicked for lag. BadPackets, Crash and Exploit ignore it. 0 turns it off.
 high-ping:
@@ -85,6 +82,14 @@ alert-defaults:
     # punishment runs, so a short lag burst can't kick someone in a split
     # second. 0 = punish as soon as max-violations is reached.
     punish-grace-ms: 2000
+
+# ----------------------------------------------------------------------------
+#  Performance
+# ----------------------------------------------------------------------------
+
+# Share identical chunk sections between players to reduce RAM usage on larger
+# servers (copy-on-write on edit). Safe to leave off on small servers.
+experimental-chunk-sharing: false
 
 # ----------------------------------------------------------------------------
 #  Storage
@@ -127,19 +132,18 @@ history:
 #  Bedrock players
 # ----------------------------------------------------------------------------
 
-# Bedrock players (Geyser/Floodgate) are still checked, but checks that assume
-# Java behaviour are skipped for them: movement prediction, knockback, reach
-# and aim (Geyser makes up the look direction on touch screens), click timing
-# and packet order. Packet validity checks such as Crash and Exploit still
-# run, since a normal Bedrock client can't trip them.
+# Bedrock players (Geyser/Floodgate) are still checked, but Java-specific checks
+# (movement prediction, timer, knockback, reach, aim, click timing, bridging and
+# packet order) are skipped for them by default. Packet-validity and pure cheat
+# checks (such as Crash, Exploit, Nuker and CrystalAura) still run.
 #
-# Bedrock players are recognised by their Floodgate UUID, or by a client brand
-# containing "Geyser" for accounts linked to Java.
+# Bedrock players are detected strictly server-side via Floodgate/Geyser APIs
+# and Floodgate UUIDs (client brands cannot spoof Bedrock status).
 bedrock:
     # false = check Bedrock players exactly like Java players.
     enabled: true
-    # Leave empty for the built-in list. A list here replaces it completely,
-    # it doesn't add to it.
+    # Leave empty for the built-in skip list. A custom list replaces it.
+    # Use ["*"] to exempt Bedrock players from ALL checks completely.
     disabled-checks: []
 
 # ----------------------------------------------------------------------------
@@ -148,6 +152,8 @@ bedrock:
 
 # Each option only does something when that plugin is installed, so leaving
 # them on is safe. Set one to false to turn that support off.
+# CheckHacks auto-flag integration is enabled automatically when CheckHacks is
+# installed and respects your CheckHacks config.
 integrations:
     # GSit: skip movement checks for players sitting, crawling or lying down.
     gsit-exempt-movement: true
@@ -1611,9 +1617,9 @@ checks:
         punishment-commands:
             - 'kick %player% &#c19a6bᴀᴄ &8» &fᴄʜᴇᴀᴛɪɴɢ ᴅᴇᴛᴇᴄᴛᴇᴅ &8(&#c19a6b%check%&8 &7ping: %ping%ms&8)'
 
-    # Responded to chunk batch packets in an invalid transaction order.
+    # Sent keepalive and transaction packets out of order.
     PacketOrderP:
-        enabled: false
+        enabled: true
         punishable: false
         max-violations: 20
         dont-alert-until: 3
