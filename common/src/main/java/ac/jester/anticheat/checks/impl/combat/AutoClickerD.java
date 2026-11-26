@@ -53,9 +53,7 @@ public final class AutoClickerD extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        if (!isAttackPacket(event)) return;
 
         long now = System.currentTimeMillis();
         long previous = lastAttackMs;

@@ -55,9 +55,7 @@ public final class AutoClickerC extends Check implements PacketCheck {
             return;
         }
 
-        if (type != PacketType.Play.Client.INTERACT_ENTITY) return;
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        if (!isAttackPacket(event)) return;
 
         if (stationaryTicks < minStationaryTicks) return;
 

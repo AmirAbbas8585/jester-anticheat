@@ -105,22 +105,22 @@ public final class ReachB extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        Integer entityId = getAttackedEntityId(event);
+        if (entityId == null) return;
+        int id = entityId;
 
         if (System.currentTimeMillis() - lastSelfKnockbackMs < knockbackGraceMs) return;
 
         if (player.inVehicle()) return;
 
-        PacketEntity target = player.compensatedEntities.entityMap.get(interact.getEntityId());
+        PacketEntity target = player.compensatedEntities.entityMap.get(id);
         if (target != null) {
             if (target.riding != null) return;
             if (target.isBoat || target.isMinecart) return;
             if (target.type == EntityTypes.CREAKING || target.type == EntityTypes.SHULKER) return;
         }
 
-        Track t = tracked.get(interact.getEntityId());
+        Track t = tracked.get(id);
         if (t == null || t.count == 0) return;
 
         long when = System.currentTimeMillis() - Math.max(0, player.getTransactionPing());
@@ -141,7 +141,6 @@ public final class ReachB extends Check implements PacketCheck {
 
         if (distance > maxPlausibleDistance) return;
 
-        int id = interact.getEntityId();
         if (distance > allowed) {
             int bad = consecutiveBad.merge(id, 1, Integer::sum);
             if (bad >= minConsecutive) {

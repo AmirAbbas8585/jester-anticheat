@@ -54,14 +54,11 @@ public final class AutoClickerA extends Check implements PacketCheck {
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
         if (cancelBeforeKick
-                && event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY
+                && isAttackPacket(event)
                 && System.currentTimeMillis() < cancelUntil
                 && shouldModifyPackets()) {
-            WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-            if (interact.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
-                event.setCancelled(true);
-                player.onPacketCancel();
-            }
+            event.setCancelled(true);
+            player.onPacketCancel();
             return;
         }
 
@@ -97,7 +94,7 @@ public final class AutoClickerA extends Check implements PacketCheck {
             return;
         }
 
-        if (event.getPacketType() != PacketType.Play.Client.ANIMATION) return;
+        if (!isAnimation(event.getPacketType())) return;
         if (useSwingPending) {
             useSwingPending = false;
             return;

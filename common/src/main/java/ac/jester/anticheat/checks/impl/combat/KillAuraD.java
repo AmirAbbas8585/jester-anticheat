@@ -32,15 +32,13 @@ public final class KillAuraD extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        Integer entityId = getAttackedEntityId(event);
+        if (entityId == null) return;
 
         if (!player.isTickingReliablyFor(5)) return;
         if (player.getTransactionPing() > maxPingMs) return;
 
-        PacketEntity entity = player.compensatedEntities.entityMap.get(interact.getEntityId());
+        PacketEntity entity = player.compensatedEntities.entityMap.get(entityId.intValue());
         if (entity == null) return;
 
         var entityPos = entity.trackedServerPosition.getPos();

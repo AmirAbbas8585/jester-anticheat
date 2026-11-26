@@ -34,12 +34,10 @@ public final class KillAuraB extends Check implements PacketCheck {
             return;
         }
 
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
+        Integer entityId = getAttackedEntityId(event);
+        if (entityId == null) return;
 
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
-
-        entitiesThisTick.add(interact.getEntityId());
+        entitiesThisTick.add(entityId);
 
         if (entitiesThisTick.size() >= minTargets && player.isTickingReliablyFor(3)) {
             flagAndAlert(String.format("targets=%d ping=%dms",

@@ -38,7 +38,8 @@ public class MultiActionsF extends BlockPlaceCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
+        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY
+                || event.getPacketType() == PacketType.Play.Client.ATTACK) {
             entity = true;
             if (block) {
                 if (!player.canSkipTicks()) {

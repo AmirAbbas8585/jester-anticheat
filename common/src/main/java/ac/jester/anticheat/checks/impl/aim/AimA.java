@@ -38,9 +38,7 @@ public final class AimA extends Check implements RotationCheck, PacketCheck {
             return;
         }
 
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        if (!isAttackPacket(event)) return;
         ticksSinceAttack = 0;
     }
 

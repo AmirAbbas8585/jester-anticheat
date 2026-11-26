@@ -17,7 +17,8 @@ public class SetbackBlocker extends Check implements PacketCheck {
         if (player.disableGrim)
             return;
 
-        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
+        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY
+                || event.getPacketType() == PacketType.Play.Client.ATTACK) {
             if (player.getSetbackTeleportUtil().cheatVehicleInterpolationDelay > 0) {
                 event.setCancelled(true);
             }

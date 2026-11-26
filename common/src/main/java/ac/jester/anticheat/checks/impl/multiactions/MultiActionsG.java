@@ -18,7 +18,8 @@ public class MultiActionsG extends BlockPlaceCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY && isCheckActive()
+        if ((event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY
+                || event.getPacketType() == PacketType.Play.Client.ATTACK) && isCheckActive()
                 && flagAndAlert("interact") && shouldModifyPackets()) {
             event.setCancelled(true);
             player.onPacketCancel();

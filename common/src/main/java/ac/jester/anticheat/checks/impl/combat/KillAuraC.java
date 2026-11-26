@@ -26,10 +26,7 @@ public final class KillAuraC extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        if (!isAttackPacket(event)) return;
 
         if (!player.inventory.hasExternalContainerOpen()) {
             consecutive = 0;

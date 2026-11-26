@@ -254,6 +254,30 @@ public class Check extends GrimProcessor implements AbstractCheck {
         return packetType == PacketType.Play.Client.ANIMATION || packetType == PacketType.Play.Client.PUNCH;
     }
 
+    public static boolean isAttackPacket(com.github.retrooper.packetevents.event.PacketReceiveEvent event) {
+        PacketTypeCommon type = event.getPacketType();
+        if (type == PacketType.Play.Client.ATTACK) return true;
+        if (type == PacketType.Play.Client.INTERACT_ENTITY) {
+            return new com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity(event)
+                    .getAction() == com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity.InteractAction.ATTACK;
+        }
+        return false;
+    }
+
+    public static Integer getAttackedEntityId(com.github.retrooper.packetevents.event.PacketReceiveEvent event) {
+        PacketTypeCommon type = event.getPacketType();
+        if (type == PacketType.Play.Client.ATTACK) {
+            return new com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAttack(event).getEntityId();
+        }
+        if (type == PacketType.Play.Client.INTERACT_ENTITY) {
+            var interact = new com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity(event);
+            if (interact.getAction() == com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
+                return interact.getEntityId();
+            }
+        }
+        return null;
+    }
+
     public boolean isTickPacketIncludingNonMovement(PacketTypeCommon packetType) {
         if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2)
                 && !player.packetStateData.didSendMovementBeforeTickEnd) {

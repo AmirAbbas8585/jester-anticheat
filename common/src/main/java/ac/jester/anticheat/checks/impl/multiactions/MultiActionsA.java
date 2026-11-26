@@ -17,12 +17,13 @@ public class MultiActionsA extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (player.packetStateData.isSlowedByUsingItem() && (player.packetStateData.lastSlotSelected == player.packetStateData.getSlowedByUsingItemSlot() || player.packetStateData.itemInUseHand == InteractionHand.OFF_HAND) && event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
-            if (new WrapperPlayClientInteractEntity(event).getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
-                if (flagAndAlert() && shouldModifyPackets()) {
-                    event.setCancelled(true);
-                    player.onPacketCancel();
-                }
+        if (player.packetStateData.isSlowedByUsingItem()
+                && (player.packetStateData.lastSlotSelected == player.packetStateData.getSlowedByUsingItemSlot()
+                        || player.packetStateData.itemInUseHand == InteractionHand.OFF_HAND)
+                && isAttackPacket(event)) {
+            if (flagAndAlert() && shouldModifyPackets()) {
+                event.setCancelled(true);
+                player.onPacketCancel();
             }
         }
     }

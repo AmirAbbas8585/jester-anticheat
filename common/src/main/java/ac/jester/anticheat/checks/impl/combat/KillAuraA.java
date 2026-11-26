@@ -7,7 +7,8 @@ import ac.jester.anticheat.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
-import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.protocol.player.ClientVersion;
+import com.github.retrooper.packetevents.protocol.player.GameMode;
 
 @CheckData(name = "KillAura", configName = "KillAuraA",
         description = "Attacking entity without swinging arm (no ANIMATION after INTERACT_ENTITY)")
@@ -24,7 +25,7 @@ public final class KillAuraA extends Check implements PacketCheck {
     public void onPacketReceive(PacketReceiveEvent event) {
         PacketTypeCommon type = event.getPacketType();
 
-        if (type == PacketType.Play.Client.ANIMATION) {
+        if (isAnimation(type)) {
             if (pendingSwing) consecutiveNoSwing = 0;
             pendingSwing = false;
             return;
@@ -45,10 +46,8 @@ public final class KillAuraA extends Check implements PacketCheck {
             return;
         }
 
-        if (type != PacketType.Play.Client.INTERACT_ENTITY) return;
-
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        if (!isAttackPacket(event)) return;
+        if (player.gamemode == GameMode.SPECTATOR && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_11)) return;
 
         pendingSwing = true;
     }

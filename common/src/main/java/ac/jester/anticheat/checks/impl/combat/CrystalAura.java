@@ -48,30 +48,28 @@ public final class CrystalAura extends Check implements PacketCheck {
             }
         }
 
-        if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
-            WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-            if (interact.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
-                var entity = player.compensatedEntities.entityMap.get(interact.getEntityId());
-                if (entity == null
-                        || entity.type != com.github.retrooper.packetevents.protocol.entity.type.EntityTypes.END_CRYSTAL) {
-                    return;
-                }
-                isCrystalInteraction = true;
+        Integer attackedEntityId = getAttackedEntityId(event);
+        if (attackedEntityId != null) {
+            var entity = player.compensatedEntities.entityMap.get(attackedEntityId.intValue());
+            if (entity == null
+                    || entity.type != com.github.retrooper.packetevents.protocol.entity.type.EntityTypes.END_CRYSTAL) {
+                return;
+            }
+            isCrystalInteraction = true;
 
-                if (lastPlaceTime != 0L) {
-                    long gap = System.currentTimeMillis() - lastPlaceTime;
-                    lastPlaceTime = 0L;
-                    long physical = player.getTransactionPing() / 2;
-                    if (gap < minPlaceDetonateMs && gap < physical) {
-                        consecutiveFastDetonates++;
-                        if (consecutiveFastDetonates >= minConsecutiveFast && player.isTickingReliablyFor(3)) {
-                            flagAndAlert(String.format("place->detonate gap=%dms min=%dms consecutive=%d",
-                                    gap, minPlaceDetonateMs, consecutiveFastDetonates));
-                            consecutiveFastDetonates = 0;
-                        }
-                    } else {
+            if (lastPlaceTime != 0L) {
+                long gap = System.currentTimeMillis() - lastPlaceTime;
+                lastPlaceTime = 0L;
+                long physical = player.getTransactionPing() / 2;
+                if (gap < minPlaceDetonateMs && gap < physical) {
+                    consecutiveFastDetonates++;
+                    if (consecutiveFastDetonates >= minConsecutiveFast && player.isTickingReliablyFor(3)) {
+                        flagAndAlert(String.format("place->detonate gap=%dms min=%dms consecutive=%d",
+                                gap, minPlaceDetonateMs, consecutiveFastDetonates));
                         consecutiveFastDetonates = 0;
                     }
+                } else {
+                    consecutiveFastDetonates = 0;
                 }
             }
         }

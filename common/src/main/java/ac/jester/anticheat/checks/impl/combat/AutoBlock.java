@@ -32,10 +32,7 @@ public final class AutoBlock extends Check implements PacketCheck {
     public void onPacketReceive(PacketReceiveEvent event) {
         if (!PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_9)) return;
 
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        if (!isAttackPacket(event)) return;
 
         if (!player.packetStateData.isSlowedByUsingItem() || !holdingShield()) {
             consecutive = 0;

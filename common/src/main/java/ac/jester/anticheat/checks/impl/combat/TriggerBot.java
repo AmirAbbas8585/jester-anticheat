@@ -54,9 +54,8 @@ public final class TriggerBot extends Check implements PacketCheck {
             return;
         }
 
-        if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-        WrapperPlayClientInteractEntity interact = new WrapperPlayClientInteractEntity(event);
-        if (interact.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) return;
+        Integer entityId = getAttackedEntityId(event);
+        if (entityId == null) return;
 
         boolean wasInCombat = ticksSinceAttack <= COMBAT_WINDOW_TICKS;
         ticksSinceAttack = 0;
@@ -67,7 +66,7 @@ public final class TriggerBot extends Check implements PacketCheck {
             return;
         }
 
-        int onTargetTicks = ticksOnTarget.get(interact.getEntityId());
+        int onTargetTicks = ticksOnTarget.get(entityId.intValue());
         if (onTargetTicks == 0) return;
 
         if (onTargetTicks <= maxAcquireTicks) {
