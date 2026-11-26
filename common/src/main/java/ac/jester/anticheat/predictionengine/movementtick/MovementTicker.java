@@ -169,24 +169,15 @@ public class MovementTicker {
                 bounceY = preUncertainty.vector.getY();
             }
 
-            if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
-                    && (onBlock == StateTypes.SLIME_BLOCK || (onBlock == StateTypes.HONEY_BLOCK && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14_4)))) {
-                if (player.isSneaking) {
+            float blockRestitution = BlockProperties.getBlockBounceRestitution(onBlock, player);
+            if (blockRestitution > 0.0F) {
+                boolean isSlimeLike = onBlock == StateTypes.SLIME_BLOCK
+                        || (onBlock == StateTypes.HONEY_BLOCK && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14_4));
+                if (isSlimeLike && player.isSneaking) {
                     player.clientVelocity.setY(0);
-                } else {
-                    if (bounceY < 0.0) {
-                        player.clientVelocity.setY(-bounceY *
-                                (riding != null && !riding.isLivingEntity ? 0.8 : 1.0));
-                    }
-                }
-            } else if (BlockTags.BEDS.contains(onBlock) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_12)) {
-                if (bounceY < 0.0) {
-                    player.clientVelocity.setY(-bounceY * 0.6600000262260437 *
-                            (riding != null && !riding.isLivingEntity ? 0.8 : 1.0));
-                }
-            } else if (onBlock == StateTypes.SHELF_MUSHROOM && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
-                if (bounceY < 0.0) {
-                    player.clientVelocity.setY(-bounceY * 0.75 *
+                } else if (bounceY < 0.0) {
+                    double restitution = blockRestitution == 0.66F ? 0.6600000262260437 : blockRestitution;
+                    player.clientVelocity.setY(-bounceY * restitution *
                             (riding != null && !riding.isLivingEntity ? 0.8 : 1.0));
                 }
             } else {
@@ -431,6 +422,7 @@ public class MovementTicker {
         }
 
         Collisions.applyEffectsFromBlocks(player);
+        ac.jester.anticheat.predictionengine.blockeffects.PotentSulfurGeyser.launchEntityTicker(player, player.clientVelocity, true);
     }
 
     private boolean canFloatWhileRidden() {

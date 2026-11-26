@@ -187,6 +187,7 @@ public class GrimPlayer implements GrimUser {
     public final LastInstanceManager lastInstanceManager;
     public final CompensatedFireworks fireworks;
     public final CompensatedWorld compensatedWorld;
+    public final ac.jester.anticheat.predictionengine.blockeffects.CompensatedGeysers compensatedGeysers;
     public final CompensatedEntities compensatedEntities;
     public final CompensatedDashableEntities dashableEntities;
     public final CompensatedInventory inventory;
@@ -262,6 +263,7 @@ public class GrimPlayer implements GrimUser {
         inventory = new CompensatedInventory(this);
 
         compensatedWorld = new CompensatedWorld(this);
+        compensatedGeysers = new ac.jester.anticheat.predictionengine.blockeffects.CompensatedGeysers();
         compensatedEntities = new CompensatedEntities(this);
         dashableEntities = new CompensatedDashableEntities();
         cameraEntity = new CompensatedCameraEntity(this);
@@ -333,6 +335,7 @@ public class GrimPlayer implements GrimUser {
             Vector3dm vector = clientVelocity.clone().setY(0.30000001192092896 + (canFloatWhileRidden ? 0.03999999910593033 : 0.0));
             if (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2)) {
                 Collisions.resolveBlockEffects(this, vector, true, finalMovementsThisTick);
+                ac.jester.anticheat.predictionengine.blockeffects.PotentSulfurGeyser.launchEntityTicker(this, vector, false);
             }
 
             vector.setY(vector.getY() + baseTickApplied.getY());
@@ -347,6 +350,7 @@ public class GrimPlayer implements GrimUser {
             Vector3dm vector = clientVelocity.clone().setY(lastWasClimbing);
             if (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2)) {
                 Collisions.resolveBlockEffects(this, vector, true, finalMovementsThisTick);
+                ac.jester.anticheat.predictionengine.blockeffects.PotentSulfurGeyser.launchEntityTicker(this, vector, false);
             }
 
             vector.setY(vector.getY() + baseTickApplied.getY());
@@ -899,6 +903,7 @@ public class GrimPlayer implements GrimUser {
         resetItemUsageOnItemUse = config.getBooleanElse("reset-item-usage-on-item-use", true);
         for (AbstractCheck value : checkManager.allChecks.values()) value.reload();
         punishmentManager.reload(config);
+        this.movementCheckRunner.reload(config);
     }
 
     @Override

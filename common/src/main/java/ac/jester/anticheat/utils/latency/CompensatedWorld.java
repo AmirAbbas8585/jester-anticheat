@@ -315,12 +315,18 @@ public class CompensatedWorld implements PacketWorld {
                 chunk.set(blockVersion, 0, 0, 0, 0);
             }
 
-            player.pointThreeEstimator.handleChangeBlock(x, y, z, chunk.get(blockVersion, x & 0xF, offsetY & 0xF, z & 0xF));
+            WrappedBlockState previousState = chunk.get(blockVersion, x & 0xF, offsetY & 0xF, z & 0xF);
+            if (previousState.getGlobalId() != combinedID) {
+                WrappedBlockState newState = WrappedBlockState.getByGlobalId(blockVersion, combinedID);
 
-            chunk = ac.jester.anticheat.utils.chunks.ChunkSectionCache.detachSectionForWrite(column, sectionIndex, chunk);
-            chunk.set(blockVersion, x & 0xF, offsetY & 0xF, z & 0xF, combinedID);
+                player.pointThreeEstimator.handleChangeBlock(x, y, z, previousState);
 
-            player.pointThreeEstimator.handleChangeBlock(x, y, z, WrappedBlockState.getByGlobalId(blockVersion, combinedID));
+                chunk = ac.jester.anticheat.utils.chunks.ChunkSectionCache.detachSectionForWrite(column, sectionIndex, chunk);
+                chunk.set(blockVersion, x & 0xF, offsetY & 0xF, z & 0xF, combinedID);
+                player.compensatedGeysers.updateBlock(x, y, z, previousState, newState, minHeight);
+
+                player.pointThreeEstimator.handleChangeBlock(x, y, z, newState);
+            }
         }
     }
 
@@ -624,10 +630,16 @@ public class CompensatedWorld implements PacketWorld {
     }
 
     public void addToCache(Column chunk, int chunkX, int chunkZ) {
+        addToCache(chunk, chunkX, chunkZ, null);
+    }
+
+    public void addToCache(Column chunk, int chunkX, int chunkZ, com.github.retrooper.packetevents.protocol.world.chunk.TileEntity[] tileEntities) {
         long chunkPosition = chunkPositionToLong(chunkX, chunkZ);
         player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
-            Column previous = chunks.put(chunkPosition, ac.jester.anticheat.utils.chunks.ChunkSectionCache.shareColumnSections(chunk));
+            Column shared = ac.jester.anticheat.utils.chunks.ChunkSectionCache.shareColumnSections(chunk);
+            Column previous = chunks.put(chunkPosition, shared);
             if (previous != null) ac.jester.anticheat.utils.chunks.ChunkSectionCache.releaseColumnSections(previous);
+            player.compensatedGeysers.addChunkToCache(shared, tileEntities, minHeight);
         });
     }
 
@@ -703,6 +715,7 @@ public class CompensatedWorld implements PacketWorld {
             Column column = chunks.remove(chunkPosition);
             if (column != null) {
                 ac.jester.anticheat.utils.chunks.ChunkSectionCache.releaseColumnSections(column);
+                player.compensatedGeysers.removeChunk(chunkX, chunkZ, column.chunks().length);
             }
         });
     }

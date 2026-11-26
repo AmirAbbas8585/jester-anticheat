@@ -167,6 +167,7 @@ public class PacketPlayerRespawn extends PacketListenerAbstract {
                     player.compensatedWorld.openShulkerBoxes.clear();
                     ac.jester.anticheat.utils.chunks.ChunkSectionCache.releaseSharedSections(player.compensatedWorld);
                     player.compensatedWorld.chunks.clear();
+                    player.compensatedGeysers.clear();
                     player.compensatedWorld.isRaining = false;
                     player.checkManager.getBlockPlaceCheck(BadPacketsH.class).onWorldChange();
                     player.compensatedWorld.clearPredictions();

@@ -110,6 +110,10 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
     }
 
     public void addChunkToCache(PacketSendEvent event, GrimPlayer player, BaseChunk[] chunks, boolean isGroundUp, int chunkX, int chunkZ) {
+        addChunkToCache(event, player, chunks, isGroundUp, chunkX, chunkZ, null);
+    }
+
+    public void addChunkToCache(PacketSendEvent event, GrimPlayer player, BaseChunk[] chunks, boolean isGroundUp, int chunkX, int chunkZ, com.github.retrooper.packetevents.protocol.world.chunk.TileEntity[] tileEntities) {
         double chunkCenterX = (chunkX << 4) + 8;
         double chunkCenterZ = (chunkZ << 4) + 8;
         boolean shouldPostTrans = Math.abs(player.x - chunkCenterX) < 16 && Math.abs(player.z - chunkCenterZ) < 16;
@@ -126,7 +130,7 @@ public class BasePacketWorldReader extends PacketListenerAbstract {
         }
         if (isGroundUp) {
             Column column = new Column(chunkX, chunkZ, chunks, new long[chunks.length], player.lastTransactionSent.get());
-            player.compensatedWorld.addToCache(column, chunkX, chunkZ);
+            player.compensatedWorld.addToCache(column, chunkX, chunkZ, tileEntities);
         } else {
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                 ac.jester.anticheat.utils.chunks.ChunkSectionCache.mergeIncomingSections(player.compensatedWorld, chunkX, chunkZ, chunks);

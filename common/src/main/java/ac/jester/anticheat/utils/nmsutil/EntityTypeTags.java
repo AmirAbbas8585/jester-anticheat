@@ -5,7 +5,12 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 
 public class EntityTypeTags {
     public static final EntityTag CAN_FLOAT_WHILE_RIDDEN = new EntityTag(
-            EntityTypes.HORSE, EntityTypes.ZOMBIE_HORSE, EntityTypes.MULE, EntityTypes.DONKEY, EntityTypes.CAMEL, EntityTypes.CAMEL_HUSK
+            EntityTypes.HORSE, EntityTypes.ZOMBIE_HORSE, EntityTypes.MULE,
+            EntityTypes.DONKEY, EntityTypes.CAMEL, EntityTypes.CAMEL_HUSK
+    );
+
+    public static final EntityTag NOT_AFFECTED_BY_GEYSERS = new EntityTag(
+            EntityTypes.ENDER_DRAGON
     );
 
     public record EntityTag(EntityType... tags) {

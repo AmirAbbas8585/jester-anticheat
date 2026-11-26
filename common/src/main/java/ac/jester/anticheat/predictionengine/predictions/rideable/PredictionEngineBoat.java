@@ -183,6 +183,7 @@ public class PredictionEngineBoat extends PredictionEngine {
 
         Collisions.applyEffectsFromBlocks(player);
         Collisions.applyEffectsFromBlocks(player);
+        ac.jester.anticheat.predictionengine.blockeffects.PotentSulfurGeyser.launchEntityTicker(player, player.clientVelocity, true);
     }
 
     @Override
