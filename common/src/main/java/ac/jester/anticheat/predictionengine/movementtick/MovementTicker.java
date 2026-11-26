@@ -163,24 +163,30 @@ public class MovementTicker {
         StateType onBlock = BlockProperties.getOnPos(player, player.mainSupportingBlockData, new Vector3d(player.x, player.y, player.z));
 
         if (inputVel.getY() != collide.getY()) {
+            double bounceY = player.clientVelocity.getY();
+            VectorData preUncertainty = player.predictedVelocity.preUncertainty;
+            if (preUncertainty != null && preUncertainty.vector.getY() < bounceY) {
+                bounceY = preUncertainty.vector.getY();
+            }
+
             if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_8)
                     && (onBlock == StateTypes.SLIME_BLOCK || (onBlock == StateTypes.HONEY_BLOCK && player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_14_4)))) {
                 if (player.isSneaking) {
                     player.clientVelocity.setY(0);
                 } else {
-                    if (player.clientVelocity.getY() < 0.0) {
-                        player.clientVelocity.setY(-player.clientVelocity.getY() *
+                    if (bounceY < 0.0) {
+                        player.clientVelocity.setY(-bounceY *
                                 (riding != null && !riding.isLivingEntity ? 0.8 : 1.0));
                     }
                 }
             } else if (BlockTags.BEDS.contains(onBlock) && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_12)) {
-                if (player.clientVelocity.getY() < 0.0) {
-                    player.clientVelocity.setY(-player.clientVelocity.getY() * 0.6600000262260437 *
+                if (bounceY < 0.0) {
+                    player.clientVelocity.setY(-bounceY * 0.6600000262260437 *
                             (riding != null && !riding.isLivingEntity ? 0.8 : 1.0));
                 }
             } else if (onBlock == StateTypes.SHELF_MUSHROOM && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_26_3)) {
-                if (player.clientVelocity.getY() < 0.0) {
-                    player.clientVelocity.setY(-player.clientVelocity.getY() * 0.75 *
+                if (bounceY < 0.0) {
+                    player.clientVelocity.setY(-bounceY * 0.75 *
                             (riding != null && !riding.isLivingEntity ? 0.8 : 1.0));
                 }
             } else {

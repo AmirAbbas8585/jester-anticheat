@@ -198,6 +198,7 @@ public class GrimPlayer implements GrimUser {
     public final PacketStateData packetStateData = new PacketStateData();
     public Vector3dm baseTickAddition = new Vector3dm();
     public Vector3dm baseTickWaterPushing = new Vector3dm();
+    public Vector3dm baseTickApplied = new Vector3dm();
     public Vector3dm startTickClientVel = new Vector3dm();
     public int movementPackets = 0;
     public VelocityData firstBreadKB = null;
@@ -334,6 +335,7 @@ public class GrimPlayer implements GrimUser {
                 Collisions.resolveBlockEffects(this, vector, true, finalMovementsThisTick);
             }
 
+            vector.setY(vector.getY() + baseTickApplied.getY());
             possibleMovements.add(new VectorData(vector, VectorData.VectorType.Swimhop));
         }
 
@@ -342,7 +344,13 @@ public class GrimPlayer implements GrimUser {
         }
 
         if (lastWasClimbing != 0) {
-            possibleMovements.add(new VectorData(clientVelocity.clone().setY(lastWasClimbing + baseTickAddition.getY()), VectorData.VectorType.Climbable));
+            Vector3dm vector = clientVelocity.clone().setY(lastWasClimbing);
+            if (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_21_2)) {
+                Collisions.resolveBlockEffects(this, vector, true, finalMovementsThisTick);
+            }
+
+            vector.setY(vector.getY() + baseTickApplied.getY());
+            possibleMovements.add(new VectorData(vector, VectorData.VectorType.Climbable));
         }
 
         for (VectorData data : new HashSet<>(possibleMovements)) {
@@ -403,6 +411,7 @@ public class GrimPlayer implements GrimUser {
 
     public void baseTickAddVector(Vector3dm vector) {
         clientVelocity.add(vector);
+        baseTickApplied.add(vector);
     }
 
     public void trackBaseTickAddition(Vector3dm vector) {
