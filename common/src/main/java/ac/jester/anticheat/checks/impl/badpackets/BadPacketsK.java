@@ -16,7 +16,8 @@ public class BadPacketsK extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() == PacketType.Play.Client.SPECTATE
+        if ((event.getPacketType() == PacketType.Play.Client.SPECTATE
+                || event.getPacketType() == PacketType.Play.Client.SPECTATE_ENTITY)
                 && player.gamemode != GameMode.SPECTATOR
                 && flagAndAlert() && shouldModifyPackets()) {
             event.setCancelled(true);

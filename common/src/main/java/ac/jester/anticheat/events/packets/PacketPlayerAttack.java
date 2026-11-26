@@ -51,8 +51,7 @@ public class PacketPlayerAttack extends PacketListenerAbstract {
                 ItemStack heldItem = player.inventory.getHeldItem();
                 PacketEntity entity = player.compensatedEntities.getEntity(interact.getEntityId());
 
-                if (entity != null && (!entity.isLivingEntity || entity.type == EntityTypes.PLAYER || entity.type == EntityTypes.PAINTING
-                        || entity.type == EntityTypes.ENDER_DRAGON && player.getClientVersion().isOlderThan(ClientVersion.V_1_21_2))) {
+                if (shouldPredictAttackSlow(player, entity)) {
                     int knockbackLevel = player.getClientVersion().isOlderThan(ClientVersion.V_1_21) && heldItem != null
                             ? heldItem.getEnchantmentLevel(EnchantmentTypes.KNOCKBACK)
                             : 0;
@@ -91,5 +90,14 @@ public class PacketPlayerAttack extends PacketListenerAbstract {
                 }
             }
         }
+    }
+
+    private static boolean shouldPredictAttackSlow(GrimPlayer player, PacketEntity entity) {
+        if (entity == null) return false;
+
+        if (EntityTypes.isTypeInstanceOf(entity.type, EntityTypes.ABSTRACT_HANGING)) return false;
+
+        return !entity.isLivingEntity || entity.type == EntityTypes.PLAYER
+                || entity.type == EntityTypes.ENDER_DRAGON && player.getClientVersion().isOlderThan(ClientVersion.V_1_21_2);
     }
 }

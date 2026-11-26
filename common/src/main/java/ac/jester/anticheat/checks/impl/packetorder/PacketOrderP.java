@@ -7,48 +7,73 @@ import ac.jester.anticheat.player.GrimPlayer;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBundle;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientKeepAlive;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerKeepAlive;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-@CheckData(name = "PacketOrderP", description = "Responded to chunk batch packets in an invalid transaction order", experimental = true)
+import java.util.ArrayList;
+
+@CheckData(name = "PacketOrderP", description = "Sent keepalive and transaction packets out of order", experimental = true)
 public class PacketOrderP extends Check implements PacketCheck {
-    public PacketOrderP(final GrimPlayer player) {
+    private static final int DEFAULT_LIST_SIZE = 4;
+    private static final int TARGET_MAX_LIST_SIZE = 8;
+
+    private final ArrayList<KeepAliveData> pendingKeepAlives = new ArrayList<>(DEFAULT_LIST_SIZE);
+    private boolean needsShrink;
+
+    public PacketOrderP(@NotNull GrimPlayer player) {
         super(player);
     }
 
-    private byte trimTimer;
-    private final IntArrayList transactions = new IntArrayList(0);
-
     @Override
-    public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacketType() == PacketType.Play.Client.CHUNK_BATCH_ACK) {
-            if (!transactions.rem(player.getLastTransactionReceived())) {
-                flagAndAlert("invalid response");
+    public void onPacketReceive(@NotNull PacketReceiveEvent event) {
+        if (event.getPacketType() != PacketType.Play.Client.KEEP_ALIVE) return;
+        long id = new WrapperPlayClientKeepAlive(event).getId();
+
+        for (int i = 0, size = pendingKeepAlives.size(); i < size; i++) {
+            if (pendingKeepAlives.get(i).id == id) {
+                pendingKeepAlives.remove(i);
+                break;
             }
-        } else if (!isAsync(event.getPacketType()) && !isTransaction(event.getPacketType())) {
-            if (transactions.rem(player.getLastTransactionReceived())) {
-                flagAndAlert("skipped response, type=" + event.getPacketType());
-            }
+        }
+
+        if (needsShrink && pendingKeepAlives.isEmpty()) {
+            pendingKeepAlives.trimToSize();
+            pendingKeepAlives.ensureCapacity(DEFAULT_LIST_SIZE);
+            needsShrink = false;
         }
     }
 
-    public void onPacketSend(PacketSendEvent event) {
-        if (event.getPacketType() == PacketType.Play.Server.CHUNK_BATCH_END) {
-            boolean sendingBundlePacket = player.packetStateData.sendingBundlePacket;
-            if (!sendingBundlePacket) player.user.sendPacket(new WrapperPlayServerBundle());
+    @Override
+    public void onPacketSend(final @NotNull PacketSendEvent event) {
+        if (event.getPacketType() != PacketType.Play.Server.KEEP_ALIVE) return;
+        WrapperPlayServerKeepAlive packet = new WrapperPlayServerKeepAlive(event);
 
-            player.sendTransaction();
-            int transaction = player.getLastTransactionSent();
-            transactions.add(transaction);
-            if (++trimTimer == 0) transactions.trim();
-            player.addRealTimeTaskNext(() -> {
-                if (transactions.rem(transaction))
-                    flagAndAlert("skipped response, type=TRANSACTION");
-            });
+        KeepAliveData data = new KeepAliveData(packet.getId());
 
-            if (!sendingBundlePacket) {
-                event.getTasksAfterSend().add(() -> player.user.sendPacket(new WrapperPlayServerBundle()));
+        pendingKeepAlives.add(data);
+
+        player.addRealTimeTaskNext(() -> {
+            if (pendingKeepAlives.remove(data)) {
+                flagAndAlert();
             }
+        });
+
+        if (pendingKeepAlives.size() > TARGET_MAX_LIST_SIZE) {
+            needsShrink = true;
+        }
+
+        event.getTasksAfterSend().add(player::sendTransaction);
+    }
+
+    @SuppressWarnings("ClassCanBeRecord")
+    private static final class KeepAliveData {
+        public final long id;
+
+        @Contract(pure = true)
+        public KeepAliveData(long id) {
+            this.id = id;
         }
     }
 }

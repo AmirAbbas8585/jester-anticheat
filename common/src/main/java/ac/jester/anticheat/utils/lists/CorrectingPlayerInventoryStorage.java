@@ -55,6 +55,11 @@ public class CorrectingPlayerInventoryStorage extends InventoryStorage {
         }
     }
 
+    private boolean isServerChangeInFlight(int slot) {
+        Integer transaction = serverIsCurrentlyProcessingThesePredictions.get(slot);
+        return transaction != null && player.lastTransactionReceived.get() <= transaction;
+    }
+
     private void checkThatBukkitIsSynced(int slot) {
         if (player.platformPlayer == null) return;
         if (!player.inventory.isPacketInventoryActive) return;
@@ -80,8 +85,9 @@ public class CorrectingPlayerInventoryStorage extends InventoryStorage {
         for (Iterator<Map.Entry<Integer, Integer>> it = pendingFinalizedSlot.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<Integer, Integer> entry = it.next();
             if (entry.getValue() <= tickID) {
+                if (isServerChangeInFlight(entry.getKey()) && tickID - entry.getValue() < 40) continue;
                 checkThatBukkitIsSynced(entry.getKey());
-                it.remove();
+                pendingFinalizedSlot.remove(entry.getKey(), entry.getValue());
             }
         }
 

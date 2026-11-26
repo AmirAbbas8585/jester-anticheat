@@ -132,6 +132,7 @@ public class CheckManager {
                 .put(ac.jester.anticheat.checks.impl.packetorder.PacketOrderC.class, new ac.jester.anticheat.checks.impl.packetorder.PacketOrderC(player))
                 .put(ac.jester.anticheat.checks.impl.packetorder.PacketOrderD.class, new ac.jester.anticheat.checks.impl.packetorder.PacketOrderD(player))
                 .put(ac.jester.anticheat.checks.impl.packetorder.PacketOrderO.class, new ac.jester.anticheat.checks.impl.packetorder.PacketOrderO(player))
+                .put(ac.jester.anticheat.checks.impl.packetorder.PacketOrderP.class, new ac.jester.anticheat.checks.impl.packetorder.PacketOrderP(player))
                 .put(ac.jester.anticheat.checks.impl.aim.AimA.class, aimA)
                 .put(ac.jester.anticheat.checks.impl.combat.TriggerBot.class,
                         new ac.jester.anticheat.checks.impl.combat.TriggerBot(player))

@@ -240,8 +240,8 @@ public class CompensatedInventory extends Check implements PacketCheck {
             inventory.selected = slot;
             player.attackCooldown.updateHeldItem(false);
         } else if (event.getPacketType() == PacketType.Play.Client.CREATIVE_INVENTORY_ACTION) {
-            WrapperPlayClientCreativeInventoryAction action = new WrapperPlayClientCreativeInventoryAction(event);
             if (player.gamemode != GameMode.CREATIVE) return;
+            WrapperPlayClientCreativeInventoryAction action = new WrapperPlayClientCreativeInventoryAction(event);
 
             boolean valid = action.getSlot() >= 1 &&
                     (PacketEvents.getAPI().getServerManager().getVersion().isNewerThan(ServerVersion.V_1_8) ?
