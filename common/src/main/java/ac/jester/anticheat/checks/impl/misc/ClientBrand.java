@@ -48,7 +48,6 @@ public class ClientBrand extends Check implements PacketCheck {
 
             brand = new String(minusLength).replace(" (Velocity)", "");
             brand = MessageUtil.stripColor(brand);
-            player.markBedrockFromBrand(brand);
             if (!GrimAPI.INSTANCE.getConfigManager().isIgnoredClient(brand)) {
                 String message = GrimAPI.INSTANCE.getConfigManager().getConfig().getStringElse("client-brand-format", "%prefix% &f%player% joined using %brand%");
                 Component component = MessageUtil.replacePlaceholders(player, MessageUtil.miniMessage(message));

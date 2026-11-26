@@ -807,12 +807,6 @@ public class GrimPlayer implements GrimUser {
         return bedrock;
     }
 
-    public void markBedrockFromBrand(String brand) {
-        if (!bedrock && brand != null && brand.toLowerCase().contains("geyser")) {
-            bedrock = true;
-        }
-    }
-
     @Override
     public UUID getUniqueId() {
         return user.getProfile().getUUID();
